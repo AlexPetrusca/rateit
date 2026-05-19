@@ -5,7 +5,8 @@
 # Configuration
 BUCKET_NAME="frontend"
 DIST_PATH="../dist"
-ENDPOINT="http://localhost:9000"
+LOCAL_MINIO_PORT="${LOCAL_MINIO_PORT:-9100}"
+ENDPOINT="http://localhost:${LOCAL_MINIO_PORT}"
 NAMESPACE="rateit"
 MINIO_SERVICE="rateit-minio"
 PORT_FORWARD_PATTERN="kubectl port-forward -n ${NAMESPACE} svc/${MINIO_SERVICE}"
@@ -23,7 +24,7 @@ if pgrep -f "$PORT_FORWARD_PATTERN" >/dev/null; then
 else
     TEMP_TUNNEL=true
     echo "Starting port-forward..."
-    kubectl port-forward -n "$NAMESPACE" "svc/$MINIO_SERVICE" 9000:9000 >/dev/null &
+    kubectl port-forward -n "$NAMESPACE" "svc/$MINIO_SERVICE" "${LOCAL_MINIO_PORT}:9000" >/dev/null &
     PORT_FORWARD_PID=$!
     sleep 3 # Wait for port-forward to be ready
 fi

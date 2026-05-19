@@ -49,14 +49,14 @@ ingress:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/use-regex: "true"
   hosts:
-    - host: localhost
+    - host: rateit.localhost
       paths:
         - path: /
           pathType: Prefix
   tls: []
 
 ingress-nginx:
-  enabled: true
+  enabled: false
   controller:
     metrics:
       enabled: true
