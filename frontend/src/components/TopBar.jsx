@@ -28,7 +28,7 @@ const TopBar = () => {
         <div className="top-bar">
             <div className="top-bar-left">
                 <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-                    <div className="logo-icon">CT</div>
+                    <div className="logo-icon">RI</div>
                     <span className="company-name">RateIt</span>
                 </div>
             </div>
