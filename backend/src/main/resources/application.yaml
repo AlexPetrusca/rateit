@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: backend
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/postgres
+    username: ${POSTGRES_ADMIN_USERNAME}
+    password: ${POSTGRES_ADMIN_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update  # auto-update tables
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_ADMIN_PASSWORD}
+  cloud:
+    aws:
+      credentials:
+        access-key: ${MINIO_ADMIN_USERNAME}
+        secret-key: ${MINIO_ADMIN_PASSWORD}
+      s3:
+        endpoint: http://${MINIO_HOST:localhost}:${MINIO_PORT:9000}
+        path-style-access-enabled: true
+      region:
+        static: us-east-1
+
+integration:
+  twilio:
+    account-sid: ${TWILIO_ACCOUNT_SID}
+    auth-token: ${TWILIO_AUTH_TOKEN}
+    service-sid: ${TWILIO_SERVICE_SID}
+  mocker:
+    endpoint: http://${MOCKER_HOST:localhost}:${MOCKER_PORT:8090}
+
+security:
+  auth:
+    session:
+      duration: 24h
+    cookie:
+      name: AUTH_TOKEN
+      secure: false
+      same-site: Lax
+    rsa:
+      public-key: ${RSA_PUBLIC_KEY}
+      private-key: ${RSA_PRIVATE_KEY}
+
+logging:
+  level:
+    root: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+    enabled: true
+  api-docs:
+    enabled: true

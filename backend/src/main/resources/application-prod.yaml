@@ -1,0 +1,19 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    jdbc: postgresql://rateit-postgresql:5432/postgres
+  cloud:
+    aws:
+      s3:
+        endpoint: http://localhost
+
+security:
+  auth:
+    cookie:
+      secure: true
+
+logging:
+  level:
+    root: DEBUG

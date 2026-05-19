@@ -1,0 +1,16 @@
+{{- if .Values.backend.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: rateit-backend
+  labels:
+    {{- include "rateit.selectorLabels" . | nindent 4 }}
+spec:
+  type: {{ .Values.backend.service.type }}
+  selector:
+    {{- include "rateit.selectorLabels" . | nindent 4 }}
+    component: backend
+  ports:
+    - port: {{ .Values.backend.service.port }}
+      targetPort: {{ .Values.backend.service.targetPort }}
+{{- end }}

@@ -1,0 +1,50 @@
+package com.rateit.backend.service;
+
+import io.awspring.cloud.s3.S3Template;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+
+@Service
+@RequiredArgsConstructor
+public class S3Service {
+
+    private final S3Presigner s3Presigner;
+    private final S3Template s3Template;
+
+    public void uploadString(String bucket, String key, String content) {
+        s3Template.upload(bucket, key, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    public String createPresignedUploadUrl(String bucket, String key, Duration duration) {
+        PutObjectRequest objectRequest = PutObjectRequest.builder()
+            .bucket(bucket)
+            .key(key)
+            .build();
+
+        PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest -> presignRequest
+            .signatureDuration(duration)
+            .putObjectRequest(objectRequest));
+
+        return presignedRequest.url().toString();
+    }
+
+    public String createPresignedGetUrl(String bucket, String key, Duration duration) {
+        software.amazon.awssdk.services.s3.model.GetObjectRequest objectRequest = software.amazon.awssdk.services.s3.model.GetObjectRequest.builder()
+            .bucket(bucket)
+            .key(key)
+            .build();
+
+        software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest -> presignRequest
+            .signatureDuration(duration)
+            .getObjectRequest(objectRequest));
+
+        return presignedRequest.url().toString();
+    }
+}

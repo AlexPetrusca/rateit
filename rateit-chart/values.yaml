@@ -1,0 +1,266 @@
+# Default values for rateit-chart.
+
+appName: "rateit"
+
+global:
+  security:
+    allowInsecureImages: true
+
+nginx:
+  enabled: true
+  image: nginx:alpine
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+  upstreamService: "rateit"
+  upstreamPort: 80
+
+backend:
+  enabled: true
+  image: "alexpetrusca/rateit-backend"
+  imageTag: "latest"
+  pullPolicy: Always
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+
+mocker:
+  enabled: true
+  image:
+    tag: "latest"
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8099
+    targetPort: 8090
+  h2Service:
+    type: ClusterIP
+    port: 8098
+    targetPort: 8092
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+  hosts:
+    - host: localhost
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+ingress-nginx:
+  enabled: true
+  controller:
+    metrics:
+      enabled: true
+    service:
+      type: LoadBalancer
+      ports:
+        http: 80
+        https: 443
+    admissionWebhooks:
+      enabled: false
+    config:
+      use-proxy-protocol: "false"
+      use-forwarded-headers: "true"
+      compute-full-forwarded-for: "true"
+
+minio:
+  enabled: true
+  mode: standalone
+  existingSecret: "rateit-minio-secret"
+  persistence:
+    enabled: true
+    size: 20Gi
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+  service:
+    type: ClusterIP
+    port: 9000
+  consoleService:
+    type: ClusterIP
+    port: 9001
+  buckets:
+    - name: images
+      policy: none
+      purge: false
+  policies:
+    - name: user-policy
+      statements:
+        - resources:
+            - 'arn:aws:s3:::images/*'
+          actions:
+            - "s3:GetObject"
+            - "s3:PutObject"
+
+postgresql:
+  enabled: true
+  auth:
+    database: "rateit"
+    username: "rateit"
+    existingSecret: "rateit-postgres-secret"
+    secretKeys:
+      adminPasswordKey: "POSTGRES_ADMIN_PASSWORD"
+      userPasswordKey: "POSTGRES_USER_PASSWORD"
+  metrics:
+    enabled: true
+  architecture: standalone
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+    service:
+      ports:
+        postgresql: 5432
+
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: true
+    existingSecret: "rateit-redis-secret"
+    existingSecretPasswordKey: "REDIS_ADMIN_PASSWORD"
+  metrics:
+    enabled: true
+  master:
+    persistence:
+      enabled: true
+      size: 1Gi
+
+kafka:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/kafka
+    tag: 4.0.0-debian-12-r10
+  controller:
+    replicaCount: 1
+  broker:
+    replicaCount: 0
+  metrics:
+    jmx:
+      enabled: true
+      image:
+        registry: docker.io
+        repository: bitnamilegacy/jmx-exporter
+        tag: 1.4.0-debian-12-r0
+  overrideConfiguration:
+    advertised.listeners: "CLIENT://localhost:9092,INTERNAL://rateit-kafka-controller-0.rateit-kafka-controller-headless.rateit.svc.cluster.local:9094"
+  listeners:
+    client:
+      protocol: PLAINTEXT
+    controller:
+      protocol: PLAINTEXT
+    interbroker:
+      protocol: PLAINTEXT
+  service:
+    type: ClusterIP
+    ports:
+      client: 9092
+
+prometheus:
+  enabled: true
+
+  alertmanager:
+    enabled: false
+
+  prometheus-pushgateway:
+    enabled: false
+
+  kube-state-metrics:
+    enabled: false
+
+  prometheus-node-exporter:
+    enabled: false
+
+  scrapeConfigs:
+    kubernetes-api-servers:
+      enabled: false
+    kubernetes-nodes:
+      enabled: false
+    kubernetes-nodes-cadvisor:
+      enabled: false
+    kubernetes-service-endpoints:
+      enabled: false
+    kubernetes-service-endpoints-slow:
+      enabled: false
+    kubernetes-pods:
+      enabled: false
+    kubernetes-pods-slow:
+      enabled: false
+    kubernetes-services:
+      enabled: false
+    prometheus-pushgateway:
+      enabled: false
+
+  server:
+    persistentVolume:
+      enabled: false
+    retention: "1d"
+  
+  extraScrapeConfigs: |
+    - job_name: 'backend'
+      metrics_path: '/actuator/prometheus'
+      static_configs:
+        - targets: ["rateit-backend:80"]
+    - job_name: 'mocker'
+      metrics_path: '/actuator/prometheus'
+      static_configs:
+        - targets: ["rateit-mocker:8099"]
+    - job_name: 'nginx'
+      static_configs:
+        - targets: ["rateit-nginx:9113"]
+    - job_name: 'postgresql'
+      static_configs:
+        - targets: ["rateit-postgresql-metrics:9187"]
+    - job_name: 'redis'
+      static_configs:
+        - targets: ["rateit-redis-metrics:9121"]
+    - job_name: 'kafka'
+      static_configs:
+        - targets: ["rateit-kafka-jmx-metrics:5556"]
+    - job_name: 'minio'
+      metrics_path: '/minio/v2/metrics/cluster'
+      static_configs:
+        - targets: ["rateit-minio:9000"]
+    - job_name: 'ingress-nginx'
+      static_configs:
+        - targets: ["rateit-ingress-nginx-controller-metrics:10254"]
+
+grafana:
+  enabled: true
+
+  admin:
+    existingSecret: "rateit-grafana-secret"
+    userKey: "GRAFANA_ADMIN_USER"
+    passwordKey: "GRAFANA_ADMIN_PASSWORD"
+
+  persistence:
+    enabled: true
+    size: 200Mi
+
+  initChownData:
+    enabled: false
+
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://rateit-prometheus-server:80
+          isDefault: true
+          editable: true

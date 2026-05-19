@@ -1,0 +1,27 @@
+dependencies:
+- name: ingress-nginx
+  repository: https://kubernetes.github.io/ingress-nginx
+  version: 4.15.1
+- name: minio
+  repository: https://charts.min.io/
+  version: 5.4.0
+- name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 18.6.7
+- name: redis
+  repository: https://charts.bitnami.com/bitnami
+  version: 25.5.3
+- name: kafka
+  repository: https://charts.bitnami.com/bitnami
+  version: 32.4.3
+- name: prometheus
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 28.16.0
+- name: grafana
+  repository: https://grafana.github.io/helm-charts
+  version: 10.5.15
+- name: mocker
+  repository: oci://ghcr.io/alexpetrusca
+  version: 1.0.2
+digest: sha256:184ca2d38c887b14f771d240653995b971f854da6790cd13bc03d70ffdb2b25f
+generated: "2026-05-18T21:53:11.82769197-07:00"

@@ -1,0 +1,16 @@
+{{- if .Values.nginx.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: rateit-nginx
+  labels:
+    {{- include "rateit.selectorLabels" . | nindent 4 }}
+spec:
+  type: {{ .Values.nginx.service.type }}
+  selector:
+    {{- include "rateit.selectorLabels" . | nindent 4 }}
+    component: nginx
+  ports:
+    - port: 80
+      targetPort: 80
+{{- end }}

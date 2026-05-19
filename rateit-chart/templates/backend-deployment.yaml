@@ -1,0 +1,71 @@
+{{- if .Values.backend.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rateit-backend
+  labels:
+    {{- include "rateit.selectorLabels" . | nindent 4 }}
+    component: backend
+spec:
+  selector:
+    matchLabels:
+      {{- include "rateit.selectorLabels" . | nindent 6 }}
+      component: backend
+  template:
+    metadata:
+      labels:
+        {{- include "rateit.selectorLabels" . | nindent 8 }}
+        component: backend
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}-backend
+          image: "{{ .Values.backend.image }}:{{ .Values.backend.imageTag }}"
+          imagePullPolicy: {{ .Values.backend.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.service.targetPort }}
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod,mocker"
+            - name: SPRING_CONFIG_IMPORT
+              value: "configtree:/etc/secrets/"
+            - name: POSTGRES_HOST
+              value: "rateit-postgresql"
+            - name: POSTGRES_PORT
+              value: "{{ .Values.postgresql.primary.service.ports.postgresql }}"
+            - name: POSTGRES_ADMIN_USERNAME
+              value: "postgres"
+            - name: POSTGRES_USER_USERNAME
+              value: "{{ .Values.postgresql.auth.username }}"
+            - name: POSTGRES_DB_NAME
+              value: "{{ .Values.postgresql.auth.database }}"
+            - name: MINIO_HOST
+              value: "rateit-minio"
+            - name: MINIO_PORT
+              value: "{{ .Values.minio.service.port }}"
+            - name: MOCKER_HOST
+              value: "rateit-mocker"
+            - name: MOCKER_PORT
+              value: "{{ .Values.mocker.service.port }}"
+          volumeMounts:
+            - name: secrets-volume
+              mountPath: "/etc/secrets"
+              readOnly: true
+      volumes:
+        - name: secrets-volume
+          projected:
+            sources:
+              - secret:
+                  name: rateit-backend-secret
+              - secret:
+                  name: rateit-postgres-secret
+              - secret:
+                  name: rateit-redis-secret
+              - secret:
+                  name: rateit-minio-secret
+                  items:
+                    - key: rootUser
+                      path: MINIO_ADMIN_USERNAME
+                    - key: rootPassword
+                      path: MINIO_ADMIN_PASSWORD
+{{- end }}

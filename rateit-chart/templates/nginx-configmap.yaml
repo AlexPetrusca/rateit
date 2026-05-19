@@ -1,0 +1,83 @@
+{{- if .Values.nginx.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rateit-nginx-config
+  labels:
+    {{- include "rateit.selectorLabels" . | nindent 4 }}
+data:
+  nginx.conf: |
+    events {
+        worker_connections 1024;
+    }
+    http {
+        include       /etc/nginx/mime.types;
+        default_type  application/octet-stream;
+
+        upstream minio {
+            server rateit-minio:{{ .Values.minio.service.port }};
+            keepalive 32;
+        }
+
+        upstream backend {
+            server rateit-backend:{{ .Values.backend.service.port }};
+            keepalive 32;
+        }
+
+        # serve traffic
+        server {
+            listen 80;
+
+            location / {
+                # If the request is for the root "/", rewrite it to "/index.html"
+                rewrite ^/$ /index.html break;
+
+                # Proxy to MinIO, appending the (potentially rewritten) $uri
+                proxy_pass http://minio/frontend$uri;
+
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+
+                # Handle SPA routing
+                #  - If MinIO returns 404 (file not found), serve index.html instead
+                #  - This allows the frontend router to handle the path.
+                proxy_intercept_errors on;
+                error_page 404 = /index.html;
+            }
+
+            location /images/ {
+                proxy_pass http://minio/images/;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+
+            location /api/ {
+                proxy_pass http://backend;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+
+            location /auth/ {
+                proxy_pass http://backend;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+        }
+
+        # serve metrics
+        server {
+            listen 8080;
+            location /stub_status {
+                stub_status on;
+                allow 127.0.0.1;
+                deny all;
+            }
+        }
+    }
+{{- end }}
