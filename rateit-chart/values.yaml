@@ -30,6 +30,7 @@ backend:
 mocker:
   enabled: true
   image:
+    repository: alexpetrusca/rateit-mocker
     tag: "latest"
     pullPolicy: Always
   service:
