@@ -3,6 +3,7 @@ package com.rateit.backend.controller;
 import com.rateit.backend.entity.rest.S3UploadRequest;
 import com.rateit.backend.entity.rest.S3UploadResponse;
 import com.rateit.backend.service.S3Service;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,18 +20,23 @@ public class S3Controller {
     private final S3Service s3Service;
 
     @PostMapping("/images")
-    public ResponseEntity<S3UploadResponse> getPresignedUploadUrl(@RequestBody S3UploadRequest req) {
+    public ResponseEntity<S3UploadResponse> getPresignedUploadUrl(@RequestBody S3UploadRequest req, HttpServletRequest servletRequest) {
         String bucketName = "images";
         String key = "uploads/" + System.currentTimeMillis() + "_" + req.filename();
 
         // Generate presigned URL valid for 10 minutes
-        String uploadUrl = s3Service.createPresignedUploadUrl(bucketName, key, Duration.ofMinutes(10));
+        String uploadUrl = s3Service.createPresignedUploadUrl(
+            bucketName,
+            key,
+            Duration.ofMinutes(10),
+            getForwardedOrigin(servletRequest)
+        );
 
         return ResponseEntity.ok(new S3UploadResponse(uploadUrl, key));
     }
 
     @GetMapping("/images/{*key}")
-    public ResponseEntity<Void> getPresignedDownloadUrl(@PathVariable String key) {
+    public ResponseEntity<Void> getPresignedDownloadUrl(@PathVariable String key, HttpServletRequest servletRequest) {
         String bucketName = "images";
 
         // Strip leading slash
@@ -39,10 +45,38 @@ public class S3Controller {
         }
 
         // Generate presigned URL valid for 10 minutes
-        String downloadUrl = s3Service.createPresignedGetUrl(bucketName, key, Duration.ofMinutes(10));
+        String downloadUrl = s3Service.createPresignedGetUrl(
+            bucketName,
+            key,
+            Duration.ofMinutes(10),
+            getForwardedOrigin(servletRequest)
+        );
 
         return ResponseEntity.status(HttpStatus.TEMPORARY_REDIRECT)
             .location(URI.create(downloadUrl))
             .build();
+    }
+
+    private String getForwardedOrigin(HttpServletRequest request) {
+        String proto = firstHeader(request, "X-Forwarded-Proto");
+        String host = firstHeader(request, "X-Forwarded-Host");
+
+        if (host == null) {
+            return null;
+        }
+
+        if (proto == null) {
+            proto = request.getScheme();
+        }
+
+        return proto + "://" + host;
+    }
+
+    private String firstHeader(HttpServletRequest request, String name) {
+        String value = request.getHeader(name);
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.split(",")[0].trim();
     }
 }

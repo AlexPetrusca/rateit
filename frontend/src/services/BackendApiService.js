@@ -25,8 +25,13 @@ const BackendApiService = {
 
     getCurrentUser: async () => {
         const response = await fetch('/api/users/me');
-        if (response.status === 404) {
+        if (response.status === 204 || response.status === 404) {
             return null; // Authenticated but no profile
+        }
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authenticated');
+            error.status = response.status;
+            throw error;
         }
         if (!response.ok) {
             throw new Error('Failed to fetch user');

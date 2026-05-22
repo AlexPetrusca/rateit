@@ -7,7 +7,7 @@ spring:
   cloud:
     aws:
       s3:
-        endpoint: http://localhost
+        endpoint: http://${MINIO_HOST:rateit-minio}:${MINIO_PORT:9000}
 
 security:
   auth:

@@ -20,7 +20,9 @@ export const AuthProvider = ({ children }) => {
                 return null;
             }
         } catch (err) {
-            console.error('Auth check failed', err);
+            if (err.status !== 401 && err.status !== 403) {
+                console.error('Auth check failed', err);
+            }
             setUser(null);
             setIsAuthenticated(false);
             return null;
