@@ -8,7 +8,9 @@ from there, we need the ability to make a "post" and then rate that post, essent
 
 ## Database Design
 
-This section describes the intended relational database model. The current backend only implements the `users` table, but the rest of this design gives the app a path toward photos, posts, ratings, friends, feeds, custom rating scales, and external review integrations.
+This section describes the current relational database model. The backend now has JPA entities and repositories for the core schema: users, media assets, rateable items, rating scales, ratings, friendships, follows, feed events, and external review integrations.
+
+Important current-state note: most of these tables exist as schema only. The app currently exposes user/auth/profile/image-upload flows, but it does not yet expose product endpoints for creating rateable items, ratings, friendships, follows, feed events, custom scales, or external imports.
 
 ### Design Principles
 
@@ -19,13 +21,14 @@ This section describes the intended relational database model. The current backe
 - Use join tables for social relationships and many-to-many associations.
 - Store external imported reviews separately enough that we can preserve source metadata.
 
-### Implemented Tables
+### Current Tables
 
 #### `users`
 
 Stores the core account/profile record for a person using RateIt.
 
 Current backend entity: `User`.
+Current repository: `UserRepository`.
 
 Columns:
 
@@ -40,9 +43,10 @@ Constraints and indexes:
 
 - Primary key on `id`.
 - Unique index on `phone_number`.
+- Unique index on `username`.
 - `phone_number` and `username` should be non-null.
 
-### Planned Core Tables
+### Core Tables
 
 #### `media_assets`
 
@@ -65,6 +69,8 @@ Notes:
 
 - This keeps the database from depending directly on raw URL strings.
 - Public display URLs can still be generated through the backend using presigned URLs or nginx proxy routes.
+- Current backend entity: `MediaAsset`.
+- Current repository: `MediaAssetRepository`.
 
 #### `rateable_items`
 
@@ -89,6 +95,9 @@ Notes:
 - A photo rating target is a `rateable_items` row with `item_type = PHOTO` and a `media_asset_id`.
 - A text post is a `rateable_items` row with `item_type = TEXT_POST` and `body`.
 - A rating can itself become rateable by creating a `rateable_items` row with `item_type = RATING`.
+- Current backend entity: `RateableItem`.
+- Current repository: `RateableItemRepository`.
+- Current enum dependencies: `RateableItemType`, `Visibility`.
 
 #### `rating_scales`
 
@@ -114,6 +123,10 @@ Examples:
 - `1` to `10`, symbol `fire`.
 - `-5` to `5`, symbol `star`.
 
+Current backend entity: `RatingScale`.
+Current repository: `RatingScaleRepository`.
+Current enum dependency: `RatingScaleType`.
+
 #### `ratings`
 
 Stores a user's rating/review of a rateable item.
@@ -134,13 +147,16 @@ Constraints and indexes:
 
 - Index on `rateable_item_id`.
 - Index on `author_user_id`.
-- Optional unique constraint on `(author_user_id, rateable_item_id)` if each user should only rate an item once.
+- Unique constraint on `(author_user_id, rateable_item_id)`, so each user can rate a specific item once.
 - Check constraint that `score` is within the scale range if enforced at the database layer.
 
 Notes:
 
 - This is the main feed unit: a friend rated something.
 - If users can rate other people's ratings, create a `rateable_items` row for a `ratings.id`, then store the second-level rating here too.
+- Current backend entity: `Rating`.
+- Current repository: `RatingRepository`.
+- Current enum dependency: `Visibility`.
 
 ### Social Tables
 
@@ -166,6 +182,9 @@ Constraints and indexes:
 Notes:
 
 - Feed queries can use accepted friendships to determine which ratings to show.
+- Current backend entity: `Friendship`.
+- Current repository: `FriendshipRepository`.
+- Current enum dependency: `FriendshipStatus`.
 
 #### `follows`
 
@@ -181,6 +200,11 @@ Columns:
 Constraints:
 
 - Unique constraint on `(follower_user_id, followed_user_id)`.
+
+Notes:
+
+- Current backend entity: `Follow`.
+- Current repository: `FollowRepository`.
 
 ### Feed Tables
 
@@ -202,6 +226,9 @@ Columns:
 Notes:
 
 - This table should be considered a cache of activity, not the source of truth.
+- Current backend entity: `FeedEvent`.
+- Current repository: `FeedEventRepository`.
+- Current enum dependency: `FeedEventType`.
 
 ### External Integration Tables
 
@@ -216,6 +243,16 @@ Columns:
 - `updated_at`
 - `provider`: enum/string such as `YELP`, `BELI`, `LETTERBOXD`.
 - `display_name`: human-readable provider name.
+
+Constraints:
+
+- Unique constraint on `provider`.
+
+Notes:
+
+- Current backend entity: `ExternalIntegration`.
+- Current repository: `ExternalIntegrationRepository`.
+- Current enum dependency: `ExternalProvider`.
 
 #### `user_external_accounts`
 
@@ -237,7 +274,12 @@ Columns:
 Constraints:
 
 - Unique constraint on `(external_integration_id, external_user_id)`.
-- Unique constraint on `(user_id, external_integration_id)` if each user can only connect one account per provider.
+- Unique constraint on `(user_id, external_integration_id)`, so each user can connect one account per provider.
+
+Notes:
+
+- Current backend entity: `UserExternalAccount`.
+- Current repository: `UserExternalAccountRepository`.
 
 #### `external_reviews`
 
@@ -262,14 +304,36 @@ Constraints:
 
 - Unique constraint on `(user_external_account_id, external_review_id)`.
 
+Notes:
+
+- Current backend entity: `ExternalReview`.
+- Current repository: `ExternalReviewRepository`.
+
+### Current Backend Support
+
+The backend currently contains:
+
+- JPA entities for every table listed above.
+- Spring Data repositories for every table listed above.
+- Existing API support for users, auth, and S3 image URL generation.
+
+The backend does not yet contain:
+
+- Controllers or services for creating media asset records.
+- Controllers or services for creating rateable items.
+- Controllers or services for submitting ratings.
+- Friend/follow request endpoints.
+- Feed generation endpoints.
+- External integration connection or import jobs.
+
 ### Suggested MVP Schema Order
 
-1. Keep `users` as implemented.
-2. Add `media_assets`.
-3. Add `rateable_items`.
-4. Add a default `rating_scales` row for 1-5 stars.
-5. Add `ratings`.
-6. Add `friendships`.
-7. Build the feed from ratings and friendships before adding `feed_events`.
+1. Add services/controllers for `media_assets`, `rateable_items`, and `ratings`.
+2. Seed a default `rating_scales` row for 1-5 stars.
+3. Wire profile photo uploads to `media_assets` instead of storing only the raw object key on `users`.
+4. Add photo post creation.
+5. Add rating submission for photo posts.
+6. Add friendships.
+7. Build the feed from ratings and friendships before relying heavily on `feed_events`.
 8. Add custom rating scales.
 9. Add external integrations/imports.
