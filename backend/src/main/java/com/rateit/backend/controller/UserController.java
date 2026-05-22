@@ -44,8 +44,7 @@ public class UserController {
         String phoneNumber = token.getToken().getSubject();
         User body = userService.create(
             phoneNumber,
-            req.firstName(),
-            req.lastName(),
+            req.username(),
             req.profilePicUrl()
         );
         return ResponseEntity.ok(body);

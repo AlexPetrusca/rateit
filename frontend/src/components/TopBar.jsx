@@ -50,7 +50,7 @@ const TopBar = () => {
                                 />
                             ) : (
                                 <div className="profile-placeholder">
-                                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                                    {user?.username?.[0]}
                                 </div>
                             )}
                         </div>

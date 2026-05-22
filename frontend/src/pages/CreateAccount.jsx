@@ -5,8 +5,7 @@ import BackendApiService from '../services/BackendApiService';
 import '../App.css';
 
 const CreateAccount = () => {
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
+    const [username, setUsername] = useState('');
     const [selectedFile, setSelectedFile] = useState(null);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -18,8 +17,8 @@ const CreateAccount = () => {
     };
 
     const handleSubmit = async () => {
-        if (!firstName || !lastName) {
-            setError('Please enter your first and last name');
+        if (!username) {
+            setError('Please enter a username');
             return;
         }
         setIsLoading(true);
@@ -37,8 +36,7 @@ const CreateAccount = () => {
 
             // Create User
             const updatedUser = await BackendApiService.createOrUpdateUser({
-                firstName,
-                lastName,
+                username,
                 profilePicUrl
             });
 
@@ -56,19 +54,11 @@ const CreateAccount = () => {
         <div className="container">
             <h1>Create Account</h1>
             <div className="form-group">
-                <label>First Name</label>
+                <label>Username</label>
                 <input
                     type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                />
-            </div>
-            <div className="form-group">
-                <label>Last Name</label>
-                <input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                 />
             </div>
             <div className="form-group">

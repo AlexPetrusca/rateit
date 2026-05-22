@@ -22,11 +22,10 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User create(String phoneNumber, String firstName, String lastName, String profilePicUrl) {
+    public User create(String phoneNumber, String username, String profilePicUrl) {
         User user = User.builder()
             .phoneNumber(phoneNumber)
-            .firstName(firstName)
-            .lastName(lastName)
+            .username(username)
             .profilePicUrl(profilePicUrl)
             .build();
         return userRepository.save(user);

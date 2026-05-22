@@ -11,7 +11,7 @@ const Home = () => {
             <main>
                 <h2>Welcome to RateIt!</h2>
                 {isFullyAuthenticated ? (
-                    <p>Hello, {user?.firstName}!</p>
+                    <p>Hello, {user?.username}!</p>
                 ) : (
                     <p>Please login to continue.</p>
                 )}

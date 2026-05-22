@@ -22,10 +22,7 @@ const Profile = () => {
                 )}
                 <div className="detail-rows">
                     <div className="detail-row">
-                        <strong>First Name:</strong> {user?.firstName}
-                    </div>
-                    <div className="detail-row">
-                        <strong>Last Name:</strong> {user?.lastName}
+                        <strong>Username:</strong> {user?.username}
                     </div>
                     <div className="detail-row">
                         <strong>Phone:</strong> {user?.phoneNumber}
