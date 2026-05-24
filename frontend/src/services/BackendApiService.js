@@ -43,6 +43,14 @@ const BackendApiService = {
         await fetch('/auth/logout', { method: 'POST' });
     },
 
+    getFeed: async (limit = 20) => {
+        const response = await fetch(`/api/feed?limit=${encodeURIComponent(limit)}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch feed');
+        }
+        return await response.json();
+    },
+
     getUploadUrl: async (filename, contentType) => {
         const response = await fetch('/api/s3/images', {
             method: 'POST',
