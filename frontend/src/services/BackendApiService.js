@@ -34,7 +34,9 @@ const BackendApiService = {
             throw error;
         }
         if (!response.ok) {
-            throw new Error('Failed to fetch user');
+            const error = new Error('Failed to fetch user');
+            error.status = response.status;
+            throw error;
         }
         return await response.json();
     },

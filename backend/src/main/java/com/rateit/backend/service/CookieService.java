@@ -25,6 +25,9 @@ public class CookieService {
 
     public ResponseCookie getEmptyAuthCookie() {
         return ResponseCookie.from(authCookieProps.name(), "")
+            .httpOnly(true)
+            .secure(authCookieProps.secure())
+            .sameSite(authCookieProps.sameSite())
             .maxAge(0)
             .path("/")
             .build();

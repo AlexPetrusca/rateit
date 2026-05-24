@@ -1,5 +1,7 @@
 package com.rateit.backend.config;
 
+import com.rateit.backend.config.properties.AuthCookieProperties;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -10,7 +12,11 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Configuration
+@RequiredArgsConstructor
 public class BearerTokenResolverConfig {
+
+    private final AuthCookieProperties authCookieProps;
+
     @Bean
     public BearerTokenResolver bearerTokenResolver() {
         return (HttpServletRequest request) -> {
@@ -20,11 +26,11 @@ public class BearerTokenResolverConfig {
                 return authHeader.substring(7);
             }
 
-            // 2) Cookie fallback (AUTH_TOKEN)
+            // 2) Cookie fallback
             Cookie[] cookies = request.getCookies();
             if (cookies != null) {
                 for (Cookie cookie : cookies) {
-                    if ("AUTH_TOKEN".equals(cookie.getName())) {
+                    if (authCookieProps.name().equals(cookie.getName())) {
                         String token = cookie.getValue();
                         if (StringUtils.hasText(token)) {
                             return token;
