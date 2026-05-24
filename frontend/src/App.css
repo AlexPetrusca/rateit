@@ -419,6 +419,20 @@ button:disabled {
     color: #536471;
 }
 
+.op-rating-stars {
+    display: inline-flex;
+    align-items: center;
+}
+
+.op-rating-stars .star-rating-display {
+    font-size: 1.05rem;
+    letter-spacing: 0;
+}
+
+.rating-summary .op-rating-stars .star-rating-display {
+    font-size: 1.1rem;
+}
+
 .tweet-body,
 .tweet-review {
     margin: 10px 0 0;

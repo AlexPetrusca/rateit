@@ -3,6 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import BackendApiService from '../services/BackendApiService';
 import '../App.css';
 
+const STAR_TEXT = String.fromCharCode(9733).repeat(5);
+
 const Home = () => {
     const { user, isAuthenticated } = useAuth();
     const [feedItems, setFeedItems] = useState([]);
@@ -95,9 +97,9 @@ const Home = () => {
     const renderStarDisplay = (scoreValue, label) => {
         return (
             <span className="star-rating-display" aria-label={label}>
-                <span className="star-rating-empty">★★★★★</span>
+                <span className="star-rating-empty">{STAR_TEXT}</span>
                 <span className="star-rating-filled" style={{ width: getStarRatingPercent(scoreValue) }}>
-                    ★★★★★
+                    {STAR_TEXT}
                 </span>
             </span>
         );
@@ -508,7 +510,9 @@ const Home = () => {
 
                                                     <div className="rating-summary">
                                                         <span>OP rating</span>
-                                                        <strong>{formatScore(item)}</strong>
+                                                        <strong className="op-rating-stars">
+                                                            {renderStarDisplay(item.score, formatScore(item))}
+                                                        </strong>
                                                     </div>
                                                 </div>
                                             ) : (
@@ -518,7 +522,9 @@ const Home = () => {
                                                     )}
                                                     <div className="text-rating-score">
                                                         <span>OP rating</span>
-                                                        <strong>{formatScore(item)}</strong>
+                                                        <strong className="op-rating-stars">
+                                                            {renderStarDisplay(item.score, formatScore(item))}
+                                                        </strong>
                                                     </div>
                                                 </div>
                                             )}
