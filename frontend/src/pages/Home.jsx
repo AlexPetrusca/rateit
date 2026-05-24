@@ -4,6 +4,7 @@ import BackendApiService from '../services/BackendApiService';
 import '../App.css';
 
 const STAR_TEXT = String.fromCharCode(9733).repeat(5);
+const FIVE_STAR_SCALE = { max: 5, symbol: 'star' };
 
 const Home = () => {
     const { user, isAuthenticated } = useAuth();
@@ -80,25 +81,26 @@ const Home = () => {
         return formatScoreValue(item.score, item.ratingScale);
     };
 
-    const formatCommentScore = (comment, item) => {
-        return formatScoreValue(comment.score, item.ratingScale);
+    const formatCommentScore = (comment) => {
+        return formatScoreValue(comment.score, FIVE_STAR_SCALE);
     };
 
-    const getStarRatingPercent = (scoreValue) => {
+    const getStarRatingPercent = (scoreValue, maxValue = 5) => {
         const score = Number(scoreValue);
+        const max = Number(maxValue);
 
-        if (!Number.isFinite(score)) {
+        if (!Number.isFinite(score) || !Number.isFinite(max) || max <= 0) {
             return '0%';
         }
 
-        return `${Math.max(0, Math.min(100, (score / 5) * 100))}%`;
+        return `${Math.max(0, Math.min(100, (score / max) * 100))}%`;
     };
 
-    const renderStarDisplay = (scoreValue, label) => {
+    const renderStarDisplay = (scoreValue, label, maxValue = 5) => {
         return (
             <span className="star-rating-display" aria-label={label}>
                 <span className="star-rating-empty">{STAR_TEXT}</span>
-                <span className="star-rating-filled" style={{ width: getStarRatingPercent(scoreValue) }}>
+                <span className="star-rating-filled" style={{ width: getStarRatingPercent(scoreValue, maxValue) }}>
                     {STAR_TEXT}
                 </span>
             </span>
@@ -266,10 +268,10 @@ const Home = () => {
                 <div className="comment-rating-control">
                     <label id={`${scoreInputId}-label`}>Your rating</label>
                     <output aria-live="polite">
-                        {formatScoreValue(previewScore, item.ratingScale)}
+                        {formatScoreValue(previewScore, FIVE_STAR_SCALE)}
                     </output>
                     <div className="star-rating-picker" role="radiogroup" aria-labelledby={`${scoreInputId}-label`}>
-                        {renderStarDisplay(previewScore, `Selected rating: ${formatScoreValue(commentScore, item.ratingScale)}`)}
+                        {renderStarDisplay(previewScore, `Selected rating: ${formatScoreValue(commentScore, FIVE_STAR_SCALE)}`)}
                         <div className="star-rating-hit-grid">
                             {Array.from({ length: 10 }, (_, index) => {
                                 const score = (index + 1) / 2;
@@ -335,7 +337,7 @@ const Home = () => {
                             <div className="comment-author">{comment.author?.username || 'Someone'}</div>
                             {comment.score != null && (
                                 <div className="comment-score">
-                                    {renderStarDisplay(comment.score, formatCommentScore(comment, item))}
+                                    {renderStarDisplay(comment.score, formatCommentScore(comment))}
                                 </div>
                             )}
                         </div>
@@ -511,7 +513,7 @@ const Home = () => {
                                                     <div className="rating-summary">
                                                         <span>OP rating</span>
                                                         <strong className="op-rating-stars">
-                                                            {renderStarDisplay(item.score, formatScore(item))}
+                                                            {renderStarDisplay(item.score, formatScore(item), item.ratingScale?.max)}
                                                         </strong>
                                                     </div>
                                                 </div>
@@ -523,7 +525,7 @@ const Home = () => {
                                                     <div className="text-rating-score">
                                                         <span>OP rating</span>
                                                         <strong className="op-rating-stars">
-                                                            {renderStarDisplay(item.score, formatScore(item))}
+                                                            {renderStarDisplay(item.score, formatScore(item), item.ratingScale?.max)}
                                                         </strong>
                                                     </div>
                                                 </div>
