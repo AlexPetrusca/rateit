@@ -8,6 +8,7 @@ public enum ErrorCode {
     // 1xxx: Validation / Not Found
     BAD_REQUEST(1000),
     RESOURCE_NOT_FOUND(1000),
+    CONFLICT(1001),
     INVALID_PHONE_NUMBER(1002),
 
     // 2xxx: Authentication / Authorization

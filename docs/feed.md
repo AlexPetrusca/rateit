@@ -2,7 +2,7 @@
 
 ## Functional Design
 
-The first feed iteration shows authenticated users a reverse-chronological list of recent public ratings. Each feed item answers four questions:
+The feed shows authenticated users a reverse-chronological list of recent public ratings. Each feed item answers four questions:
 
 - Who made the rating?
 - What did they rate?
@@ -11,7 +11,15 @@ The first feed iteration shows authenticated users a reverse-chronological list 
 
 The Home page is now the feed surface. When a signed-in user lands there, the frontend loads recent ratings from the backend and renders each rating with the author's username/avatar, timestamp, score, rated item title/body, optional media, and review text.
 
-This first pass is intentionally global. It does not yet rank by friendship, follows, favorites, or recency windows beyond newest-first ordering. The backend only returns ratings where both the rating and the rated item are `PUBLIC`, which keeps private and friends-only data out of the initial feed.
+The visual model is Twitter-inspired functional design: a single center timeline, border-separated posts, avatar and handle metadata, a rounded content object, and compact actions underneath the content. This is not intended to copy Twitter branding; it uses the familiar timeline pattern to make the RateIt actions easy to understand.
+
+Each rating post supports three primary actions:
+
+- Like: adds or removes the current user's like on the rating.
+- Re-rate: starts a composer for the current user to rate the same underlying item.
+- Comment: opens a threaded reply composer tied to the rating. Comments can optionally carry a rating score in the backend model, though the current frontend comment composer is text-only.
+
+This pass is intentionally global. It does not yet rank by friendship, follows, favorites, or recency windows beyond newest-first ordering. The backend only returns ratings where both the rating and the rated item are `PUBLIC`, which keeps private and friends-only data out of the initial feed.
 
 ## Current User Story
 
@@ -25,8 +33,21 @@ The request path is implemented by:
 
 - `FeedController`: exposes the `/api/feed` endpoint.
 - `FeedService`: normalizes the limit and maps ratings into DTOs.
+- `FeedActionService`: handles likes, comments, and re-rates.
 - `RatingRepository`: fetches recent public ratings with the author, rateable item, rating scale, and optional media asset loaded in one query.
-- `FeedItemDto`: shapes the response for the frontend.
+- `RatingLikeRepository`: stores one like per user/rating pair.
+- `RatingCommentRepository`: stores comments for each rating.
+- `FeedItemDto` and `RatingCommentDto`: shape responses for the frontend.
+
+Action endpoints:
+
+- `POST /api/feed/ratings/{ratingId}/like`
+- `DELETE /api/feed/ratings/{ratingId}/like`
+- `GET /api/feed/ratings/{ratingId}/comments`
+- `POST /api/feed/ratings/{ratingId}/comments`
+- `POST /api/feed/ratings/{ratingId}/rerate`
+
+Re-rate creates a new row in `ratings` for the same `rateable_item`. Because the current schema enforces one rating per author per item, the backend returns `409 Conflict` if the user has already rated that item.
 
 The response shape is:
 
@@ -37,6 +58,9 @@ The response shape is:
     "score": 4.5,
     "reviewText": "A classic.",
     "createdAt": "2026-05-23T12:00:00Z",
+    "likeCount": 2,
+    "commentCount": 1,
+    "likedByCurrentUser": true,
     "author": {
       "username": "bob_bananas",
       "profilePicUrl": "uploads/example.jpg"
@@ -67,6 +91,8 @@ The feed currently reads from normalized content/rating tables rather than a den
 - `media_assets`: optional image backing a rateable item.
 - `rating_scales`: describes the scale used for the score.
 - `users`: supplies author identity and avatar.
+- `rating_likes`: stores likes against ratings with a unique rating/user constraint.
+- `rating_comments`: stores threaded comments against ratings, with optional score.
 
 `feed_events` exists in the schema for a future event-driven feed model, but this iteration does not query it yet.
 
@@ -74,7 +100,7 @@ The feed currently reads from normalized content/rating tables rather than a den
 
 `BackendApiService.getFeed()` calls `/api/feed`. `Home.jsx` loads feed data once a full authenticated profile exists and renders loading, error, empty, and populated states.
 
-The visual treatment is a straightforward activity feed: a constrained center column, repeated feed cards, compact author rows, an emphasized score badge, and optional media. This keeps the first version easy to scan and leaves room for future actions like comments, reactions, or rate-this-too controls.
+The visual treatment is a Twitter-like activity feed: a constrained center timeline, post rows with avatars, rounded rateable-object previews, an OP rating strip, and action controls for like, re-rate, and comment. Like is optimistic in the UI and rolls back on API failure. Comment and re-rate open inline composers under the target post.
 
 ## Next Iterations
 
@@ -82,4 +108,6 @@ The visual treatment is a straightforward activity feed: a constrained center co
 - Include friendship/follow filtering and ranking.
 - Decide whether `feed_events` should become the main read source for richer activity types.
 - Add pagination or cursor-based loading.
+- Add richer comment threads, including visible rating scores on comments.
+- Add durable migration files instead of relying on Hibernate `ddl-auto=update`.
 - Add tests for repository filtering, DTO mapping, and frontend loading/error states.

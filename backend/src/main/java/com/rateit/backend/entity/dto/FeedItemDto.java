@@ -15,11 +15,23 @@ public record FeedItemDto(
     BigDecimal score,
     String reviewText,
     Instant createdAt,
+    long likeCount,
+    long commentCount,
+    boolean likedByCurrentUser,
     Author author,
     Item rateableItem,
     Scale ratingScale
 ) {
     public static FeedItemDto fromRating(Rating rating) {
+        return fromRating(rating, 0, 0, false);
+    }
+
+    public static FeedItemDto fromRating(
+        Rating rating,
+        long likeCount,
+        long commentCount,
+        boolean likedByCurrentUser
+    ) {
         User author = rating.getAuthorUser();
         RateableItem item = rating.getRateableItem();
         RatingScale scale = rating.getRatingScale();
@@ -30,6 +42,9 @@ public record FeedItemDto(
             rating.getScore(),
             rating.getReviewText(),
             rating.getCreatedAt(),
+            likeCount,
+            commentCount,
+            likedByCurrentUser,
             new Author(
                 author.getUsername(),
                 author.getProfilePicUrl()

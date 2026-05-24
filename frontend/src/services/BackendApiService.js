@@ -51,6 +51,59 @@ const BackendApiService = {
         return await response.json();
     },
 
+    likeRating: async (ratingId) => {
+        const response = await fetch(`/api/feed/ratings/${ratingId}/like`, {
+            method: 'POST'
+        });
+        if (!response.ok) {
+            throw new Error('Failed to like rating');
+        }
+        return response.status === 204 ? null : await response.json();
+    },
+
+    unlikeRating: async (ratingId) => {
+        const response = await fetch(`/api/feed/ratings/${ratingId}/like`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) {
+            throw new Error('Failed to unlike rating');
+        }
+        return response.status === 204 ? null : await response.json();
+    },
+
+    getRatingComments: async (ratingId) => {
+        const response = await fetch(`/api/feed/ratings/${ratingId}/comments`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch comments');
+        }
+        return await response.json();
+    },
+
+    createRatingComment: async (ratingId, text, score) => {
+        const response = await fetch(`/api/feed/ratings/${ratingId}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, score })
+        });
+        if (!response.ok) {
+            throw new Error('Failed to comment');
+        }
+        return await response.json();
+    },
+
+    rerate: async (ratingId, score, reviewText) => {
+        const response = await fetch(`/api/feed/ratings/${ratingId}/rerate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ score, reviewText })
+        });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to re-rate');
+        }
+        return await response.json();
+    },
+
     getUploadUrl: async (filename, contentType) => {
         const response = await fetch('/api/s3/images', {
             method: 'POST',

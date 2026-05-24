@@ -1,6 +1,8 @@
 package com.rateit.backend.repository;
 
 import com.rateit.backend.entity.Rating;
+import com.rateit.backend.entity.RateableItem;
+import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.types.Visibility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +14,8 @@ import java.util.List;
 
 @Repository
 public interface RatingRepository extends JpaRepository<Rating, Long> {
+
+    boolean existsByAuthorUserAndRateableItem(User authorUser, RateableItem rateableItem);
 
     @Query("""
         select r
