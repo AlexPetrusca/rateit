@@ -9,7 +9,7 @@ set -e  # Exit immediately if a command exits with a non-zero status
 # Default environment
 ENVIRONMENT="dev"
 IMAGE_TAG="latest"
-PLATFORM="${PLATFORM:-linux/amd64}"
+PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -33,7 +33,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo "Building and pushing to $ENVIRONMENT environment with tag: $IMAGE_TAG"
-echo "Target platform: $PLATFORM"
+echo "Target platforms: $PLATFORMS"
 
 # Check Docker is available. The push step below will fail clearly if auth is missing.
 if ! docker system info >/dev/null 2>&1; then
@@ -41,33 +41,38 @@ if ! docker system info >/dev/null 2>&1; then
   exit 1
 fi
 
+# Ensure buildx is available and selected
+docker buildx inspect >/dev/null 2>&1 || docker buildx create --use >/dev/null 2>&1 || true
+
 # Function to build and push
 build_and_push() {
   local service_name=$1
   local image_name=$2
   local build_context=$3
-  local dockerfile=$4
+  local dockerfile=${4:-}
 
   echo "----------------------------------------------------------------"
   echo "Processing $service_name..."
   echo "Building Docker image: $image_name:$IMAGE_TAG"
 
-  build_args=(--platform "$PLATFORM" -t "$image_name:$IMAGE_TAG")
+  build_args=(--platform "$PLATFORMS" -t "$image_name:$IMAGE_TAG")
+
   if [ "$ENVIRONMENT" == "prod" ]; then
     echo "Also tagging as latest for production"
     build_args+=(-t "$image_name:latest")
   fi
+
   if [ -n "$dockerfile" ]; then
     build_args+=(-f "$dockerfile")
   fi
 
   echo "Building and pushing image(s) to Docker Hub..."
   docker buildx build "${build_args[@]}" --push "$build_context"
-  
+
   echo "$service_name pushed successfully!"
 }
 
-build_and_push "Backend" "alexpetrusca/rateit-backend" "./backend" ""
+build_and_push "Backend" "alexpetrusca/rateit-backend" "./backend"
 
 echo "----------------------------------------------------------------"
 echo "All components processed successfully!"
