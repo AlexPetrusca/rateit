@@ -11,6 +11,7 @@ const Home = () => {
     const [activeComposer, setActiveComposer] = useState(null);
     const [commentsByRating, setCommentsByRating] = useState({});
     const [commentDrafts, setCommentDrafts] = useState({});
+    const [hoveredCommentScores, setHoveredCommentScores] = useState({});
     const [rerateDrafts, setRerateDrafts] = useState({});
     const [actionError, setActionError] = useState(null);
 
@@ -81,6 +82,27 @@ const Home = () => {
         return formatScoreValue(comment.score, item.ratingScale);
     };
 
+    const getStarRatingPercent = (scoreValue) => {
+        const score = Number(scoreValue);
+
+        if (!Number.isFinite(score)) {
+            return '0%';
+        }
+
+        return `${Math.max(0, Math.min(100, (score / 5) * 100))}%`;
+    };
+
+    const renderStarDisplay = (scoreValue, label) => {
+        return (
+            <span className="star-rating-display" aria-label={label}>
+                <span className="star-rating-empty">★★★★★</span>
+                <span className="star-rating-filled" style={{ width: getStarRatingPercent(scoreValue) }}>
+                    ★★★★★
+                </span>
+            </span>
+        );
+    };
+
     const getCommentDraftKey = (ratingId, parentCommentId = null) => {
         return parentCommentId == null ? `${ratingId}:root` : `${ratingId}:${parentCommentId}`;
     };
@@ -110,27 +132,13 @@ const Home = () => {
     };
 
     const getDefaultCommentScore = (item) => {
-        const min = Number(item.ratingScale?.min || 1);
-        const max = Number(item.ratingScale?.max || 5);
-
-        if (!Number.isFinite(min)) {
-            return 1;
-        }
-
-        if (!Number.isFinite(max)) {
-            return min;
-        }
-
-        return Number(((min + max) / 2).toFixed(1));
+        return 2.5;
     };
 
     const isScoreInRange = (score, item) => {
-        const min = Number(item.ratingScale?.min || 1);
-        const max = Number(item.ratingScale?.max);
-
         return Number.isFinite(score)
-            && score >= min
-            && (!Number.isFinite(max) || score <= max);
+            && score >= 0.5
+            && score <= 5;
     };
 
     const formatDate = (createdAt) => {
@@ -247,23 +255,56 @@ const Home = () => {
         const ratingId = item.ratingId;
         const draft = getCommentDraft(ratingId, parentCommentId);
         const commentScore = draft.score || getDefaultCommentScore(item);
+        const scoreInputId = `comment-score-${ratingId}-${parentCommentId || 'root'}`;
+        const draftKey = getCommentDraftKey(ratingId, parentCommentId);
+        const previewScore = hoveredCommentScores[draftKey] || commentScore;
 
         return (
             <div className={parentCommentId == null ? 'comment-composer' : 'comment-composer comment-composer-nested'}>
                 <div className="comment-rating-control">
-                    <label htmlFor={`comment-score-${ratingId}-${parentCommentId || 'root'}`}>Your rating</label>
-                    <output htmlFor={`comment-score-${ratingId}-${parentCommentId || 'root'}`}>
-                        {formatScoreValue(commentScore, item.ratingScale)}
+                    <label id={`${scoreInputId}-label`}>Your rating</label>
+                    <output aria-live="polite">
+                        {formatScoreValue(previewScore, item.ratingScale)}
                     </output>
-                    <input
-                        id={`comment-score-${ratingId}-${parentCommentId || 'root'}`}
-                        type="range"
-                        min={item.ratingScale?.min || 1}
-                        max={item.ratingScale?.max || 5}
-                        step="0.5"
-                        value={commentScore}
-                        onChange={(event) => updateCommentDraft(ratingId, parentCommentId, 'score', event.target.value)}
-                    />
+                    <div className="star-rating-picker" role="radiogroup" aria-labelledby={`${scoreInputId}-label`}>
+                        {renderStarDisplay(previewScore, `Selected rating: ${formatScoreValue(commentScore, item.ratingScale)}`)}
+                        <div className="star-rating-hit-grid">
+                            {Array.from({ length: 10 }, (_, index) => {
+                                const score = (index + 1) / 2;
+                                const isSelected = Number(commentScore) === score;
+
+                                return (
+                                    <button
+                                        key={score}
+                                        type="button"
+                                        className="star-rating-hit"
+                                        role="radio"
+                                        aria-checked={isSelected}
+                                        aria-label={`${score} out of 5 stars`}
+                                        onMouseEnter={() => setHoveredCommentScores((current) => ({
+                                            ...current,
+                                            [draftKey]: score
+                                        }))}
+                                        onFocus={() => setHoveredCommentScores((current) => ({
+                                            ...current,
+                                            [draftKey]: score
+                                        }))}
+                                        onMouseLeave={() => setHoveredCommentScores((current) => {
+                                            const next = { ...current };
+                                            delete next[draftKey];
+                                            return next;
+                                        })}
+                                        onBlur={() => setHoveredCommentScores((current) => {
+                                            const next = { ...current };
+                                            delete next[draftKey];
+                                            return next;
+                                        })}
+                                        onClick={() => updateCommentDraft(ratingId, parentCommentId, 'score', score.toString())}
+                                    />
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
                 <textarea
                     value={draft.text}
@@ -291,7 +332,9 @@ const Home = () => {
                         <div className="comment-meta">
                             <div className="comment-author">{comment.author?.username || 'Someone'}</div>
                             {comment.score != null && (
-                                <div className="comment-score">{formatCommentScore(comment, item)}</div>
+                                <div className="comment-score">
+                                    {renderStarDisplay(comment.score, formatCommentScore(comment, item))}
+                                </div>
                             )}
                         </div>
                         <div className="comment-text">{comment.text}</div>
