@@ -54,16 +54,77 @@ const Home = () => {
         )));
     };
 
-    const formatScore = (item) => {
-        const score = Number(item.score);
-        const max = Number(item.ratingScale?.max);
-        const symbol = item.ratingScale?.symbol === 'star'
+    const formatScoreValue = (scoreValue, ratingScale) => {
+        const score = Number(scoreValue);
+        const max = Number(ratingScale?.max);
+        const symbol = ratingScale?.symbol === 'star'
             ? 'stars'
-            : item.ratingScale?.symbol;
-        const displayScore = Number.isInteger(score) ? score.toString() : score.toFixed(1);
-        const displayMax = Number.isInteger(max) ? max.toString() : max.toFixed(1);
+            : ratingScale?.symbol;
 
-        return `${displayScore}${max ? ` / ${displayMax}` : ''}${symbol ? ` ${symbol}` : ''}`;
+        if (!Number.isFinite(score)) {
+            return '';
+        }
+
+        const displayScore = Number.isInteger(score) ? score.toString() : score.toFixed(1);
+        const displayMax = Number.isFinite(max)
+            ? (Number.isInteger(max) ? max.toString() : max.toFixed(1))
+            : '';
+
+        return `${displayScore}${Number.isFinite(max) ? ` / ${displayMax}` : ''}${symbol ? ` ${symbol}` : ''}`;
+    };
+
+    const formatScore = (item) => {
+        return formatScoreValue(item.score, item.ratingScale);
+    };
+
+    const formatCommentScore = (comment, item) => {
+        return formatScoreValue(comment.score, item.ratingScale);
+    };
+
+    const getCommentDraft = (ratingId) => {
+        const draft = commentDrafts[ratingId];
+
+        if (typeof draft === 'string') {
+            return { text: draft, score: '' };
+        }
+
+        return draft || { text: '', score: '' };
+    };
+
+    const updateCommentDraft = (ratingId, field, value) => {
+        setCommentDrafts((current) => ({
+            ...current,
+            [ratingId]: {
+                ...(typeof current[ratingId] === 'string'
+                    ? { text: current[ratingId], score: '' }
+                    : current[ratingId] || { text: '', score: '' }),
+                [field]: value
+            }
+        }));
+    };
+
+    const getDefaultCommentScore = (item) => {
+        const min = Number(item.ratingScale?.min || 1);
+        const max = Number(item.ratingScale?.max || 5);
+
+        if (!Number.isFinite(min)) {
+            return 1;
+        }
+
+        if (!Number.isFinite(max)) {
+            return min;
+        }
+
+        return Number(((min + max) / 2).toFixed(1));
+    };
+
+    const isScoreInRange = (score, item) => {
+        const min = Number(item.ratingScale?.min || 1);
+        const max = Number(item.ratingScale?.max);
+
+        return Number.isFinite(score)
+            && score >= min
+            && (!Number.isFinite(max) || score <= max);
     };
 
     const formatDate = (createdAt) => {
@@ -133,23 +194,33 @@ const Home = () => {
         }
     };
 
-    const submitComment = async (ratingId) => {
-        const draft = commentDrafts[ratingId]?.trim();
-        if (!draft) {
+    const submitComment = async (item) => {
+        const ratingId = item.ratingId;
+        const draft = getCommentDraft(ratingId);
+        const text = draft.text?.trim();
+        const score = Number(draft.score || getDefaultCommentScore(item));
+
+        if (!text) {
+            setActionError('Add a comment before replying.');
+            return;
+        }
+
+        if (!isScoreInRange(score, item)) {
+            setActionError('Add a rating before replying.');
             return;
         }
 
         setActionError(null);
 
         try {
-            const comment = await BackendApiService.createRatingComment(ratingId, draft);
+            const comment = await BackendApiService.createRatingComment(ratingId, text, score);
             setCommentsByRating((current) => ({
                 ...current,
                 [ratingId]: [...(current[ratingId] || []), comment]
             }));
             setCommentDrafts((current) => ({
                 ...current,
-                [ratingId]: ''
+                [ratingId]: { text: '', score: '' }
             }));
             updateFeedItem(ratingId, (item) => ({
                 ...item,
@@ -188,6 +259,8 @@ const Home = () => {
     const renderComments = (item) => {
         const ratingId = item.ratingId;
         const comments = commentsByRating[ratingId] || [];
+        const draft = getCommentDraft(ratingId);
+        const commentScore = draft.score || getDefaultCommentScore(item);
 
         return (
             <div className="feed-composer">
@@ -196,22 +269,37 @@ const Home = () => {
                         <p className="feed-muted">No comments yet.</p>
                     ) : comments.map((comment) => (
                         <div className="comment-row" key={comment.id}>
-                            <div className="comment-author">{comment.author?.username || 'Someone'}</div>
+                            <div className="comment-meta">
+                                <div className="comment-author">{comment.author?.username || 'Someone'}</div>
+                                {comment.score != null && (
+                                    <div className="comment-score">{formatCommentScore(comment, item)}</div>
+                                )}
+                            </div>
                             <div className="comment-text">{comment.text}</div>
                         </div>
                     ))}
                 </div>
+                <div className="comment-rating-control">
+                    <label htmlFor={`comment-score-${ratingId}`}>Your rating</label>
+                    <output htmlFor={`comment-score-${ratingId}`}>{formatScoreValue(commentScore, item.ratingScale)}</output>
+                    <input
+                        id={`comment-score-${ratingId}`}
+                        type="range"
+                        min={item.ratingScale?.min || 1}
+                        max={item.ratingScale?.max || 5}
+                        step="0.5"
+                        value={commentScore}
+                        onChange={(event) => updateCommentDraft(ratingId, 'score', event.target.value)}
+                    />
+                </div>
                 <textarea
-                    value={commentDrafts[ratingId] || ''}
-                    onChange={(event) => setCommentDrafts((current) => ({
-                        ...current,
-                        [ratingId]: event.target.value
-                    }))}
-                    placeholder="Post your reply"
+                    value={draft.text}
+                    onChange={(event) => updateCommentDraft(ratingId, 'text', event.target.value)}
+                    placeholder="Add your comment"
                     rows="3"
                 />
                 <div className="composer-actions">
-                    <button type="button" onClick={() => submitComment(ratingId)}>
+                    <button type="button" onClick={() => submitComment(item)}>
                         Reply
                     </button>
                 </div>
@@ -283,9 +371,14 @@ const Home = () => {
                             {feedItems.map((item) => {
                                 const commentKey = getComposerKey(item.ratingId, 'comment');
                                 const rerateKey = getComposerKey(item.ratingId, 'rerate');
+                                const hasMedia = Boolean(item.rateableItem?.mediaObjectKey);
+                                const isTextOnlyPost = !hasMedia;
 
                                 return (
-                                    <article className="tweet-card" key={item.ratingId}>
+                                    <article
+                                        className={isTextOnlyPost ? 'tweet-card tweet-card-text' : 'tweet-card tweet-card-media'}
+                                        key={item.ratingId}
+                                    >
                                         <div className="tweet-avatar-column">
                                             {item.author?.profilePicUrl ? (
                                                 <img
@@ -308,30 +401,36 @@ const Home = () => {
                                                 <time dateTime={item.createdAt}>{formatDate(item.createdAt)}</time>
                                             </header>
 
-                                            <div className="rating-object">
-                                                {item.rateableItem?.mediaObjectKey ? (
+                                            {hasMedia ? (
+                                                <div className="rating-object">
                                                     <img
                                                         src={`/api/s3/images/${item.rateableItem.mediaObjectKey}`}
                                                         alt={item.rateableItem?.title || 'Rated item'}
                                                         className="rating-object-media"
                                                     />
-                                                ) : (
-                                                    <div className="rating-object-empty">
-                                                        {item.rateableItem?.type || 'rating'}
+
+                                                    <div className="rating-object-title">
+                                                        {item.rateableItem?.title || 'Untitled rating'}
                                                     </div>
-                                                )}
 
-                                                <div className="rating-object-title">
-                                                    {item.rateableItem?.title || 'Untitled rating'}
+                                                    <div className="rating-summary">
+                                                        <span>OP rating</span>
+                                                        <strong>{formatScore(item)}</strong>
+                                                    </div>
                                                 </div>
-
-                                                <div className="rating-summary">
-                                                    <span>OP rating</span>
-                                                    <strong>{formatScore(item)}</strong>
+                                            ) : (
+                                                <div className="text-rating">
+                                                    {item.rateableItem?.body && (
+                                                        <p className="text-post-body">{item.rateableItem.body}</p>
+                                                    )}
+                                                    <div className="text-rating-score">
+                                                        <span>OP rating</span>
+                                                        <strong>{formatScore(item)}</strong>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            )}
 
-                                            {item.rateableItem?.body && (
+                                            {hasMedia && item.rateableItem?.body && (
                                                 <p className="tweet-body">{item.rateableItem.body}</p>
                                             )}
                                             {item.reviewText && (
