@@ -539,9 +539,15 @@ button:disabled {
     margin-bottom: 10px;
 }
 
+.comment-thread {
+    min-width: 0;
+}
+
 .comment-row {
-    padding: 8px 0;
+    margin-left: calc(var(--thread-depth, 0) * 18px);
+    padding: 8px 0 8px 12px;
     border-bottom: 1px solid #eff3f4;
+    border-left: 2px solid #eff3f4;
 }
 
 .comment-meta {
@@ -562,6 +568,34 @@ button:disabled {
     color: #536471;
     font-size: 0.85rem;
     font-weight: 700;
+}
+
+.comment-reply-button {
+    margin: 6px 0 0;
+    padding: 0;
+    background: transparent;
+    color: #536471;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.comment-reply-button:hover {
+    background: transparent;
+    color: #1d9bf0;
+}
+
+.comment-replies {
+    margin-top: 4px;
+}
+
+.comment-composer {
+    margin-top: 8px;
+}
+
+.comment-composer-nested {
+    margin-left: 18px;
+    padding-left: 12px;
+    border-left: 2px solid #eff3f4;
 }
 
 .comment-text,

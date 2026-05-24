@@ -81,8 +81,12 @@ const Home = () => {
         return formatScoreValue(comment.score, item.ratingScale);
     };
 
-    const getCommentDraft = (ratingId) => {
-        const draft = commentDrafts[ratingId];
+    const getCommentDraftKey = (ratingId, parentCommentId = null) => {
+        return parentCommentId == null ? `${ratingId}:root` : `${ratingId}:${parentCommentId}`;
+    };
+
+    const getCommentDraft = (ratingId, parentCommentId = null) => {
+        const draft = commentDrafts[getCommentDraftKey(ratingId, parentCommentId)];
 
         if (typeof draft === 'string') {
             return { text: draft, score: '' };
@@ -91,13 +95,15 @@ const Home = () => {
         return draft || { text: '', score: '' };
     };
 
-    const updateCommentDraft = (ratingId, field, value) => {
+    const updateCommentDraft = (ratingId, parentCommentId, field, value) => {
+        const draftKey = getCommentDraftKey(ratingId, parentCommentId);
+
         setCommentDrafts((current) => ({
             ...current,
-            [ratingId]: {
-                ...(typeof current[ratingId] === 'string'
-                    ? { text: current[ratingId], score: '' }
-                    : current[ratingId] || { text: '', score: '' }),
+            [draftKey]: {
+                ...(typeof current[draftKey] === 'string'
+                    ? { text: current[draftKey], score: '' }
+                    : current[draftKey] || { text: '', score: '' }),
                 [field]: value
             }
         }));
@@ -141,6 +147,9 @@ const Home = () => {
     };
 
     const getComposerKey = (ratingId, type) => `${ratingId}:${type}`;
+    const getCommentReplyKey = (ratingId, parentCommentId = null) => (
+        parentCommentId == null ? getComposerKey(ratingId, 'comment') : `${ratingId}:comment:${parentCommentId}`
+    );
 
     const toggleLike = async (item) => {
         setActionError(null);
@@ -194,9 +203,10 @@ const Home = () => {
         }
     };
 
-    const submitComment = async (item) => {
+    const submitComment = async (item, parentCommentId = null) => {
         const ratingId = item.ratingId;
-        const draft = getCommentDraft(ratingId);
+        const draft = getCommentDraft(ratingId, parentCommentId);
+        const draftKey = getCommentDraftKey(ratingId, parentCommentId);
         const text = draft.text?.trim();
         const score = Number(draft.score || getDefaultCommentScore(item));
 
@@ -213,15 +223,17 @@ const Home = () => {
         setActionError(null);
 
         try {
-            const comment = await BackendApiService.createRatingComment(ratingId, text, score);
+            await BackendApiService.createRatingComment(ratingId, text, score, parentCommentId);
+            const comments = await BackendApiService.getRatingComments(ratingId);
             setCommentsByRating((current) => ({
                 ...current,
-                [ratingId]: [...(current[ratingId] || []), comment]
+                [ratingId]: comments
             }));
             setCommentDrafts((current) => ({
                 ...current,
-                [ratingId]: { text: '', score: '' }
+                [draftKey]: { text: '', score: '' }
             }));
+            setActiveComposer(getComposerKey(ratingId, 'comment'));
             updateFeedItem(ratingId, (item) => ({
                 ...item,
                 commentCount: (item.commentCount || 0) + 1
@@ -229,6 +241,79 @@ const Home = () => {
         } catch (error) {
             setActionError(error.message);
         }
+    };
+
+    const renderCommentComposer = (item, parentCommentId = null) => {
+        const ratingId = item.ratingId;
+        const draft = getCommentDraft(ratingId, parentCommentId);
+        const commentScore = draft.score || getDefaultCommentScore(item);
+
+        return (
+            <div className={parentCommentId == null ? 'comment-composer' : 'comment-composer comment-composer-nested'}>
+                <div className="comment-rating-control">
+                    <label htmlFor={`comment-score-${ratingId}-${parentCommentId || 'root'}`}>Your rating</label>
+                    <output htmlFor={`comment-score-${ratingId}-${parentCommentId || 'root'}`}>
+                        {formatScoreValue(commentScore, item.ratingScale)}
+                    </output>
+                    <input
+                        id={`comment-score-${ratingId}-${parentCommentId || 'root'}`}
+                        type="range"
+                        min={item.ratingScale?.min || 1}
+                        max={item.ratingScale?.max || 5}
+                        step="0.5"
+                        value={commentScore}
+                        onChange={(event) => updateCommentDraft(ratingId, parentCommentId, 'score', event.target.value)}
+                    />
+                </div>
+                <textarea
+                    value={draft.text}
+                    onChange={(event) => updateCommentDraft(ratingId, parentCommentId, 'text', event.target.value)}
+                    placeholder={parentCommentId == null ? 'Add your comment' : 'Reply in thread'}
+                    rows="3"
+                />
+                <div className="composer-actions">
+                    <button type="button" onClick={() => submitComment(item, parentCommentId)}>
+                        Reply
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    const renderCommentThread = (item, comments, depth = 0) => {
+        return comments.map((comment) => {
+            const replyKey = getCommentReplyKey(item.ratingId, comment.id);
+            const replies = comment.replies || [];
+
+            return (
+                <div className="comment-thread" key={comment.id}>
+                    <div className="comment-row" style={{ '--thread-depth': depth }}>
+                        <div className="comment-meta">
+                            <div className="comment-author">{comment.author?.username || 'Someone'}</div>
+                            {comment.score != null && (
+                                <div className="comment-score">{formatCommentScore(comment, item)}</div>
+                            )}
+                        </div>
+                        <div className="comment-text">{comment.text}</div>
+                        <button
+                            type="button"
+                            className="comment-reply-button"
+                            onClick={() => setActiveComposer((current) => (
+                                current === replyKey ? getComposerKey(item.ratingId, 'comment') : replyKey
+                            ))}
+                        >
+                            Reply
+                        </button>
+                    </div>
+                    {activeComposer === replyKey && renderCommentComposer(item, comment.id)}
+                    {replies.length > 0 && (
+                        <div className="comment-replies">
+                            {renderCommentThread(item, replies, depth + 1)}
+                        </div>
+                    )}
+                </div>
+            );
+        });
     };
 
     const submitRerate = async (ratingId) => {
@@ -259,50 +344,15 @@ const Home = () => {
     const renderComments = (item) => {
         const ratingId = item.ratingId;
         const comments = commentsByRating[ratingId] || [];
-        const draft = getCommentDraft(ratingId);
-        const commentScore = draft.score || getDefaultCommentScore(item);
 
         return (
             <div className="feed-composer">
                 <div className="comment-list">
                     {comments.length === 0 ? (
                         <p className="feed-muted">No comments yet.</p>
-                    ) : comments.map((comment) => (
-                        <div className="comment-row" key={comment.id}>
-                            <div className="comment-meta">
-                                <div className="comment-author">{comment.author?.username || 'Someone'}</div>
-                                {comment.score != null && (
-                                    <div className="comment-score">{formatCommentScore(comment, item)}</div>
-                                )}
-                            </div>
-                            <div className="comment-text">{comment.text}</div>
-                        </div>
-                    ))}
+                    ) : renderCommentThread(item, comments)}
                 </div>
-                <div className="comment-rating-control">
-                    <label htmlFor={`comment-score-${ratingId}`}>Your rating</label>
-                    <output htmlFor={`comment-score-${ratingId}`}>{formatScoreValue(commentScore, item.ratingScale)}</output>
-                    <input
-                        id={`comment-score-${ratingId}`}
-                        type="range"
-                        min={item.ratingScale?.min || 1}
-                        max={item.ratingScale?.max || 5}
-                        step="0.5"
-                        value={commentScore}
-                        onChange={(event) => updateCommentDraft(ratingId, 'score', event.target.value)}
-                    />
-                </div>
-                <textarea
-                    value={draft.text}
-                    onChange={(event) => updateCommentDraft(ratingId, 'text', event.target.value)}
-                    placeholder="Add your comment"
-                    rows="3"
-                />
-                <div className="composer-actions">
-                    <button type="button" onClick={() => submitComment(item)}>
-                        Reply
-                    </button>
-                </div>
+                {activeComposer === getComposerKey(ratingId, 'comment') && renderCommentComposer(item)}
             </div>
         );
     };
@@ -369,8 +419,8 @@ const Home = () => {
 
                         <section className="timeline" aria-label="Recent ratings">
                             {feedItems.map((item) => {
-                                const commentKey = getComposerKey(item.ratingId, 'comment');
                                 const rerateKey = getComposerKey(item.ratingId, 'rerate');
+                                const isCommentThreadActive = activeComposer?.startsWith(`${item.ratingId}:comment`);
                                 const hasMedia = Boolean(item.rateableItem?.mediaObjectKey);
                                 const isTextOnlyPost = !hasMedia;
 
@@ -466,7 +516,7 @@ const Home = () => {
                                             </div>
 
                                             {activeComposer === rerateKey && renderRerate(item)}
-                                            {activeComposer === commentKey && renderComments(item)}
+                                            {isCommentThreadActive && renderComments(item)}
                                         </div>
                                     </article>
                                 );

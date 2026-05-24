@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 public record CreateRatingCommentRequest(
     @NotBlank String text,
     @NotNull
-    BigDecimal score
+    BigDecimal score,
+    Long parentCommentId
 ) {
 }

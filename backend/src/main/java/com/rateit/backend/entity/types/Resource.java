@@ -3,6 +3,7 @@ package com.rateit.backend.entity.types;
 public enum Resource {
     USER("User"),
     RATING("Rating"),
+    RATING_COMMENT("Rating comment"),
     RATEABLE_ITEM("Rateable item");
 
     private final String value;

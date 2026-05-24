@@ -81,11 +81,11 @@ const BackendApiService = {
         return await response.json();
     },
 
-    createRatingComment: async (ratingId, text, score) => {
+    createRatingComment: async (ratingId, text, score, parentCommentId = null) => {
         const response = await fetch(`/api/feed/ratings/${ratingId}/comments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text, score })
+            body: JSON.stringify({ text, score, parentCommentId })
         });
         if (!response.ok) {
             throw new Error('Failed to comment');

@@ -19,7 +19,7 @@ Each rating post supports three primary actions:
 
 - Like: adds or removes the current user's like on the rating.
 - Re-rate: starts a composer for the current user to rate the same underlying item.
-- Comment: opens a threaded reply composer tied to the rating. In RateIt, comments are also ratings, so each reply includes both text and a score on the same scale as the original post.
+- Comment: opens a threaded reply composer tied to the rating. In RateIt, comments are also ratings, so each reply includes both text and a score on the same scale as the original post. Users can reply to the main post or to another comment, which creates a nested thread similar to Reddit.
 
 This pass is intentionally global. It does not yet rank by friendship, follows, favorites, or recency windows beyond newest-first ordering. The backend only returns ratings where both the rating and the rated item are `PUBLIC`, which keeps private and friends-only data out of the initial feed.
 
@@ -96,13 +96,15 @@ The feed currently reads from normalized content/rating tables rather than a den
 - `rating_likes`: stores likes against ratings with a unique rating/user constraint.
 - `rating_comments`: stores threaded comments against ratings. Each comment carries text and a score, because comments are also ratings in the product model.
 
+`rating_comments.parent_comment_id` is nullable. A null parent means the comment replies directly to the rating. A non-null parent means the comment is a reply inside that rating's comment thread. The backend validates that parent comments belong to the same rating before saving.
+
 `feed_events` exists in the schema for a future event-driven feed model, but this iteration does not query it yet.
 
 ## Frontend Design
 
 `BackendApiService.getFeed()` calls `/api/feed`. `Home.jsx` loads feed data once a full authenticated profile exists and renders loading, error, empty, and populated states.
 
-The visual treatment is a Twitter-like activity feed: a constrained center timeline, post rows with avatars, media-aware post bodies, and action controls for like, re-rate, and comment. Image posts use a rounded rateable-object preview with a title and OP rating strip. Text posts skip titles and previews, showing body text first with a smaller OP rating line. Like is optimistic in the UI and rolls back on API failure. Comment and re-rate open inline composers under the target post. The comment composer asks for a rating and text together, and existing comments display their rating beside the commenter identity.
+The visual treatment is a Twitter-like activity feed: a constrained center timeline, post rows with avatars, media-aware post bodies, and action controls for like, re-rate, and comment. Image posts use a rounded rateable-object preview with a title and OP rating strip. Text posts skip titles and previews, showing body text first with a smaller OP rating line. Like is optimistic in the UI and rolls back on API failure. Comment and re-rate open inline composers under the target post. The comment composer asks for a rating and text together, and existing comments display their rating beside the commenter identity. Comment replies render as nested threads with indentation and an inline reply composer under the comment being answered.
 
 ## Next Iterations
 
@@ -110,6 +112,6 @@ The visual treatment is a Twitter-like activity feed: a constrained center timel
 - Include friendship/follow filtering and ranking.
 - Decide whether `feed_events` should become the main read source for richer activity types.
 - Add pagination or cursor-based loading.
-- Add richer comment thread sorting and aggregation around comment ratings.
+- Add richer comment thread sorting, collapsing, and aggregation around comment ratings.
 - Add durable migration files instead of relying on Hibernate `ddl-auto=update`.
 - Add tests for repository filtering, DTO mapping, and frontend loading/error states.
