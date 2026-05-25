@@ -31,7 +31,7 @@ cd rateit
 docker-compose up -d
 
 # Or build locally
-cd backend && ./mvnw clean install
+cd backend && ./scripts/dev.sh
 cd ../frontend && npm install && npm run dev
 ```
 
