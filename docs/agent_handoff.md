@@ -38,6 +38,20 @@ RateIt is a React + Spring Boot app with phone-number login, JWT cookie auth, a 
 - Keep the home feed and profile feed visually aligned.
 - Use the shared admin grid wrapper for any new admin table so vertical centering stays consistent.
 - Prefer existing shared components before creating a new one.
+- If you need the implementation seam for an area, start with the relevant doc in `docs/app/` or `docs/admin/` before reading code.
+
+## Roadmap Notes
+
+The current implemented surface is broad enough that the old general design doc was mostly redundant. The useful remaining planning work is now:
+
+- extend automation with DB-backed scenarios and template banks
+- make the admin automation UI configurable instead of hardcoded
+- add richer moderation and search tools
+- expand social graph behavior if the product needs follows/friends
+- use the synthetic-data pipeline to test recommendation logic
+- consider external integrations later, once the core feed and admin flows settle
+
+Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spec.md`, `docs/app/feed.md`, `docs/admin/admin_spec.md`, and `docs/admin/automation.md`.
 
 ## Main UI Surfaces
 
@@ -106,11 +120,12 @@ Use these instead of recreating the same UI:
 
 ## Where To Start When Continuing Work
 
-1. Read [`docs/feed.md`](./feed.md) for the feed and post interaction contract.
-2. Read [`docs/design_doc.md`](./design_doc.md) for the broader architecture and current roadmap.
-3. Inspect the admin automation flow in `backend/src/main/java/com/rateit/backend/service/AdminJobService.java`.
-4. Inspect the shared feed UI in `frontend/src/components/FeedTimeline.jsx` and `frontend/src/components/PostCard.jsx`.
-5. Inspect the admin UI in `frontend/src/pages/AdminUsers.jsx`, `AdminPosts.jsx`, and `AdminJobs.jsx`.
+1. Read [`docs/app/app_spec.md`](./app/app_spec.md) for the main user-facing surface.
+2. Read [`docs/app/feed.md`](./app/feed.md) for the feed and post interaction contract.
+3. Read [`docs/admin/admin_spec.md`](./admin/admin_spec.md) for the manual admin surface.
+4. Read [`docs/admin/automation.md`](./admin/automation.md) for the queue and synthetic-data pipeline.
+5. Inspect the shared feed UI in `frontend/src/components/FeedTimeline.jsx` and `frontend/src/components/PostCard.jsx`.
+6. Inspect the admin UI in `frontend/src/pages/AdminUsers.jsx`, `AdminPosts.jsx`, and `AdminJobs.jsx`.
 
 ## Important Workflow Rule
 

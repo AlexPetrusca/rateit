@@ -22,8 +22,10 @@ RateIt is a social app for ratings and reviews with threaded comments, a feed, u
 Start here if you are continuing the codebase:
 
 - [`docs/agent_handoff.md`](docs/agent_handoff.md)
-- [`docs/feed.md`](docs/feed.md)
-- [`docs/design_doc.md`](docs/design_doc.md)
+- [`docs/app/app_spec.md`](docs/app/app_spec.md)
+- [`docs/app/feed.md`](docs/app/feed.md)
+- [`docs/admin/admin_spec.md`](docs/admin/admin_spec.md)
+- [`docs/admin/automation.md`](docs/admin/automation.md)
 
 ## Getting Started
 

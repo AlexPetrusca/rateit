@@ -1,51 +1,24 @@
 # AGENTS.md
 
-This repository is meant to be handed between agents. Keep the docs current enough that a new agent can understand the app without reconstructing recent work from git history.
+This is the root index for agent work in this repo. Start here, then read the narrower docs that match the area you are changing.
 
-## When To Update Docs
+## Read Order
 
-Update the docs when you make a significant change to:
+1. [`docs/agent_handoff.md`](docs/agent_handoff.md) for the current snapshot of the app.
+2. [`docs/app/app_spec.md`](docs/app/app_spec.md) for the main product surface.
+3. [`docs/app/feed.md`](docs/app/feed.md) for the feed and post/comment contract.
+4. [`docs/admin/admin_spec.md`](docs/admin/admin_spec.md) for the admin and automation surface.
+5. [`docs/admin/automation.md`](docs/admin/automation.md) for the job queue and synthetic-data pipeline.
+6. [`docs/agent_handoff.md`](docs/agent_handoff.md) for the remaining roadmap notes.
 
-- routes or pages
-- backend APIs
-- data model or schema
-- auth/roles/security behavior
-- shared frontend components
-- admin workflows
-- job queue behavior
-- feed or content rendering behavior
+## Repo Rules
 
-Do not update docs for minor bug fixes, typo fixes, styling noise, or one-off issue tickets unless they materially change behavior.
+- Update the docs when you make a significant change to routes, pages, APIs, schema, auth/roles, shared components, admin workflows, job behavior, or feed behavior.
+- Do not update docs for minor bug fixes, typo fixes, or styling noise unless behavior changed.
+- Prefer shared components over page-specific copies when the same UI appears in more than one place.
+- Prefer existing docs over re-explaining the same design in code comments.
+- Keep admin actions separate from user-facing actions.
 
-## What To Update
+## Scope
 
-At minimum, keep these current:
-
-- `docs/agent_handoff.md`
-- `docs/feed.md`
-- `docs/design_doc.md`
-
-If the project structure changes, update `README.md` as well so the entry points stay obvious.
-
-## How To Write The Update
-
-- Describe the current state, not the history of how you got there.
-- Prefer concrete API/page/component names over vague summaries.
-- If you add a new shared UI component, document when it should be reused.
-- If you add a new admin flow, document the request, job/state shape, and where to find the UI.
-- If you change behavior that future work depends on, write down the new invariant.
-
-## Good Triggers
-
-Examples of changes that should trigger a doc update:
-
-- adding or removing a page
-- changing auth or role behavior
-- changing the feed contract
-- adding a new admin job type
-- changing how posts/comments are rendered
-- adding a new reusable component that should be preferred in future work
-
-## Working Rule
-
-If you are about to finish a substantial feature and the docs are now out of date, update the docs before you stop.
+This file is the general project index. If you are working inside a subsystem and later add a more specific `AGENTS.md` file there, that file should take precedence for that subtree.
