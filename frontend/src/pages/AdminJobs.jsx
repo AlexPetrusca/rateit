@@ -58,6 +58,10 @@ const AdminJobs = () => {
     const [count, setCount] = useState(20);
     const [usernamePrefix, setUsernamePrefix] = useState('test_user');
     const [phonePrefix, setPhonePrefix] = useState('+1555000');
+    const [postCount, setPostCount] = useState(20);
+    const [postTitlePrefix, setPostTitlePrefix] = useState('');
+    const [postBodyPrefix, setPostBodyPrefix] = useState('');
+    const [postReviewPrefix, setPostReviewPrefix] = useState('');
 
     const loadJobs = useCallback(async () => {
         const nextJobs = await BackendApiService.getAdminJobs(20);
@@ -157,6 +161,33 @@ const AdminJobs = () => {
                 count: Number(count),
                 usernamePrefix,
                 phonePrefix
+            });
+            notify({ message: `Queued job #${job.id}`, type: 'info' });
+            await loadJobs();
+            setSelectedJobId(job.id);
+            setIsDetailOpen(true);
+        } catch (error) {
+            if (error.status !== 403) {
+                notify({ message: error.message || 'Failed to queue job', type: 'error' });
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleCreatePostsJob = async () => {
+        if (!Number.isInteger(Number(postCount)) || Number(postCount) < 1) {
+            notify({ message: 'Count must be at least 1', type: 'warning' });
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const job = await BackendApiService.createPostsJob({
+                count: Number(postCount),
+                titlePrefix: postTitlePrefix,
+                bodyPrefix: postBodyPrefix,
+                reviewPrefix: postReviewPrefix
             });
             notify({ message: `Queued job #${job.id}`, type: 'info' });
             await loadJobs();
@@ -315,6 +346,44 @@ const AdminJobs = () => {
         }
     ], []);
 
+    const createdPostColumns = useMemo(() => [
+        {
+            field: 'title',
+            headerName: 'Title',
+            flex: 1,
+            minWidth: 200,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params) => (
+                <Typography variant="body2" fontWeight={700} sx={{ width: '100%', textAlign: 'center' }}>
+                    {params.value}
+                </Typography>
+            )
+        },
+        {
+            field: 'authorUsername',
+            headerName: 'Author',
+            width: 160,
+            align: 'center',
+            headerAlign: 'center'
+        },
+        {
+            field: 'score',
+            headerName: 'Score',
+            width: 120,
+            align: 'center',
+            headerAlign: 'center'
+        },
+        {
+            field: 'reviewText',
+            headerName: 'Review',
+            flex: 1,
+            minWidth: 220,
+            align: 'center',
+            headerAlign: 'center'
+        }
+    ], []);
+
     const createdUserRows = selectedJobDetail?.createdUsers || [];
 
     return (
@@ -323,7 +392,7 @@ const AdminJobs = () => {
                 <Stack spacing={1.5}>
                     <Box>
                         <Typography variant="h6" component="h2" gutterBottom>
-                            Create Users
+                            Automation
                         </Typography>
                         <Typography variant="body2" color="text.secondary" gutterBottom>
                             Queues a background job.
@@ -353,6 +422,7 @@ const AdminJobs = () => {
                         <TextField
                             id="admin-username-prefix"
                             label="Username Prefix"
+                            helperText="Prepended to each generated username."
                             value={usernamePrefix}
                             onChange={(event) => setUsernamePrefix(event.target.value)}
                             fullWidth
@@ -361,6 +431,7 @@ const AdminJobs = () => {
                         <TextField
                             id="admin-phone-prefix"
                             label="Phone Prefix"
+                            helperText="Prepended to each generated test phone number."
                             value={phonePrefix}
                             onChange={(event) => setPhonePrefix(event.target.value)}
                             fullWidth
@@ -371,6 +442,74 @@ const AdminJobs = () => {
                     <Box>
                         <Button variant="contained" onClick={handleCreateUsersJob} disabled={isSubmitting}>
                             {isSubmitting ? 'Queueing...' : 'Queue User Job'}
+                        </Button>
+                    </Box>
+                </Stack>
+            </Paper>
+
+            <Paper elevation={1} sx={{ p: 2.5 }}>
+                <Stack spacing={1.5}>
+                    <Box>
+                        <Typography variant="h6" component="h2" gutterBottom>
+                            Create Posts
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Generates test posts from active test users with randomized titles, bodies, review text, and scores.
+                        </Typography>
+                    </Box>
+
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gap: 2,
+                            gridTemplateColumns: {
+                                xs: '1fr',
+                                md: '180px repeat(3, minmax(220px, 1fr))'
+                            }
+                        }}
+                    >
+                        <TextField
+                            id="admin-post-count"
+                            label="Count"
+                            type="number"
+                            slotProps={{ htmlInput: { min: 1 } }}
+                            value={postCount}
+                            onChange={(event) => setPostCount(event.target.value)}
+                            fullWidth
+                            size="small"
+                        />
+                        <TextField
+                            id="admin-post-title-prefix"
+                            label="Title Prefix"
+                            helperText="Prepended to the generated title text."
+                            value={postTitlePrefix}
+                            onChange={(event) => setPostTitlePrefix(event.target.value)}
+                            fullWidth
+                            size="small"
+                        />
+                        <TextField
+                            id="admin-post-body-prefix"
+                            label="Body Prefix"
+                            helperText="Prepended to the generated body text."
+                            value={postBodyPrefix}
+                            onChange={(event) => setPostBodyPrefix(event.target.value)}
+                            fullWidth
+                            size="small"
+                        />
+                        <TextField
+                            id="admin-post-review-prefix"
+                            label="Review Prefix"
+                            helperText="Prepended to the generated review text."
+                            value={postReviewPrefix}
+                            onChange={(event) => setPostReviewPrefix(event.target.value)}
+                            fullWidth
+                            size="small"
+                        />
+                    </Box>
+
+                    <Box>
+                        <Button variant="contained" onClick={handleCreatePostsJob} disabled={isSubmitting}>
+                            {isSubmitting ? 'Queueing...' : 'Queue Post Job'}
                         </Button>
                     </Box>
                 </Stack>
@@ -483,6 +622,20 @@ const AdminJobs = () => {
                             </Paper>
                         )}
 
+                        {selectedJobDetail.createPostsRequest && (
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                                <Typography variant="h6" component="h3" gutterBottom>
+                                    Planned config
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Create {selectedJobDetail.createPostsRequest.count} posts with title prefix{' '}
+                                    <strong>{selectedJobDetail.createPostsRequest.titlePrefix || 'None'}</strong>, body prefix{' '}
+                                    <strong>{selectedJobDetail.createPostsRequest.bodyPrefix || 'None'}</strong>, and review prefix{' '}
+                                    <strong>{selectedJobDetail.createPostsRequest.reviewPrefix || 'None'}</strong>.
+                                </Typography>
+                            </Paper>
+                        )}
+
                         {createdUserRows.length > 0 && (
                             <Paper variant="outlined" sx={{ p: 2 }}>
                                 <Typography variant="h6" component="h3" gutterBottom>
@@ -493,6 +646,22 @@ const AdminJobs = () => {
                                     rows={createdUserRows}
                                     columns={createdUserColumns}
                                     getRowId={(row) => row.userId}
+                                    hideFooter
+                                    disableRowSelectionOnClick
+                                />
+                            </Paper>
+                        )}
+
+                        {selectedJobDetail.createdPosts?.length > 0 && (
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                                <Typography variant="h6" component="h3" gutterBottom>
+                                    Created posts
+                                </Typography>
+                                <AdminDataGrid
+                                    autoHeight
+                                    rows={selectedJobDetail.createdPosts}
+                                    columns={createdPostColumns}
+                                    getRowId={(row) => row.ratingId}
                                     hideFooter
                                     disableRowSelectionOnClick
                                 />

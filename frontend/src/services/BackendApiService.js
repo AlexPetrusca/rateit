@@ -340,6 +340,24 @@ const BackendApiService = {
         return await response.json();
     },
 
+    createPostsJob: async ({ count, titlePrefix, bodyPrefix, reviewPrefix }) => {
+        const response = await fetch('/api/admin/jobs/create-posts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ count, titlePrefix, bodyPrefix, reviewPrefix })
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to queue post job');
+        }
+        return await response.json();
+    },
+
     getAdminJobs: async (limit = 20) => {
         const response = await fetch(`/api/admin/jobs?limit=${encodeURIComponent(limit)}`);
         if (response.status === 401 || response.status === 403) {

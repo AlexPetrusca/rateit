@@ -95,6 +95,12 @@ public class UserService {
         return userRepository.findByPhoneNumber(phoneNumber);
     }
 
+    public List<User> findAllTestUsers() {
+        return userRepository.findAllByRole(UserRoles.TEST_USER).stream()
+            .filter(user -> user.getDeletedAt() == null)
+            .toList();
+    }
+
     @Transactional
     public User updateAdminUser(long userId, UpdateAdminUserRequest request, String currentPhoneNumber) {
         User user = findById(userId);

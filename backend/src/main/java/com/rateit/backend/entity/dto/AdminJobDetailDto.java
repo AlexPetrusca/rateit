@@ -2,6 +2,7 @@ package com.rateit.backend.entity.dto;
 
 import com.rateit.backend.entity.AdminJob;
 import com.rateit.backend.entity.rest.CreateUsersJobRequest;
+import com.rateit.backend.entity.rest.CreatePostsJobRequest;
 import com.rateit.backend.entity.types.AdminJobStatus;
 import com.rateit.backend.entity.types.AdminJobType;
 
@@ -20,13 +21,17 @@ public record AdminJobDetailDto(
     Instant startedAt,
     Instant finishedAt,
     CreateUsersJobRequest createUsersRequest,
-    List<CreatedAdminUserDto> createdUsers
+    List<CreatedAdminUserDto> createdUsers,
+    CreatePostsJobRequest createPostsRequest,
+    List<CreatedAdminPostDto> createdPosts
 ) {
     public static AdminJobDetailDto fromJob(
         AdminJob job,
         String narrative,
         CreateUsersJobRequest createUsersRequest,
-        List<CreatedAdminUserDto> createdUsers
+        List<CreatedAdminUserDto> createdUsers,
+        CreatePostsJobRequest createPostsRequest,
+        List<CreatedAdminPostDto> createdPosts
     ) {
         return new AdminJobDetailDto(
             job.getId(),
@@ -40,7 +45,9 @@ public record AdminJobDetailDto(
             job.getStartedAt(),
             job.getFinishedAt(),
             createUsersRequest,
-            createdUsers
+            createdUsers,
+            createPostsRequest,
+            createdPosts
         );
     }
 }

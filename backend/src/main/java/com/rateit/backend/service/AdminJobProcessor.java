@@ -19,7 +19,10 @@ public class AdminJobProcessor {
             }
 
             try {
-                adminJobService.executeCreateUsersJob(job.getId());
+                switch (job.getJobType()) {
+                    case CREATE_USER -> adminJobService.executeCreateUsersJob(job.getId());
+                    case CREATE_POST -> adminJobService.executeCreatePostsJob(job.getId());
+                }
             } catch (Exception ex) {
                 adminJobService.markJobFailed(job.getId(), ex.getMessage());
             }

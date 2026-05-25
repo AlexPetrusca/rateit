@@ -82,7 +82,7 @@ const Admin = () => {
                             <Tabs value={tabValue} variant="scrollable" scrollButtons="auto">
                                 <Tab label="Posts" value="/admin/posts" component={NavLink} to="posts" />
                                 <Tab label="Users" value="/admin/users" component={NavLink} to="users" />
-                                <Tab label="Jobs" value="/admin/jobs" component={NavLink} to="jobs" />
+                                <Tab label="Automation" value="/admin/jobs" component={NavLink} to="jobs" />
                             </Tabs>
                         </Stack>
                     </Paper>

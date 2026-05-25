@@ -88,6 +88,39 @@ test('getAdminPosts requests the paged admin post endpoint', async () => {
     }
 });
 
+test('createPostsJob posts the expected payload and returns the response body', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            json: async () => ({ id: 99, status: 'PENDING' })
+        };
+    };
+
+    try {
+        const result = await BackendApiService.createPostsJob({
+            count: 5,
+            titlePrefix: 'alpha',
+            bodyPrefix: 'body',
+            reviewPrefix: 'review'
+        });
+
+        assert.deepEqual(result, { id: 99, status: 'PENDING' });
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].url, '/api/admin/jobs/create-posts');
+        assert.equal(calls[0].options.method, 'POST');
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            count: 5,
+            titlePrefix: 'alpha',
+            bodyPrefix: 'body',
+            reviewPrefix: 'review'
+        });
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
 test('bulkDeleteAdminUsers posts selected ids', async () => {
     const calls = [];
     globalThis.fetch = async (url, options = {}) => {

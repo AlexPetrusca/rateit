@@ -2,6 +2,7 @@ package com.rateit.backend.controller;
 
 import com.rateit.backend.entity.dto.AdminJobDto;
 import com.rateit.backend.entity.dto.AdminJobDetailDto;
+import com.rateit.backend.entity.rest.CreatePostsJobRequest;
 import com.rateit.backend.entity.rest.CreateUsersJobRequest;
 import com.rateit.backend.service.AdminJobService;
 import jakarta.validation.Valid;
@@ -29,6 +30,13 @@ public class AdminJobController {
         @RequestBody @Valid CreateUsersJobRequest request
     ) {
         return ResponseEntity.accepted().body(adminJobService.queueCreateUsersJob(request));
+    }
+
+    @PostMapping("/create-posts")
+    public ResponseEntity<AdminJobDto> queueCreatePosts(
+        @RequestBody @Valid CreatePostsJobRequest request
+    ) {
+        return ResponseEntity.accepted().body(adminJobService.queueCreatePostsJob(request));
     }
 
     @GetMapping
