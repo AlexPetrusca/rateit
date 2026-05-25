@@ -11,7 +11,6 @@ import '../App.css';
 
 const Create = () => {
     const navigate = useNavigate();
-    const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
     const [reviewText, setReviewText] = useState('');
     const [score, setScore] = useState('4');
@@ -63,7 +62,6 @@ const Create = () => {
 
             await BackendApiService.createRating({
                 ...buildCreateRatingRequest({
-                    title,
                     body,
                     reviewText,
                     score,
@@ -97,17 +95,6 @@ const Create = () => {
                 <section className="create-form">
                     <div className="create-layout">
                         <div className="create-fields">
-                            <div className="form-group">
-                                <label htmlFor="create-title">Title</label>
-                                <input
-                                    id="create-title"
-                                    type="text"
-                                    value={title}
-                                    onChange={(event) => setTitle(event.target.value)}
-                                    placeholder="Optional short title"
-                                />
-                            </div>
-
                             <div className="form-group">
                                 <label htmlFor="create-body">Post</label>
                                 <textarea
@@ -182,7 +169,6 @@ const Create = () => {
                                 )}
                             </div>
                             <div className="create-preview-meta">
-                                <strong>{title.trim() || 'Untitled post'}</strong>
                                 <p>{body.trim() || 'Add text to describe the thing you are rating.'}</p>
                             </div>
                         </aside>

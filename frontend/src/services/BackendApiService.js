@@ -106,12 +106,11 @@ const BackendApiService = {
         return await response.json();
     },
 
-    createRating: async ({ title, body, reviewText, score, mediaObjectKey, mediaContentType }) => {
+    createRating: async ({ body, reviewText, score, mediaObjectKey, mediaContentType }) => {
         const response = await fetch('/api/feed/ratings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                title,
                 body,
                 reviewText,
                 score,
@@ -340,11 +339,11 @@ const BackendApiService = {
         return await response.json();
     },
 
-    createPostsJob: async ({ count, titlePrefix, bodyPrefix, reviewPrefix }) => {
+    createPostsJob: async ({ count, bodyPrefix, reviewPrefix }) => {
         const response = await fetch('/api/admin/jobs/create-posts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ count, titlePrefix, bodyPrefix, reviewPrefix })
+            body: JSON.stringify({ count, bodyPrefix, reviewPrefix })
         });
         if (response.status === 401 || response.status === 403) {
             const error = new Error('Not authorized');

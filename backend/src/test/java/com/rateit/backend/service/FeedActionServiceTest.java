@@ -93,7 +93,7 @@ class FeedActionServiceTest {
         });
 
         FeedItemDto result = feedActionService.createRating(
-            new CreateRatingRequest("  Title  ", "  A small post  ", "  Nice.  ", new BigDecimal("4.5"), null, null),
+            new CreateRatingRequest("  A small post  ", "  Nice.  ", new BigDecimal("4.5"), null, null),
             author.getPhoneNumber()
         );
 
@@ -107,7 +107,7 @@ class FeedActionServiceTest {
         Rating persistedRating = ratingCaptor.getValue();
 
         assertEquals(RateableItemType.TEXT_POST, persistedItem.getItemType());
-        assertEquals("Title", persistedItem.getTitle());
+        assertNull(persistedItem.getTitle());
         assertEquals("A small post", persistedItem.getBody());
         assertNull(persistedItem.getMediaAsset());
         assertEquals(Visibility.PUBLIC, persistedItem.getVisibility());
@@ -122,7 +122,6 @@ class FeedActionServiceTest {
         assertEquals(21L, result.ratingId());
         assertEquals("bob_bananas", result.author().username());
         assertEquals(RateableItemType.TEXT_POST, result.rateableItem().type());
-        assertEquals("Title", result.rateableItem().title());
         assertEquals("A small post", result.rateableItem().body());
         assertNull(result.rateableItem().mediaObjectKey());
         assertEquals("5 stars", result.ratingScale().name());
@@ -154,7 +153,7 @@ class FeedActionServiceTest {
         });
 
         FeedItemDto result = feedActionService.createRating(
-            new CreateRatingRequest("Photo title", null, "Great shot", new BigDecimal("5"), "uploads/photo.jpg", "image/jpeg"),
+            new CreateRatingRequest(null, "Great shot", new BigDecimal("5"), "uploads/photo.jpg", "image/jpeg"),
             author.getPhoneNumber()
         );
 
@@ -174,7 +173,7 @@ class FeedActionServiceTest {
 
         assertEquals(RateableItemType.PHOTO, persistedItem.getItemType());
         assertSame(persistedAsset, persistedItem.getMediaAsset());
-        assertEquals("Photo title", persistedItem.getTitle());
+        assertNull(persistedItem.getTitle());
         assertNull(persistedItem.getBody());
 
         assertEquals(21L, result.ratingId());
@@ -186,7 +185,7 @@ class FeedActionServiceTest {
     @Test
     void createRating_createsDefaultScaleWhenDatabaseIsEmpty() {
         User author = user(1L, "5551234567", "bob_bananas");
-        RateableItem savedItem = rateableItem(11L, author, RateableItemType.TEXT_POST, null, "A small post", null);
+        RateableItem savedItem = rateableItem(11L, author, RateableItemType.TEXT_POST, "A small post", null);
 
         when(userService.findByPhoneNumber(author.getPhoneNumber())).thenReturn(author);
         when(ratingScaleRepository.findDefaultScale()).thenReturn(Optional.empty());
@@ -204,7 +203,7 @@ class FeedActionServiceTest {
         });
 
         FeedItemDto result = feedActionService.createRating(
-            new CreateRatingRequest(null, "A small post", "Nice.", new BigDecimal("4"), null, null),
+            new CreateRatingRequest("A small post", "Nice.", new BigDecimal("4"), null, null),
             author.getPhoneNumber()
         );
 
@@ -224,7 +223,7 @@ class FeedActionServiceTest {
         BadRequestException ex = assertThrows(
             BadRequestException.class,
             () -> feedActionService.createRating(
-                new CreateRatingRequest("  ", "   ", "Review", new BigDecimal("4"), null, null),
+                new CreateRatingRequest("   ", "Review", new BigDecimal("4"), null, null),
                 author.getPhoneNumber()
             )
         );
@@ -279,14 +278,12 @@ class FeedActionServiceTest {
         Long id,
         User owner,
         RateableItemType type,
-        String title,
         String body,
         MediaAsset mediaAsset
     ) {
         RateableItem item = RateableItem.builder()
             .createdByUser(owner)
             .itemType(type)
-            .title(title)
             .body(body)
             .mediaAsset(mediaAsset)
             .visibility(Visibility.PUBLIC)

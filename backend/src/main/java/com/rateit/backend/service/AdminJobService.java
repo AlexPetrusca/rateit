@@ -60,7 +60,6 @@ public class AdminJobService {
     @Transactional
     public AdminJobDto queueCreatePostsJob(CreatePostsJobRequest request) {
         int count = Math.max(1, request.count());
-        String titlePrefix = normalizeOptionalPrefix(request.titlePrefix());
         String bodyPrefix = normalizeOptionalPrefix(request.bodyPrefix());
         String reviewPrefix = normalizeOptionalPrefix(request.reviewPrefix());
 
@@ -68,7 +67,7 @@ public class AdminJobService {
             .jobType(AdminJobType.CREATE_POST)
             .status(AdminJobStatus.PENDING)
             .description(String.format("Create %d test posts", count))
-            .payloadJson(writePayload(new CreatePostsJobRequest(count, titlePrefix, bodyPrefix, reviewPrefix)))
+            .payloadJson(writePayload(new CreatePostsJobRequest(count, bodyPrefix, reviewPrefix)))
             .build();
 
         return AdminJobDto.fromJob(adminJobRepository.save(job));
@@ -207,7 +206,6 @@ public class AdminJobService {
         for (int index = 1; index <= request.count(); index++) {
             User author = testUsers.get(random.nextInt(testUsers.size()));
             CreateRatingRequest createRequest = new CreateRatingRequest(
-                buildTitle(request.titlePrefix(), random),
                 buildBody(request.bodyPrefix(), random),
                 buildReviewText(request.reviewPrefix(), random),
                 scores.get(random.nextInt(scores.size())),
@@ -266,7 +264,7 @@ public class AdminJobService {
                     yield String.format("Completed creating %d test posts.", request.count());
                 }
                 String createdPostSummary = createdPosts.stream()
-                    .map(post -> post.title() + " by " + post.authorUsername())
+                    .map(post -> post.body() + " by " + post.authorUsername())
                     .collect(Collectors.joining(", "));
                 yield String.format("Created %d test posts: %s.", createdPosts.size(), createdPostSummary);
             }
@@ -411,30 +409,16 @@ public class AdminJobService {
         return errorMessage.length() > 1000 ? errorMessage.substring(0, 1000) : errorMessage;
     }
 
-    private String buildTitle(String prefix, Random random) {
-        List<String> titles = List.of(
-            "Worth a look",
-            "Better than expected",
-            "Pretty solid overall",
-            "A decent pick",
-            "Surprisingly good",
-            "Not my favorite, but fine",
-            "A small win",
-            "Would try again"
-        );
-        return applyPrefix(prefix, titles.get(random.nextInt(titles.size())));
-    }
-
     private String buildBody(String prefix, Random random) {
         List<String> bodies = List.of(
-            "I spent some time with this and it held up pretty well.",
-            "The first impression was good and it stayed that way.",
-            "It worked out better than I expected.",
-            "Not perfect, but it did the job without drama.",
-            "I would put this in the solid-but-not-exciting category.",
-            "This was easy to use and didn't get in the way.",
-            "I kept coming back to it because it was reliable.",
-            "It felt balanced and straightforward."
+            "I tried it after work and had a good sense of how it held up.",
+            "I used it for a couple of days to see what it was like.",
+            "I took it with me for a quick test run over the weekend.",
+            "I gave it a fair shot and paid attention to the details.",
+            "I spent some time with it and noted what stood out.",
+            "I started with a simple use case and built from there.",
+            "I kept it in rotation long enough to get a clear read on it.",
+            "I went in expecting a basic result and checked how it performed."
         );
         return applyPrefix(prefix, bodies.get(random.nextInt(bodies.size())));
     }

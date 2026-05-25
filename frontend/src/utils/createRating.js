@@ -25,9 +25,8 @@ export const validateCreateRatingDraft = ({ body, selectedFile, score }) => {
     return null;
 };
 
-export const buildCreateRatingRequest = ({ title, body, reviewText, score, mediaObjectKey, mediaContentType }) => {
+export const buildCreateRatingRequest = ({ body, reviewText, score, mediaObjectKey, mediaContentType }) => {
     return {
-        title: normalizeText(title),
         body: normalizeText(body),
         reviewText: normalizeText(reviewText),
         score: Number(score),

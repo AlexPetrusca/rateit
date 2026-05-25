@@ -532,14 +532,11 @@ const Home = () => {
                                                 <div className="rating-object">
                                                     <img
                                                         src={`/api/s3/images/${item.rateableItem.mediaObjectKey}`}
-                                                        alt={item.rateableItem?.title || 'Rated item'}
+                                                        alt="Rated item"
                                                         className="rating-object-media"
                                                     />
 
                                                     <div className="rating-object-header">
-                                                        <div className="rating-object-title">
-                                                            {item.rateableItem?.title || 'Untitled rating'}
-                                                        </div>
                                                         <div className="rating-summary">
                                                             <strong className="op-rating-stars">
                                                                 <StarRating value={item.score} label={formatScore(item)} max={item.ratingScale?.max} size="sm" />

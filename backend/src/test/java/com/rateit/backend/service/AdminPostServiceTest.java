@@ -84,7 +84,7 @@ class AdminPostServiceTest {
     void listReturnsPagedAdminPosts() {
         User author = user(1L, "+15550000001", "alpha");
         RatingScale scale = ratingScale(2L);
-        RateableItem item = rateableItem(3L, author, "Title", "Body", null);
+        RateableItem item = rateableItem(3L, author, "Body", null);
         Rating rating = rating(4L, author, item, scale, new BigDecimal("4.5"), "Nice", Visibility.PUBLIC);
 
         when(ratingRepository.findAdminPage(any(PageRequest.class))).thenReturn(new PageImpl<>(List.of(rating)));
@@ -97,7 +97,6 @@ class AdminPostServiceTest {
         assertEquals(1, page.getTotalElements());
         assertEquals(4L, dto.ratingId());
         assertEquals("alpha", dto.authorUsername());
-        assertEquals("Title", dto.title());
         assertEquals("Body", dto.body());
         assertEquals(new BigDecimal("4.5"), dto.score());
         assertEquals(Visibility.PUBLIC, dto.visibility());
@@ -109,7 +108,7 @@ class AdminPostServiceTest {
     void updateAdminPostPersistsEditableFields() {
         User author = user(1L, "+15550000001", "alpha");
         RatingScale scale = ratingScale(2L);
-        RateableItem item = rateableItem(3L, author, "Old title", "Old body", null);
+        RateableItem item = rateableItem(3L, author, "Old body", null);
         Rating rating = rating(4L, author, item, scale, new BigDecimal("3"), "Old review", Visibility.PUBLIC);
 
         when(ratingRepository.findById(4L)).thenReturn(Optional.of(rating));
@@ -120,7 +119,7 @@ class AdminPostServiceTest {
 
         AdminPostDto updated = adminPostService.updateAdminPost(
             4L,
-            new UpdateAdminPostRequest("  New title  ", "  New body  ", "  New review  ", new BigDecimal("4.5"), Visibility.PRIVATE)
+            new UpdateAdminPostRequest("  New body  ", "  New review  ", new BigDecimal("4.5"), Visibility.PRIVATE)
         );
 
         ArgumentCaptor<RateableItem> itemCaptor = ArgumentCaptor.forClass(RateableItem.class);
@@ -131,13 +130,11 @@ class AdminPostServiceTest {
         RateableItem savedItem = itemCaptor.getValue();
         Rating savedRating = ratingCaptor.getValue();
 
-        assertEquals("New title", savedItem.getTitle());
         assertEquals("New body", savedItem.getBody());
         assertEquals("New review", savedRating.getReviewText());
         assertEquals(new BigDecimal("4.5"), savedRating.getScore());
         assertEquals(Visibility.PRIVATE, savedRating.getVisibility());
         assertEquals(Visibility.PRIVATE, savedItem.getVisibility());
-        assertEquals("New title", updated.title());
         assertEquals(Visibility.PRIVATE, updated.visibility());
     }
 
@@ -145,7 +142,7 @@ class AdminPostServiceTest {
     void deleteAdminPostDeletesDependentRowsBeforePostEntities() {
         User author = user(1L, "+15550000001", "alpha");
         MediaAsset mediaAsset = mediaAsset(6L, author);
-        RateableItem item = rateableItem(3L, author, "Title", "Body", mediaAsset);
+        RateableItem item = rateableItem(3L, author, "Body", mediaAsset);
         RatingScale scale = ratingScale(2L);
         Rating rating = rating(4L, author, item, scale, new BigDecimal("4.5"), "Review", Visibility.PUBLIC);
         RatingComment parent = comment(10L, rating, author, null, "parent");
@@ -178,8 +175,8 @@ class AdminPostServiceTest {
     @Test
     void deleteAdminPostsBulkDeletesEachPost() {
         User author = user(1L, "+15550000001", "alpha");
-        RateableItem firstItem = rateableItem(3L, author, "Title A", "Body A", null);
-        RateableItem secondItem = rateableItem(4L, author, "Title B", "Body B", null);
+        RateableItem firstItem = rateableItem(3L, author, "Body A", null);
+        RateableItem secondItem = rateableItem(4L, author, "Body B", null);
         RatingScale scale = ratingScale(2L);
         Rating firstRating = rating(10L, author, firstItem, scale, new BigDecimal("4"), "Review A", Visibility.PUBLIC);
         Rating secondRating = rating(11L, author, secondItem, scale, new BigDecimal("5"), "Review B", Visibility.PUBLIC);
@@ -221,11 +218,10 @@ class AdminPostServiceTest {
         return scale;
     }
 
-    private RateableItem rateableItem(Long id, User author, String title, String body, MediaAsset mediaAsset) {
+    private RateableItem rateableItem(Long id, User author, String body, MediaAsset mediaAsset) {
         RateableItem item = RateableItem.builder()
             .createdByUser(author)
             .itemType(mediaAsset == null ? RateableItemType.TEXT_POST : RateableItemType.PHOTO)
-            .title(title)
             .body(body)
             .mediaAsset(mediaAsset)
             .visibility(Visibility.PUBLIC)

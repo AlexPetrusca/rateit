@@ -22,6 +22,25 @@ import BackendApiService from '../services/BackendApiService';
 const DEFAULT_PAGE_SIZE = 10;
 const ROLE_OPTIONS = ['ROLE_USER', 'ROLE_TEST_USER', 'ROLE_ADMIN'];
 
+const emptySelectionModel = {
+    type: 'include',
+    ids: new Set()
+};
+
+const getSelectedRowIds = (selectionModel, rows, getRowId) => {
+    if (!selectionModel) {
+        return [];
+    }
+
+    const rowIds = rows.map(getRowId);
+
+    if (selectionModel.type === 'exclude') {
+        return rowIds.filter((rowId) => !selectionModel.ids.has(rowId));
+    }
+
+    return rowIds.filter((rowId) => selectionModel.ids.has(rowId));
+};
+
 const AdminUsers = () => {
     const { user: currentUser } = useAuth();
     const { notify } = useNotifications();
@@ -40,7 +59,7 @@ const AdminUsers = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [selectedUserIds, setSelectedUserIds] = useState([]);
+    const [selectedUserSelectionModel, setSelectedUserSelectionModel] = useState(emptySelectionModel);
     const [isBulkDeleteUsersOpen, setIsBulkDeleteUsersOpen] = useState(false);
     const [isDeletingSelectedUsers, setIsDeletingSelectedUsers] = useState(false);
     const [isDeleteAllTestUsersOpen, setIsDeleteAllTestUsersOpen] = useState(false);
@@ -58,7 +77,7 @@ const AdminUsers = () => {
             const nextRows = page.content || [];
             setUsers(nextRows);
             setRowCount(page.totalElements || 0);
-            setSelectedUserIds([]);
+            setSelectedUserSelectionModel(emptySelectionModel);
 
             if (nextPaginationModel.page > 0 && nextRows.length === 0 && (page.totalElements || 0) > 0) {
                 setPaginationModel((current) => ({
@@ -89,7 +108,7 @@ const AdminUsers = () => {
                 setUsers(nextRows);
                 setRowCount(page.totalElements || 0);
                 setLoadError('');
-                setSelectedUserIds([]);
+                setSelectedUserSelectionModel(emptySelectionModel);
 
                 if (paginationModel.page > 0 && nextRows.length === 0 && (page.totalElements || 0) > 0) {
                     setPaginationModel((current) => ({
@@ -208,14 +227,11 @@ const AdminUsers = () => {
     };
 
     const selectedUsers = useMemo(
-        () => users.filter((user) => selectedUserIds.includes(user.userId)),
-        [users, selectedUserIds]
+        () => getSelectedRowIds(selectedUserSelectionModel, users, (user) => user.userId)
+            .map((userId) => users.find((user) => user.userId === userId))
+            .filter(Boolean),
+        [users, selectedUserSelectionModel]
     );
-
-    const selectedUserSelectionModel = useMemo(() => ({
-        type: 'include',
-        ids: new Set(selectedUserIds)
-    }), [selectedUserIds]);
 
     const handleBulkDeleteSelectedUsers = async () => {
         if (selectedUsers.length === 0) {
@@ -233,7 +249,7 @@ const AdminUsers = () => {
                 type: 'info'
             });
             setIsBulkDeleteUsersOpen(false);
-            setSelectedUserIds([]);
+            setSelectedUserSelectionModel(emptySelectionModel);
             await loadUsers(paginationModel);
         } catch (error) {
             notify({ message: error.message || 'Failed to delete selected users', type: 'error' });
@@ -415,7 +431,7 @@ const AdminUsers = () => {
                         checkboxSelection
                         rowSelectionModel={selectedUserSelectionModel}
                         onRowSelectionModelChange={(selectionModel) => {
-                            setSelectedUserIds(Array.from(selectionModel?.ids || []));
+                            setSelectedUserSelectionModel(selectionModel || emptySelectionModel);
                         }}
                         disableRowSelectionOnClick
                         isRowSelectable={(params) => !isCurrentAccount(params.row) && !params.row.deletedAt}

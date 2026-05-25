@@ -80,7 +80,7 @@ class AdminJobServiceTest {
             return job;
         });
 
-        var dto = adminJobService.queueCreatePostsJob(new CreatePostsJobRequest(4, "alpha", "body", "review"));
+        var dto = adminJobService.queueCreatePostsJob(new CreatePostsJobRequest(4, "body", "review"));
 
         ArgumentCaptor<AdminJob> jobCaptor = ArgumentCaptor.forClass(AdminJob.class);
         verify(adminJobRepository).save(jobCaptor.capture());
@@ -89,7 +89,6 @@ class AdminJobServiceTest {
         assertEquals(AdminJobType.CREATE_POST, savedJob.getJobType());
         assertEquals(AdminJobStatus.PENDING, savedJob.getStatus());
         assertEquals("Create 4 test posts", savedJob.getDescription());
-        assertTrue(savedJob.getPayloadJson().contains("\"titlePrefix\":\"alpha\""));
         assertTrue(savedJob.getPayloadJson().contains("\"bodyPrefix\":\"body\""));
         assertTrue(savedJob.getPayloadJson().contains("\"reviewPrefix\":\"review\""));
         assertEquals(8L, dto.id());
@@ -150,7 +149,7 @@ class AdminJobServiceTest {
             .jobType(AdminJobType.CREATE_POST)
             .status(AdminJobStatus.IN_PROGRESS)
             .description("Create 2 test posts")
-            .payloadJson("{\"count\":2,\"titlePrefix\":\"alpha\",\"bodyPrefix\":\"body\",\"reviewPrefix\":\"review\"}")
+            .payloadJson("{\"count\":2,\"bodyPrefix\":\"body\",\"reviewPrefix\":\"review\"}")
             .build();
         ReflectionTestUtils.setField(job, "id", 12L);
 
@@ -169,7 +168,7 @@ class AdminJobServiceTest {
                 0L,
                 false,
                 new FeedItemDto.Author(author.getUsername(), null),
-                new FeedItemDto.Item(99L, com.rateit.backend.entity.types.RateableItemType.TEXT_POST, "A title", "A body", null),
+                new FeedItemDto.Item(99L, com.rateit.backend.entity.types.RateableItemType.TEXT_POST, "A body", null),
                 new FeedItemDto.Scale("5 stars", "star", BigDecimal.ONE, new BigDecimal("5"))
             );
             return dto;
@@ -209,8 +208,8 @@ class AdminJobServiceTest {
             .jobType(AdminJobType.CREATE_POST)
             .status(AdminJobStatus.DONE)
             .description("Create 2 test posts")
-            .payloadJson("{\"count\":2,\"titlePrefix\":\"alpha\",\"bodyPrefix\":\"body\",\"reviewPrefix\":\"review\"}")
-            .resultJson("{\"createdPosts\":[{\"ratingId\":1,\"title\":\"A title\",\"body\":\"A body\",\"reviewText\":\"review text\",\"score\":4.5,\"authorUsername\":\"alpha\",\"authorPhoneNumber\":\"+15550000001\",\"itemType\":\"TEXT_POST\"},{\"ratingId\":2,\"title\":\"B title\",\"body\":\"B body\",\"reviewText\":\"review text\",\"score\":4.0,\"authorUsername\":\"beta\",\"authorPhoneNumber\":\"+15550000002\",\"itemType\":\"TEXT_POST\"}],\"count\":2}")
+            .payloadJson("{\"count\":2,\"bodyPrefix\":\"body\",\"reviewPrefix\":\"review\"}")
+            .resultJson("{\"createdPosts\":[{\"ratingId\":1,\"body\":\"A body\",\"reviewText\":\"review text\",\"score\":4.5,\"authorUsername\":\"alpha\",\"authorPhoneNumber\":\"+15550000001\",\"itemType\":\"TEXT_POST\"},{\"ratingId\":2,\"body\":\"B body\",\"reviewText\":\"review text\",\"score\":4.0,\"authorUsername\":\"beta\",\"authorPhoneNumber\":\"+15550000002\",\"itemType\":\"TEXT_POST\"}],\"count\":2}")
             .resultSummary("Created 2 test posts")
             .build();
         ReflectionTestUtils.setField(job, "id", 12L);
@@ -220,6 +219,6 @@ class AdminJobServiceTest {
         AdminJobDetailDto detail = adminJobService.getJobDetail(12L);
 
         assertEquals(2, detail.createdPosts().size());
-        assertEquals("Created 2 test posts: A title by alpha, B title by beta.", detail.narrative());
+        assertEquals("Created 2 test posts: A body by alpha, B body by beta.", detail.narrative());
     }
 }

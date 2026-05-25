@@ -59,7 +59,6 @@ const AdminJobs = () => {
     const [usernamePrefix, setUsernamePrefix] = useState('test_user');
     const [phonePrefix, setPhonePrefix] = useState('+1555000');
     const [postCount, setPostCount] = useState(20);
-    const [postTitlePrefix, setPostTitlePrefix] = useState('');
     const [postBodyPrefix, setPostBodyPrefix] = useState('');
     const [postReviewPrefix, setPostReviewPrefix] = useState('');
 
@@ -185,7 +184,6 @@ const AdminJobs = () => {
         try {
             const job = await BackendApiService.createPostsJob({
                 count: Number(postCount),
-                titlePrefix: postTitlePrefix,
                 bodyPrefix: postBodyPrefix,
                 reviewPrefix: postReviewPrefix
             });
@@ -348,19 +346,6 @@ const AdminJobs = () => {
 
     const createdPostColumns = useMemo(() => [
         {
-            field: 'title',
-            headerName: 'Title',
-            flex: 1,
-            minWidth: 200,
-            align: 'center',
-            headerAlign: 'center',
-            renderCell: (params) => (
-                <Typography variant="body2" fontWeight={700} sx={{ width: '100%', textAlign: 'center' }}>
-                    {params.value}
-                </Typography>
-            )
-        },
-        {
             field: 'authorUsername',
             headerName: 'Author',
             width: 160,
@@ -454,7 +439,7 @@ const AdminJobs = () => {
                             Create Posts
                         </Typography>
                         <Typography variant="body2" color="text.secondary" gutterBottom>
-                            Generates test posts from active test users with randomized titles, bodies, review text, and scores.
+                            Generates test posts from active test users with randomized bodies, review text, and scores.
                         </Typography>
                     </Box>
 
@@ -464,7 +449,7 @@ const AdminJobs = () => {
                             gap: 2,
                             gridTemplateColumns: {
                                 xs: '1fr',
-                                md: '180px repeat(3, minmax(220px, 1fr))'
+                                md: '180px repeat(2, minmax(220px, 1fr))'
                             }
                         }}
                     >
@@ -479,18 +464,9 @@ const AdminJobs = () => {
                             size="small"
                         />
                         <TextField
-                            id="admin-post-title-prefix"
-                            label="Title Prefix"
-                            helperText="Prepended to the generated title text."
-                            value={postTitlePrefix}
-                            onChange={(event) => setPostTitlePrefix(event.target.value)}
-                            fullWidth
-                            size="small"
-                        />
-                        <TextField
                             id="admin-post-body-prefix"
                             label="Body Prefix"
-                            helperText="Prepended to the generated body text."
+                            helperText="Prepended to the generated post body."
                             value={postBodyPrefix}
                             onChange={(event) => setPostBodyPrefix(event.target.value)}
                             fullWidth
@@ -628,8 +604,7 @@ const AdminJobs = () => {
                                     Planned config
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    Create {selectedJobDetail.createPostsRequest.count} posts with title prefix{' '}
-                                    <strong>{selectedJobDetail.createPostsRequest.titlePrefix || 'None'}</strong>, body prefix{' '}
+                                    Create {selectedJobDetail.createPostsRequest.count} posts with body prefix{' '}
                                     <strong>{selectedJobDetail.createPostsRequest.bodyPrefix || 'None'}</strong>, and review prefix{' '}
                                     <strong>{selectedJobDetail.createPostsRequest.reviewPrefix || 'None'}</strong>.
                                 </Typography>

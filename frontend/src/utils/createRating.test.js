@@ -40,7 +40,6 @@ test('validateCreateRatingDraft accepts text or photo posts in range', () => {
 
 test('buildCreateRatingRequest normalizes payload fields', () => {
     const payload = buildCreateRatingRequest({
-        title: '  Title  ',
         body: '  Body  ',
         reviewText: '  Review  ',
         score: '4.5',
@@ -49,7 +48,6 @@ test('buildCreateRatingRequest normalizes payload fields', () => {
     });
 
     assert.deepEqual(payload, {
-        title: 'Title',
         body: 'Body',
         reviewText: 'Review',
         score: 4.5,

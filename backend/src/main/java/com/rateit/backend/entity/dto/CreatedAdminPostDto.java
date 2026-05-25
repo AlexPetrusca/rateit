@@ -7,7 +7,6 @@ import java.math.BigDecimal;
 
 public record CreatedAdminPostDto(
     Long ratingId,
-    String title,
     String body,
     String reviewText,
     BigDecimal score,
@@ -18,7 +17,6 @@ public record CreatedAdminPostDto(
     public static CreatedAdminPostDto fromFeedItem(FeedItemDto item, User author) {
         return new CreatedAdminPostDto(
             item.ratingId(),
-            item.rateableItem().title(),
             item.rateableItem().body(),
             item.reviewText(),
             item.score(),

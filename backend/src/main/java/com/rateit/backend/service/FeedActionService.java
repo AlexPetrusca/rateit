@@ -51,7 +51,6 @@ public class FeedActionService {
         User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
         RatingScale ratingScale = resolveRatingScale();
 
-        String title = normalize(request.title());
         String body = normalize(request.body());
         String reviewText = normalize(request.reviewText());
         String mediaObjectKey = normalize(request.mediaObjectKey());
@@ -75,7 +74,6 @@ public class FeedActionService {
         RateableItem rateableItem = rateableItemRepository.save(RateableItem.builder()
             .createdByUser(currentUser)
             .itemType(hasMedia ? RateableItemType.PHOTO : RateableItemType.TEXT_POST)
-            .title(title)
             .body(body)
             .mediaAsset(mediaAsset)
             .visibility(Visibility.PUBLIC)

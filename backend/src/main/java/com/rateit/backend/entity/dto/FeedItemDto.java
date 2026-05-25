@@ -53,7 +53,6 @@ public record FeedItemDto(
             new Item(
                 item.getId(),
                 item.getItemType(),
-                item.getTitle(),
                 item.getBody(),
                 mediaAsset == null ? null : mediaAsset.getObjectKey()
             ),
@@ -75,7 +74,6 @@ public record FeedItemDto(
     public record Item(
         Long id,
         RateableItemType type,
-        String title,
         String body,
         String mediaObjectKey
     ) {

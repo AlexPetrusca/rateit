@@ -14,7 +14,6 @@ test('createRating posts the expected payload and returns the response body', as
 
     try {
         const result = await BackendApiService.createRating({
-            title: 'Title',
             body: 'Body',
             reviewText: 'Review',
             score: 4.5,
@@ -27,7 +26,6 @@ test('createRating posts the expected payload and returns the response body', as
         assert.equal(calls[0].url, '/api/feed/ratings');
         assert.equal(calls[0].options.method, 'POST');
         assert.deepEqual(JSON.parse(calls[0].options.body), {
-            title: 'Title',
             body: 'Body',
             reviewText: 'Review',
             score: 4.5,
@@ -101,7 +99,6 @@ test('createPostsJob posts the expected payload and returns the response body', 
     try {
         const result = await BackendApiService.createPostsJob({
             count: 5,
-            titlePrefix: 'alpha',
             bodyPrefix: 'body',
             reviewPrefix: 'review'
         });
@@ -112,7 +109,6 @@ test('createPostsJob posts the expected payload and returns the response body', 
         assert.equal(calls[0].options.method, 'POST');
         assert.deepEqual(JSON.parse(calls[0].options.body), {
             count: 5,
-            titlePrefix: 'alpha',
             bodyPrefix: 'body',
             reviewPrefix: 'review'
         });
@@ -174,7 +170,6 @@ test('createRating surfaces backend error messages', async () => {
     try {
         await assert.rejects(
             () => BackendApiService.createRating({
-                title: 'Title',
                 body: 'Body',
                 reviewText: 'Review',
                 score: 4,

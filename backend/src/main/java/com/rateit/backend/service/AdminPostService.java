@@ -64,7 +64,6 @@ public class AdminPostService {
         }
         validateScore(score, rating);
 
-        item.setTitle(normalizeOptional(request.title()));
         item.setBody(normalizeOptional(request.body()));
         rating.setReviewText(normalizeOptional(request.reviewText()));
         rating.setScore(score);

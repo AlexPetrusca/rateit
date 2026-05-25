@@ -58,6 +58,25 @@ const normalizeOptional = (value) => {
     return trimmed.length === 0 ? null : trimmed;
 };
 
+const emptySelectionModel = {
+    type: 'include',
+    ids: new Set()
+};
+
+const getSelectedRowIds = (selectionModel, rows, getRowId) => {
+    if (!selectionModel) {
+        return [];
+    }
+
+    const rowIds = rows.map(getRowId);
+
+    if (selectionModel.type === 'exclude') {
+        return rowIds.filter((rowId) => !selectionModel.ids.has(rowId));
+    }
+
+    return rowIds.filter((rowId) => selectionModel.ids.has(rowId));
+};
+
 const AdminPosts = () => {
     const { notify } = useNotifications();
     const [posts, setPosts] = useState([]);
@@ -67,7 +86,6 @@ const AdminPosts = () => {
     const [loadError, setLoadError] = useState('');
     const [editingPost, setEditingPost] = useState(null);
     const [editDraft, setEditDraft] = useState({
-        title: '',
         body: '',
         reviewText: '',
         score: '1',
@@ -76,7 +94,7 @@ const AdminPosts = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [selectedPostIds, setSelectedPostIds] = useState([]);
+    const [selectedPostSelectionModel, setSelectedPostSelectionModel] = useState(emptySelectionModel);
     const [isBulkDeletePostsOpen, setIsBulkDeletePostsOpen] = useState(false);
     const [isDeletingSelectedPosts, setIsDeletingSelectedPosts] = useState(false);
 
@@ -92,7 +110,7 @@ const AdminPosts = () => {
             const nextRows = page.content || [];
             setPosts(nextRows);
             setRowCount(page.totalElements || 0);
-            setSelectedPostIds([]);
+            setSelectedPostSelectionModel(emptySelectionModel);
 
             if (nextPaginationModel.page > 0 && nextRows.length === 0 && (page.totalElements || 0) > 0) {
                 setPaginationModel((current) => ({
@@ -124,7 +142,7 @@ const AdminPosts = () => {
                 setPosts(nextRows);
                 setRowCount(page.totalElements || 0);
                 setLoadError('');
-                setSelectedPostIds([]);
+                setSelectedPostSelectionModel(emptySelectionModel);
 
                 if (paginationModel.page > 0 && nextRows.length === 0 && (page.totalElements || 0) > 0) {
                     setPaginationModel((current) => ({
@@ -154,7 +172,6 @@ const AdminPosts = () => {
     const openEdit = (postRow) => {
         setEditingPost(postRow);
         setEditDraft({
-            title: postRow.title || '',
             body: postRow.body || '',
             reviewText: postRow.reviewText || '',
             score: postRow.score != null ? String(postRow.score) : '1',
@@ -165,7 +182,6 @@ const AdminPosts = () => {
     const closeEdit = () => {
         setEditingPost(null);
         setEditDraft({
-            title: '',
             body: '',
             reviewText: '',
             score: '1',
@@ -192,7 +208,6 @@ const AdminPosts = () => {
         setIsSaving(true);
         try {
             const updatedPost = await BackendApiService.updateAdminPost(editingPost.ratingId, {
-                title: normalizeOptional(editDraft.title),
                 body: normalizeOptional(editDraft.body),
                 reviewText: normalizeOptional(editDraft.reviewText),
                 score: numericScore,
@@ -231,14 +246,11 @@ const AdminPosts = () => {
     };
 
     const selectedPosts = useMemo(
-        () => posts.filter((post) => selectedPostIds.includes(post.ratingId)),
-        [posts, selectedPostIds]
+        () => getSelectedRowIds(selectedPostSelectionModel, posts, (post) => post.ratingId)
+            .map((postId) => posts.find((post) => post.ratingId === postId))
+            .filter(Boolean),
+        [posts, selectedPostSelectionModel]
     );
-
-    const selectedPostSelectionModel = useMemo(() => ({
-        type: 'include',
-        ids: new Set(selectedPostIds)
-    }), [selectedPostIds]);
 
     const handleBulkDeleteSelectedPosts = async () => {
         if (selectedPosts.length === 0) {
@@ -256,7 +268,7 @@ const AdminPosts = () => {
                 type: 'info'
             });
             setIsBulkDeletePostsOpen(false);
-            setSelectedPostIds([]);
+            setSelectedPostSelectionModel(emptySelectionModel);
             await loadPosts(paginationModel);
         } catch (error) {
             notify({ message: error.message || 'Failed to delete selected posts', type: 'error' });
@@ -294,19 +306,6 @@ const AdminPosts = () => {
                         </Typography>
                     </Stack>
                 </Box>
-            )
-        },
-        {
-            field: 'title',
-            headerName: 'Title',
-            minWidth: 220,
-            flex: 1.1,
-            align: 'center',
-            headerAlign: 'center',
-            renderCell: (params) => (
-                <Typography variant="body2" sx={{ width: '100%', textAlign: 'center' }} noWrap title={params.value || ''}>
-                    {params.value || '—'}
-                </Typography>
             )
         },
         {
@@ -460,7 +459,7 @@ const AdminPosts = () => {
                             loading={isLoading}
                             rowSelectionModel={selectedPostSelectionModel}
                             onRowSelectionModelChange={(selectionModel) => {
-                                setSelectedPostIds(Array.from(selectionModel?.ids || []));
+                                setSelectedPostSelectionModel(selectionModel || emptySelectionModel);
                             }}
                             localeText={{ noRowsLabel: 'No posts found.' }}
                             onRowClick={(params) => {
@@ -569,15 +568,6 @@ const AdminPosts = () => {
                         </Paper>
 
                         <TextField
-                            label="Title"
-                            value={editDraft.title}
-                            onChange={(event) => setEditDraft((current) => ({
-                                ...current,
-                                title: event.target.value
-                            }))}
-                            fullWidth
-                        />
-                        <TextField
                             label="Body"
                             value={editDraft.body}
                             onChange={(event) => setEditDraft((current) => ({
@@ -660,7 +650,7 @@ const AdminPosts = () => {
                             This will delete the post, its comments, its likes, and related audit rows.
                         </Alert>
                         <Typography variant="body1">
-                            Delete <strong>{deleteTarget.title || `post #${deleteTarget.ratingId}`}</strong> by{' '}
+                            Delete <strong>post #{deleteTarget.ratingId}</strong> by{' '}
                             <strong>{deleteTarget.authorUsername}</strong>?
                         </Typography>
                         <Typography variant="body2" color="text.secondary">

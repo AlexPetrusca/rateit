@@ -6,8 +6,6 @@ public record CreatePostsJobRequest(
     @Min(value = 1)
     int count,
 
-    String titlePrefix,
-
     String bodyPrefix,
 
     String reviewPrefix

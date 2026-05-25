@@ -605,18 +605,6 @@ button:disabled {
     padding: 10px 12px 12px;
 }
 
-.rating-object-title {
-    display: inline-flex;
-    min-width: 0;
-    margin: 0;
-    padding: 4px 10px;
-    border: 1px solid #cfd9de;
-    border-radius: 6px;
-    color: #0f1419;
-    font-size: 0.95rem;
-    font-weight: 700;
-}
-
 .rating-summary {
     display: flex;
     align-items: center;
