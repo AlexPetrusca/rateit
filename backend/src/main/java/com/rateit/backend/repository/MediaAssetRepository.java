@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MediaAssetRepository extends JpaRepository<MediaAsset, Long> {
     long countByOwnerUser(User ownerUser);
+    void deleteByOwnerUser(User ownerUser);
 }

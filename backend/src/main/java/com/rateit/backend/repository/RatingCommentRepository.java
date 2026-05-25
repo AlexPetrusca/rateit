@@ -13,6 +13,7 @@ import java.util.List;
 public interface RatingCommentRepository extends JpaRepository<RatingComment, Long> {
 
     List<RatingComment> findByRatingOrderByCreatedAtAsc(Rating rating);
+    void deleteByAuthorUser(User authorUser);
 
     @Query("""
         select c

@@ -18,6 +18,7 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
 
     boolean existsByAuthorUserAndRateableItem(User authorUser, RateableItem rateableItem);
     long countByAuthorUser(User authorUser);
+    java.util.List<Rating> findByAuthorUser(User authorUser);
 
     @Query("""
         select r

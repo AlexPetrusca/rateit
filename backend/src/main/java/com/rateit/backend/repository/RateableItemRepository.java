@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RateableItemRepository extends JpaRepository<RateableItem, Long> {
     long countByCreatedByUser(User createdByUser);
+    void deleteByCreatedByUser(User createdByUser);
 }

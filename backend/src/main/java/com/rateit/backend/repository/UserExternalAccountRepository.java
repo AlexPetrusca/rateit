@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserExternalAccountRepository extends JpaRepository<UserExternalAccount, Long> {
     long countByUser(User user);
+    void deleteByUser(User user);
 }

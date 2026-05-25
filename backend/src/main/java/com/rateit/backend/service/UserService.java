@@ -1,6 +1,7 @@
 package com.rateit.backend.service;
 
 import com.rateit.backend.entity.User;
+import com.rateit.backend.entity.types.UserRoles;
 import com.rateit.backend.entity.dto.AdminDeleteUsersResultDto;
 import com.rateit.backend.entity.rest.UpdateAdminUserRequest;
 import com.rateit.backend.exception.BadRequestException;
@@ -24,7 +25,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,6 +44,7 @@ public class UserService {
     private final FollowRepository followRepository;
     private final FriendshipRepository friendshipRepository;
     private final ExternalReviewRepository externalReviewRepository;
+    private final AdminPostService adminPostService;
 
     public List<User> getAll() {
         return userRepository.findAll();
@@ -59,14 +60,14 @@ public class UserService {
                 .phoneNumber(user.getPhoneNumber())
                 .username(user.getUsername())
                 .profilePicUrl(user.getProfilePicUrl())
-                .role("ROLE_USER")
+                .role(UserRoles.USER)
                 .build();
         }
         return userRepository.save(user);
     }
 
     public User create(String phoneNumber, String username, String profilePicUrl) {
-        return create(phoneNumber, username, profilePicUrl, "ROLE_USER");
+        return create(phoneNumber, username, profilePicUrl, UserRoles.USER);
     }
 
     public User create(String phoneNumber, String username, String profilePicUrl, String role) {
@@ -74,7 +75,7 @@ public class UserService {
             .phoneNumber(phoneNumber)
             .username(username)
             .profilePicUrl(profilePicUrl)
-            .role(role == null || role.isBlank() ? "ROLE_USER" : role)
+            .role(role == null || role.isBlank() ? UserRoles.USER : role)
             .build();
         return userRepository.save(user);
     }
@@ -139,14 +140,7 @@ public class UserService {
             throw BadRequestException.invalidRequest("You cannot delete your own admin account");
         }
 
-        if (hasOwnedContent(user)) {
-            if (user.getDeletedAt() == null) {
-                user.setDeletedAt(Instant.now());
-                userRepository.save(user);
-            }
-            return;
-        }
-
+        deleteUserContent(user);
         userRepository.delete(user);
     }
 
@@ -164,39 +158,30 @@ public class UserService {
 
     @Transactional
     public AdminDeleteUsersResultDto deleteAllTestUsers() {
-        List<User> testUsers = userRepository.findAllByRole("ROLE_TEST_USER");
+        List<User> testUsers = userRepository.findAllByRole(UserRoles.TEST_USER);
         int deletedCount = 0;
 
         for (User user : testUsers) {
-            if (user.getDeletedAt() == null) {
-                if (hasOwnedContent(user)) {
-                    user.setDeletedAt(Instant.now());
-                    userRepository.save(user);
-                } else {
-                    userRepository.delete(user);
-                }
-                deletedCount++;
-            } else if (!hasOwnedContent(user)) {
-                userRepository.delete(user);
-                deletedCount++;
-            }
+            deleteUserContent(user);
+            userRepository.delete(user);
+            deletedCount++;
         }
 
         return new AdminDeleteUsersResultDto(deletedCount);
     }
 
-    public boolean hasOwnedContent(User user) {
-        return ratingRepository.countByAuthorUser(user) > 0
-            || ratingCommentRepository.countByAuthorUser(user) > 0
-            || ratingLikeRepository.countByUser(user) > 0
-            || rateableItemRepository.countByCreatedByUser(user) > 0
-            || mediaAssetRepository.countByOwnerUser(user) > 0
-            || feedEventRepository.countByActorUser(user) > 0
-            || ratingScaleRepository.countByOwnerUser(user) > 0
-            || userExternalAccountRepository.countByUser(user) > 0
-            || followRepository.countByFollowerUserOrFollowedUser(user, user) > 0
-            || friendshipRepository.countByRequesterUserOrAddresseeUser(user, user) > 0
-            || externalReviewRepository.countByUserExternalAccount_User(user) > 0;
+    private void deleteUserContent(User user) {
+        ratingRepository.findByAuthorUser(user).forEach(rating -> adminPostService.deleteAdminPost(rating.getId()));
+        ratingCommentRepository.deleteByAuthorUser(user);
+        ratingLikeRepository.deleteByUser(user);
+        feedEventRepository.deleteByActorUser(user);
+        externalReviewRepository.deleteByUserExternalAccount_User(user);
+        userExternalAccountRepository.deleteByUser(user);
+        followRepository.deleteByFollowerUserOrFollowedUser(user, user);
+        friendshipRepository.deleteByRequesterUserOrAddresseeUser(user, user);
+        ratingScaleRepository.deleteByOwnerUser(user);
+        rateableItemRepository.deleteByCreatedByUser(user);
+        mediaAssetRepository.deleteByOwnerUser(user);
     }
 
     private String normalizeRequired(String value, String fieldName) {

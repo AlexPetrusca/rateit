@@ -1,6 +1,7 @@
 package com.rateit.backend.service;
 
 import com.rateit.backend.entity.User;
+import com.rateit.backend.entity.Rating;
 import com.rateit.backend.entity.dto.AdminDeleteUsersResultDto;
 import com.rateit.backend.entity.rest.UpdateAdminUserRequest;
 import com.rateit.backend.exception.BadRequestException;
@@ -76,6 +77,9 @@ class UserServiceTest {
     @Mock
     private ExternalReviewRepository externalReviewRepository;
 
+    @Mock
+    private AdminPostService adminPostService;
+
     private UserService userService;
 
     @BeforeEach
@@ -92,7 +96,8 @@ class UserServiceTest {
             userExternalAccountRepository,
             followRepository,
             friendshipRepository,
-            externalReviewRepository
+            externalReviewRepository,
+            adminPostService
         );
     }
 
@@ -177,6 +182,7 @@ class UserServiceTest {
         ReflectionTestUtils.setField(existing, "id", 1L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(ratingRepository.findByAuthorUser(existing)).thenReturn(List.of());
 
         userService.deleteAdminUser(1L, "+15550000099");
 
@@ -185,7 +191,7 @@ class UserServiceTest {
     }
 
     @Test
-    void deleteAdminUserSoftDeletesUsersWithContent() {
+    void deleteAdminUserHardDeletesUsersWithContent() {
         User existing = User.builder()
             .phoneNumber("+15550000001")
             .username("alpha")
@@ -194,14 +200,15 @@ class UserServiceTest {
         ReflectionTestUtils.setField(existing, "id", 1L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(ratingRepository.countByAuthorUser(existing)).thenReturn(1L);
+        Rating rating = Rating.builder().build();
+        ReflectionTestUtils.setField(rating, "id", 99L);
+        when(ratingRepository.findByAuthorUser(existing)).thenReturn(List.of(rating));
 
         userService.deleteAdminUser(1L, "+15550000099");
 
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).save(userCaptor.capture());
-        assertTrue(userCaptor.getValue().getDeletedAt() != null);
-        verify(userRepository, never()).delete(any(User.class));
+        verify(adminPostService).deleteAdminPost(99L);
+        verify(userRepository).delete(existing);
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
@@ -245,6 +252,8 @@ class UserServiceTest {
         ReflectionTestUtils.setField(testUserB, "id", 2L);
 
         when(userRepository.findAllByRole("ROLE_TEST_USER")).thenReturn(List.of(testUserA, testUserB));
+        when(ratingRepository.findByAuthorUser(testUserA)).thenReturn(List.of());
+        when(ratingRepository.findByAuthorUser(testUserB)).thenReturn(List.of());
 
         AdminDeleteUsersResultDto result = userService.deleteAllTestUsers();
 
@@ -270,6 +279,8 @@ class UserServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(userA));
         when(userRepository.findById(2L)).thenReturn(Optional.of(userB));
+        when(ratingRepository.findByAuthorUser(userA)).thenReturn(List.of());
+        when(ratingRepository.findByAuthorUser(userB)).thenReturn(List.of());
 
         AdminDeleteUsersResultDto result = userService.deleteAdminUsers(List.of(1L, 2L), "+15550000099");
 

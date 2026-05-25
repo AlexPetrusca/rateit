@@ -1,6 +1,7 @@
 package com.rateit.backend.entity.dto;
 
 import com.rateit.backend.entity.User;
+import com.rateit.backend.entity.types.UserRoles;
 
 import java.time.Instant;
 
@@ -18,7 +19,7 @@ public record UserDto(
             user.getPhoneNumber(),
             user.getUsername(),
             user.getProfilePicUrl(),
-            user.getRole() != null ? user.getRole() : "ROLE_USER",
+            user.getRole() != null ? user.getRole() : UserRoles.USER,
             user.getDeletedAt()
         );
     }

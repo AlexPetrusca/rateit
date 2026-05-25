@@ -11,4 +11,5 @@ import org.springframework.stereotype.Repository;
 public interface FeedEventRepository extends JpaRepository<FeedEvent, Long> {
     long countByActorUser(User actorUser);
     void deleteByRatingOrRateableItem(Rating rating, RateableItem rateableItem);
+    void deleteByActorUser(User actorUser);
 }

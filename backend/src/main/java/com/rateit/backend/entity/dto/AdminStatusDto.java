@@ -1,6 +1,7 @@
 package com.rateit.backend.entity.dto;
 
 import com.rateit.backend.entity.User;
+import com.rateit.backend.entity.types.UserRoles;
 
 public record AdminStatusDto(
     Long userId,
@@ -13,7 +14,7 @@ public record AdminStatusDto(
             user.getId(),
             user.getPhoneNumber(),
             user.getUsername(),
-            user.getRole() != null ? user.getRole() : "ROLE_USER"
+            user.getRole() != null ? user.getRole() : UserRoles.USER
         );
     }
 }

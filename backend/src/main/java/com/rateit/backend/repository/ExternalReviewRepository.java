@@ -11,4 +11,5 @@ import org.springframework.stereotype.Repository;
 public interface ExternalReviewRepository extends JpaRepository<ExternalReview, Long> {
     long countByUserExternalAccount_User(User user);
     void deleteByRatingOrRateableItem(Rating rating, RateableItem rateableItem);
+    void deleteByUserExternalAccount_User(User user);
 }

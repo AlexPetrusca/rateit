@@ -20,4 +20,5 @@ public interface RatingScaleRepository extends JpaRepository<RatingScale, Long> 
     Optional<RatingScale> findDefaultScale();
 
     long countByOwnerUser(User ownerUser);
+    void deleteByOwnerUser(User ownerUser);
 }

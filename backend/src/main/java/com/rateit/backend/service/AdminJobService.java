@@ -7,6 +7,7 @@ import com.rateit.backend.entity.dto.AdminJobDetailDto;
 import com.rateit.backend.entity.dto.AdminJobDto;
 import com.rateit.backend.entity.dto.CreatedAdminUserDto;
 import com.rateit.backend.entity.rest.CreateUsersJobRequest;
+import com.rateit.backend.entity.types.UserRoles;
 import com.rateit.backend.entity.types.AdminJobStatus;
 import com.rateit.backend.entity.types.AdminJobType;
 import com.rateit.backend.exception.ResourceNotFoundException;
@@ -27,7 +28,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdminJobService {
 
-    private static final String TEST_USER_ROLE = "ROLE_TEST_USER";
     private static final String DEFAULT_PHONE_PREFIX = "+1555000";
     private static final String DEFAULT_USERNAME_PREFIX = "test_user";
 
@@ -116,7 +116,7 @@ public class AdminJobService {
             .mapToObj(index -> {
                 String username = String.format("%s_%d_%03d", request.usernamePrefix(), jobId, index);
                 String phoneNumber = buildPhoneNumber(request.phonePrefix(), jobId, index);
-                User createdUser = userService.create(phoneNumber, username, null, TEST_USER_ROLE);
+                User createdUser = userService.create(phoneNumber, username, null, UserRoles.TEST_USER);
                 return CreatedAdminUserDto.fromUser(createdUser);
             })
             .collect(Collectors.toList());

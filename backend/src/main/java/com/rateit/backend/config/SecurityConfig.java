@@ -1,6 +1,7 @@
 package com.rateit.backend.config;
 
 import com.rateit.backend.entity.User;
+import com.rateit.backend.entity.types.UserRoles;
 import com.rateit.backend.security.SessionRefreshFilter;
 import com.rateit.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +43,7 @@ public class SecurityConfig {
     public SecurityFilterChain apiChain(HttpSecurity http) {
         http.csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+                .requestMatchers("/api/admin/**").hasAuthority(UserRoles.ADMIN)
                 .anyRequest().authenticated()) // require auth
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // no sessions
             .oauth2ResourceServer(oauth2 -> oauth2
@@ -67,12 +68,12 @@ public class SecurityConfig {
     }
 
     private List<String> getCurrentAuthorities(String phoneNumber) {
-        List<String> authorities = new ArrayList<>(List.of("ROLE_USER"));
+        List<String> authorities = new ArrayList<>(List.of(UserRoles.USER));
 
         Optional<User> user = userService.findByPhoneNumberIncludingDeleted(phoneNumber);
         if (user.isPresent() && user.get().getDeletedAt() == null) {
             String role = user.get().getRole();
-            if (role != null && !role.isBlank() && !"ROLE_USER".equals(role)) {
+            if (role != null && !role.isBlank() && !UserRoles.USER.equals(role)) {
                 authorities.add(role);
             }
         }
