@@ -15,6 +15,7 @@ const Home = () => {
     const [commentsByRating, setCommentsByRating] = useState({});
     const [commentDrafts, setCommentDrafts] = useState({});
     const [hoveredCommentScores, setHoveredCommentScores] = useState({});
+    const [hoveredRerateScores, setHoveredRerateScores] = useState({});
     const [rerateDrafts, setRerateDrafts] = useState({});
     const [actionError, setActionError] = useState(null);
 
@@ -289,7 +290,7 @@ const Home = () => {
 
             return (
                 <div className="comment-thread" key={comment.id}>
-                    <div className="comment-row" style={{ '--thread-depth': depth }}>
+                    <div className="comment-row" style={{ marginLeft: `${depth * 18}px` }}>
                         <div className="comment-avatar-column">
                             {comment.author?.profilePicUrl ? (
                                 <img
@@ -380,26 +381,42 @@ const Home = () => {
     const renderRerate = (item) => {
         const ratingId = item.ratingId;
         const draft = rerateDrafts[ratingId] || {};
+        const currentScore = draft.score ? Number(draft.score) : null;
+        const previewScore = hoveredRerateScores[ratingId] ?? currentScore;
+        const scoreLabel = Number.isFinite(Number(previewScore))
+            ? `${Number(previewScore).toFixed(1)} / 5`
+            : '0.0 / 5';
 
         return (
             <div className="feed-composer">
-                <label htmlFor={`rerate-score-${ratingId}`}>Your rating</label>
-                <input
-                    id={`rerate-score-${ratingId}`}
-                    type="number"
-                    min={item.ratingScale?.min || 1}
-                    max={item.ratingScale?.max || 5}
-                    step="0.5"
-                    value={draft.score || ''}
-                    onChange={(event) => setRerateDrafts((current) => ({
-                        ...current,
-                        [ratingId]: {
-                            ...current[ratingId],
-                            score: event.target.value
-                        }
-                    }))}
-                    placeholder="4.5"
-                />
+                <label id={`rerate-score-label-${ratingId}`}>Your rating</label>
+                <div className="score-row">
+                    <output className="score-value">{scoreLabel}</output>
+                    <StarRating
+                        value={previewScore ?? 0}
+                        label={`Selected rating: ${scoreLabel}`}
+                        size="lg"
+                        interactive
+                        onChange={(nextScore) => setRerateDrafts((current) => ({
+                            ...current,
+                            [ratingId]: {
+                                ...current[ratingId],
+                                score: nextScore.toString()
+                            }
+                        }))}
+                        onHoverChange={(nextScore) => setHoveredRerateScores((current) => {
+                            const next = { ...current };
+
+                            if (nextScore == null) {
+                                delete next[ratingId];
+                            } else {
+                                next[ratingId] = nextScore;
+                            }
+
+                            return next;
+                        })}
+                    />
+                </div>
                 <textarea
                     value={draft.reviewText || ''}
                     onChange={(event) => setRerateDrafts((current) => ({
@@ -479,15 +496,15 @@ const Home = () => {
                                                         className="rating-object-media"
                                                     />
 
-                                                    <div className="rating-object-title">
-                                                        {item.rateableItem?.title || 'Untitled rating'}
-                                                    </div>
-
-                                                    <div className="rating-summary">
-                                                        <span>OP rating</span>
-                                                        <strong className="op-rating-stars">
-                                                            <StarRating value={item.score} label={formatScore(item)} max={item.ratingScale?.max} size="sm" />
-                                                        </strong>
+                                                    <div className="rating-object-header">
+                                                        <div className="rating-object-title">
+                                                            {item.rateableItem?.title || 'Untitled rating'}
+                                                        </div>
+                                                        <div className="rating-summary">
+                                                            <strong className="op-rating-stars">
+                                                                <StarRating value={item.score} label={formatScore(item)} max={item.ratingScale?.max} size="sm" />
+                                                            </strong>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ) : (
@@ -496,7 +513,6 @@ const Home = () => {
                                                         <p className="text-post-body">{item.rateableItem.body}</p>
                                                     )}
                                                     <div className="text-rating-score">
-                                                        <span>OP rating</span>
                                                         <strong className="op-rating-stars">
                                                             <StarRating value={item.score} label={formatScore(item)} max={item.ratingScale?.max} size="sm" />
                                                         </strong>

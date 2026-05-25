@@ -33,34 +33,36 @@ const TopBar = () => {
                 </div>
             </div>
             <div className="top-bar-right">
-                <button className="create-button" onClick={() => navigate('/create')}>
-                    + Create
-                </button>
                 {isFullyAuthenticated ? (
-                    <div className="user-menu-container" ref={menuRef}>
-                        <div
-                            className="profile-icon"
-                            onClick={() => setShowMenu(!showMenu)}
-                        >
-                            {user?.profilePicUrl ? (
-                                <img
-                                    src={`/api/s3/images/${user.profilePicUrl}`}
-                                    alt="Profile"
-                                    onError={(e) => { e.target.src = 'https://via.placeholder.com/40'; }}
-                                />
-                            ) : (
-                                <div className="profile-placeholder">
-                                    {user?.username?.[0]}
+                    <>
+                        <button className="create-button" onClick={() => navigate('/create')}>
+                            + Create
+                        </button>
+                        <div className="user-menu-container" ref={menuRef}>
+                            <div
+                                className="profile-icon"
+                                onClick={() => setShowMenu(!showMenu)}
+                            >
+                                {user?.profilePicUrl ? (
+                                    <img
+                                        src={`/api/s3/images/${user.profilePicUrl}`}
+                                        alt="Profile"
+                                        onError={(e) => { e.target.src = 'https://via.placeholder.com/40'; }}
+                                    />
+                                ) : (
+                                    <div className="profile-placeholder">
+                                        {user?.username?.[0]}
+                                    </div>
+                                )}
+                            </div>
+                            {showMenu && (
+                                <div className="dropdown-menu">
+                                    <button onClick={handleProfileClick}>Profile</button>
+                                    <button onClick={handleLogoutClick}>Logout</button>
                                 </div>
                             )}
                         </div>
-                        {showMenu && (
-                            <div className="dropdown-menu">
-                                <button onClick={handleProfileClick}>Profile</button>
-                                <button onClick={handleLogoutClick}>Logout</button>
-                            </div>
-                        )}
-                    </div>
+                    </>
                 ) : (
                     <button className="login-button" onClick={() => navigate('/login')}>
                         Login

@@ -350,6 +350,21 @@ button:disabled {
     color: #0b7bdc;
 }
 
+.secondary-button {
+    background-color: transparent;
+    color: #333;
+    border: 1px solid #ddd;
+    margin: 0;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.secondary-button:hover {
+    background-color: #f0f0f0;
+}
+
 .twitter-shell {
     width: min(600px, 100%);
     min-height: calc(100vh - 64px);
@@ -468,10 +483,18 @@ button:disabled {
     border-bottom: 1px solid #cfd9de;
 }
 
+.rating-object-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px 12px;
+}
+
 .rating-object-title {
     display: inline-flex;
-    max-width: calc(100% - 24px);
-    margin: 10px 12px 0;
+    min-width: 0;
+    margin: 0;
     padding: 4px 10px;
     border: 1px solid #cfd9de;
     border-radius: 6px;
@@ -483,12 +506,10 @@ button:disabled {
 .rating-summary {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 12px;
-    margin: 8px 12px 12px;
-    padding: 10px 12px;
-    border: 1px solid #cfd9de;
-    border-radius: 8px;
+    margin: 0;
+    padding: 0;
+    border: 0;
     color: #0f1419;
 }
 
@@ -721,7 +742,6 @@ button:disabled {
     display: grid;
     grid-template-columns: 28px minmax(0, 1fr);
     gap: 10px;
-    margin-left: calc(var(--thread-depth, 0) * 18px);
     padding: 8px 0 8px 12px;
     border-bottom: 1px solid #eff3f4;
     border-left: 2px solid #eff3f4;

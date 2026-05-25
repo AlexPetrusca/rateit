@@ -84,7 +84,7 @@ const Login = () => {
                     <button onClick={handleVerifyOtp} disabled={isLoading}>
                         {isLoading ? 'Verifying...' : 'Verify'}
                     </button>
-                    <button className="link-button" onClick={() => setStep('phone')}>
+                    <button className="secondary-button" onClick={() => setStep('phone')}>
                         Change Phone Number
                     </button>
                 </div>
