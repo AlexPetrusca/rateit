@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
@@ -10,6 +11,7 @@ const FIVE_STAR_SCALE = { max: 5, symbol: 'star' };
 const FEED_PAGE_SIZE = 5;
 
 const Home = () => {
+    const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
     const [feedItems, setFeedItems] = useState([]);
     const [isFeedLoading, setIsFeedLoading] = useState(false);
@@ -195,6 +197,14 @@ const Home = () => {
         }).format(new Date(createdAt));
     };
 
+    const openProfile = (userId) => {
+        if (userId == null) {
+            return;
+        }
+
+        navigate(`/users/${userId}`);
+    };
+
     const getComposerKey = (ratingId, type) => `${ratingId}:${type}`;
     const getCommentReplyKey = (ratingId, parentCommentId = null) => (
         parentCommentId == null ? getComposerKey(ratingId, 'comment') : `${ratingId}:comment:${parentCommentId}`
@@ -345,18 +355,44 @@ const Home = () => {
             return (
                 <div className="comment-thread" key={comment.id}>
                     <div className="comment-row" style={{ marginLeft: `${depth * 18}px` }}>
-                        <div className="comment-avatar-column">
+                    <div className="comment-avatar-column">
+                        {comment.author?.userId != null ? (
+                            <button
+                                type="button"
+                                className="profile-link profile-link-avatar"
+                                onClick={() => openProfile(comment.author.userId)}
+                                aria-label={`Open profile for ${comment.author.username}`}
+                            >
+                                <UserAvatar
+                                    username={comment.author?.username}
+                                    profilePicUrl={comment.author?.profilePicUrl}
+                                    alt=""
+                                    size="sm"
+                                />
+                            </button>
+                        ) : (
                             <UserAvatar
                                 username={comment.author?.username}
                                 profilePicUrl={comment.author?.profilePicUrl}
                                 alt=""
                                 size="sm"
                             />
-                        </div>
+                        )}
+                    </div>
 
                         <div className="comment-body">
                             <div className="comment-meta">
-                                <div className="comment-author">{comment.author?.username || 'Someone'}</div>
+                                {comment.author?.userId != null ? (
+                                    <button
+                                        type="button"
+                                        className="profile-link profile-link-text"
+                                        onClick={() => openProfile(comment.author.userId)}
+                                    >
+                                        <div className="comment-author">{comment.author?.username || 'Someone'}</div>
+                                    </button>
+                                ) : (
+                                    <div className="comment-author">{comment.author?.username || 'Someone'}</div>
+                                )}
                                 {comment.score != null && (
                                     <div className="comment-score">
                                         <StarRating value={comment.score} label={formatCommentScore(comment)} size="sm" />
@@ -512,18 +548,47 @@ const Home = () => {
                                         key={item.ratingId}
                                     >
                                         <div className="tweet-avatar-column">
-                                            <UserAvatar
-                                                username={item.author?.username}
-                                                profilePicUrl={item.author?.profilePicUrl}
-                                                alt=""
-                                                size="lg"
-                                            />
+                                            {item.author?.userId != null ? (
+                                                <button
+                                                    type="button"
+                                                    className="profile-link profile-link-avatar"
+                                                    onClick={() => openProfile(item.author.userId)}
+                                                    aria-label={`Open profile for ${item.author.username}`}
+                                                >
+                                                    <UserAvatar
+                                                        username={item.author?.username}
+                                                        profilePicUrl={item.author?.profilePicUrl}
+                                                        alt=""
+                                                        size="lg"
+                                                    />
+                                                </button>
+                                            ) : (
+                                                <UserAvatar
+                                                    username={item.author?.username}
+                                                    profilePicUrl={item.author?.profilePicUrl}
+                                                    alt=""
+                                                    size="lg"
+                                                />
+                                            )}
                                         </div>
 
                                         <div className="tweet-main">
                                             <header className="tweet-meta">
-                                                <span className="tweet-name">{item.author?.username}</span>
-                                                <span className="tweet-handle">@{item.author?.username}</span>
+                                                {item.author?.userId != null ? (
+                                                    <button
+                                                        type="button"
+                                                        className="profile-link profile-link-text"
+                                                        onClick={() => openProfile(item.author.userId)}
+                                                    >
+                                                        <span className="tweet-name">{item.author?.username}</span>
+                                                        <span className="tweet-handle">@{item.author?.username}</span>
+                                                    </button>
+                                                ) : (
+                                                    <>
+                                                        <span className="tweet-name">{item.author?.username}</span>
+                                                        <span className="tweet-handle">@{item.author?.username}</span>
+                                                    </>
+                                                )}
                                                 <span className="tweet-dot">.</span>
                                                 <time dateTime={item.createdAt}>{formatDate(item.createdAt)}</time>
                                             </header>

@@ -41,6 +41,36 @@ const BackendApiService = {
         return await response.json();
     },
 
+    getUserProfile: async (userId) => {
+        const response = await fetch(`/api/users/${encodeURIComponent(userId)}`);
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authenticated');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const error = new Error('Failed to fetch user profile');
+            error.status = response.status;
+            throw error;
+        }
+        return await response.json();
+    },
+
+    getUserPosts: async ({ userId, page = 0, size = 5 } = {}) => {
+        const response = await fetch(`/api/users/${encodeURIComponent(userId)}/posts?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`);
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authenticated');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const error = new Error('Failed to fetch user posts');
+            error.status = response.status;
+            throw error;
+        }
+        return await response.json();
+    },
+
     logout: async () => {
         await fetch('/auth/logout', { method: 'POST' });
     },

@@ -33,6 +33,7 @@ public record RatingCommentDto(
             comment.getScore(),
             comment.getCreatedAt(),
             new Author(
+                authorDeleted ? null : author.getId(),
                 authorDeleted ? "[deleted]" : author.getUsername(),
                 authorDeleted ? null : author.getProfilePicUrl()
             ),
@@ -41,6 +42,7 @@ public record RatingCommentDto(
     }
 
     public record Author(
+        Long userId,
         String username,
         String profilePicUrl
     ) {

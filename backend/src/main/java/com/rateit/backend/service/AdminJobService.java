@@ -221,23 +221,27 @@ public class AdminJobService {
     }
 
     private String buildUserNarrative(AdminJob job, CreateUsersJobRequest request) {
+        int count = request != null ? request.count() : 0;
+        String usernamePrefix = request != null ? request.usernamePrefix() : DEFAULT_USERNAME_PREFIX;
+        String phonePrefix = request != null ? request.phonePrefix() : DEFAULT_PHONE_PREFIX;
+
         return switch (job.getStatus()) {
             case PENDING -> String.format(
                 "Queued to create %d test users with username prefix '%s' and phone prefix '%s'.",
-                request.count(),
-                request.usernamePrefix(),
-                request.phonePrefix()
+                count,
+                usernamePrefix,
+                phonePrefix
             );
             case IN_PROGRESS -> String.format(
                 "Creating %d test users with username prefix '%s' and phone prefix '%s'.",
-                request.count(),
-                request.usernamePrefix(),
-                request.phonePrefix()
+                count,
+                usernamePrefix,
+                phonePrefix
             );
             case DONE -> {
                 List<CreatedAdminUserDto> createdUsers = readCreatedUsers(job.getResultJson());
                 if (createdUsers.isEmpty()) {
-                    yield String.format("Completed creating %d test users.", request.count());
+                    yield String.format("Completed creating %d test users.", count);
                 }
                 String createdUserSummary = createdUsers.stream()
                     .map(user -> user.username() + " (" + user.phoneNumber() + ")")
@@ -249,19 +253,21 @@ public class AdminJobService {
     }
 
     private String buildPostNarrative(AdminJob job, CreatePostsJobRequest request) {
+        int count = request != null ? request.count() : 0;
+
         return switch (job.getStatus()) {
             case PENDING -> String.format(
                 "Queued to create %d test posts using active test users as authors.",
-                request.count()
+                count
             );
             case IN_PROGRESS -> String.format(
                 "Creating %d test posts using active test users as authors.",
-                request.count()
+                count
             );
             case DONE -> {
                 List<CreatedAdminPostDto> createdPosts = readCreatedPosts(job.getResultJson());
                 if (createdPosts.isEmpty()) {
-                    yield String.format("Completed creating %d test posts.", request.count());
+                    yield String.format("Completed creating %d test posts.", count);
                 }
                 String createdPostSummary = createdPosts.stream()
                     .map(post -> post.body() + " by " + post.authorUsername())

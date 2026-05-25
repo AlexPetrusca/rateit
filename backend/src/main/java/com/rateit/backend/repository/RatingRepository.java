@@ -27,6 +27,57 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         join fetch r.rateableItem item
         join fetch r.ratingScale
         left join fetch item.mediaAsset
+        where r.authorUser = :authorUser
+        order by r.createdAt desc
+        """)
+    Page<Rating> findProfilePageByAuthorUser(@Param("authorUser") User authorUser, Pageable pageable);
+
+    @Query("""
+        select count(r)
+        from Rating r
+        join r.rateableItem item
+        where r.authorUser = :authorUser
+        """)
+    long countByAuthorUserForProfile(@Param("authorUser") User authorUser);
+
+    @Query("""
+        select r
+        from Rating r
+        join fetch r.authorUser
+        join fetch r.rateableItem item
+        join fetch r.ratingScale
+        left join fetch item.mediaAsset
+        where r.authorUser = :authorUser
+          and r.visibility = :visibility
+          and item.visibility = :visibility
+        order by r.createdAt desc
+        """)
+    Page<Rating> findProfilePageByAuthorUserAndVisibility(
+        @Param("authorUser") User authorUser,
+        @Param("visibility") Visibility visibility,
+        Pageable pageable
+    );
+
+    @Query("""
+        select count(r)
+        from Rating r
+        join r.rateableItem item
+        where r.authorUser = :authorUser
+          and r.visibility = :visibility
+          and item.visibility = :visibility
+        """)
+    long countByAuthorUserAndVisibilityForProfile(
+        @Param("authorUser") User authorUser,
+        @Param("visibility") Visibility visibility
+    );
+
+    @Query("""
+        select r
+        from Rating r
+        join fetch r.authorUser
+        join fetch r.rateableItem item
+        join fetch r.ratingScale
+        left join fetch item.mediaAsset
         where r.visibility = :visibility
           and item.visibility = :visibility
         order by r.createdAt desc

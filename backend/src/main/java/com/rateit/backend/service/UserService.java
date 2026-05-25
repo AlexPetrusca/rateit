@@ -3,6 +3,7 @@ package com.rateit.backend.service;
 import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.types.UserRoles;
 import com.rateit.backend.entity.dto.AdminDeleteUsersResultDto;
+import com.rateit.backend.entity.dto.UserProfileDto;
 import com.rateit.backend.entity.rest.UpdateAdminUserRequest;
 import com.rateit.backend.exception.BadRequestException;
 import com.rateit.backend.exception.ConflictException;
@@ -83,6 +84,20 @@ public class UserService {
     public User findById(long userId) {
         return userRepository.findById(userId)
             .orElseThrow(() -> ResourceNotFoundException.user(userId));
+    }
+
+    public UserProfileDto getProfile(long userId, String currentPhoneNumber) {
+        User user = findById(userId);
+        if (user.getDeletedAt() != null) {
+            throw ResourceNotFoundException.user(userId);
+        }
+
+        User currentUser = findByPhoneNumber(currentPhoneNumber);
+        long postCount = currentUser.getId().equals(user.getId())
+            ? ratingRepository.countByAuthorUserForProfile(user)
+            : ratingRepository.countByAuthorUserAndVisibilityForProfile(user, com.rateit.backend.entity.types.Visibility.PUBLIC);
+
+        return UserProfileDto.fromUser(user, postCount);
     }
 
     public User findByPhoneNumber(String phoneNumber) {

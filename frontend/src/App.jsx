@@ -54,6 +54,14 @@ function App() {
                                     </GuardedRoute>
                                 }
                             />
+                            <Route
+                                path="/users/:userId"
+                                element={
+                                    <GuardedRoute>
+                                        <Profile />
+                                    </GuardedRoute>
+                                }
+                            />
 
                             <Route
                                 element={

@@ -5,7 +5,9 @@ import com.rateit.backend.entity.types.Visibility;
 import com.rateit.backend.repository.RatingRepository;
 import com.rateit.backend.repository.RatingCommentRepository;
 import com.rateit.backend.repository.RatingLikeRepository;
+import com.rateit.backend.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +50,44 @@ public class FeedService {
                 ratingLikeRepository.existsByRatingAndUser(rating, currentUser)
             ))
             .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<FeedItemDto> getProfileRatings(
+        long authorUserId,
+        Integer requestedLimit,
+        Integer requestedPage,
+        String currentUserPhoneNumber
+    ) {
+        int limit = normalizeLimit(requestedLimit);
+        int page = requestedPage == null || requestedPage < 0 ? 0 : requestedPage;
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+        User authorUser = userService.findById(authorUserId);
+
+        Page<FeedItemDto> resultPage;
+        if (currentUser.getId().equals(authorUser.getId())) {
+            resultPage = ratingRepository.findProfilePageByAuthorUser(authorUser, PageRequest.of(page, limit))
+                .map(rating -> FeedItemDto.fromRating(
+                    rating,
+                    ratingLikeRepository.countByRating(rating),
+                    ratingCommentRepository.countByRating(rating),
+                    ratingLikeRepository.existsByRatingAndUser(rating, currentUser)
+                ));
+        } else {
+            resultPage = ratingRepository.findProfilePageByAuthorUserAndVisibility(
+                    authorUser,
+                    Visibility.PUBLIC,
+                    PageRequest.of(page, limit)
+                )
+                .map(rating -> FeedItemDto.fromRating(
+                    rating,
+                    ratingLikeRepository.countByRating(rating),
+                    ratingCommentRepository.countByRating(rating),
+                    ratingLikeRepository.existsByRatingAndUser(rating, currentUser)
+                ));
+        }
+
+        return resultPage;
     }
 
     private int normalizeLimit(Integer requestedLimit) {

@@ -47,6 +47,7 @@ public record FeedItemDto(
             commentCount,
             likedByCurrentUser,
             new Author(
+                authorDeleted ? null : author.getId(),
                 authorDeleted ? "[deleted]" : author.getUsername(),
                 authorDeleted ? null : author.getProfilePicUrl()
             ),
@@ -66,6 +67,7 @@ public record FeedItemDto(
     }
 
     public record Author(
+        Long userId,
         String username,
         String profilePicUrl
     ) {
