@@ -10,6 +10,9 @@ This is the root index for agent work in this repo. Start here, then read the na
 4. [`docs/admin/admin_spec.md`](docs/admin/admin_spec.md) for the admin and automation surface.
 5. [`docs/admin/automation.md`](docs/admin/automation.md) for the job queue and synthetic-data pipeline.
 6. [`docs/agent_handoff.md`](docs/agent_handoff.md) for the remaining roadmap notes.
+7. [`docs/agent_learnings.md`](docs/agent_learnings.md) for recurring repo lessons and invariants.
+8. [`frontend/AGENTS.md`](frontend/AGENTS.md) when working in the frontend subtree.
+9. [`backend/AGENTS.md`](backend/AGENTS.md) when working in the backend subtree.
 
 ## Repo Rules
 
@@ -18,6 +21,7 @@ This is the root index for agent work in this repo. Start here, then read the na
 - Prefer shared components over page-specific copies when the same UI appears in more than one place.
 - Prefer existing docs over re-explaining the same design in code comments.
 - Keep admin actions separate from user-facing actions.
+- When you discover a repeatable pitfall or invariant, record it in `docs/agent_learnings.md`.
 
 ## Scope
 

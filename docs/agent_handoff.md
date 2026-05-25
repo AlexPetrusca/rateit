@@ -39,6 +39,7 @@ RateIt is a React + Spring Boot app with phone-number login, JWT cookie auth, a 
 - Use the shared admin grid wrapper for any new admin table so vertical centering stays consistent.
 - Prefer existing shared components before creating a new one.
 - If you need the implementation seam for an area, start with the relevant doc in `docs/app/` or `docs/admin/` before reading code.
+- If you learn a repeatable pitfall or invariant while working, capture it in `docs/agent_learnings.md`.
 
 ## Roadmap Notes
 
