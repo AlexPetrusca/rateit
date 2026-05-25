@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {useClickOutside} from "../hooks/ClickOutside.jsx";
+import UserAvatar from './UserAvatar.jsx';
 import '../App.css';
 
 const TopBar = () => {
@@ -39,22 +40,18 @@ const TopBar = () => {
                             + Create
                         </button>
                         <div className="user-menu-container" ref={menuRef}>
-                            <div
-                                className="profile-icon"
+                            <button
+                                type="button"
+                                className="profile-icon-button"
                                 onClick={() => setShowMenu(!showMenu)}
                             >
-                                {user?.profilePicUrl ? (
-                                    <img
-                                        src={`/api/s3/images/${user.profilePicUrl}`}
-                                        alt="Profile"
-                                        onError={(e) => { e.target.src = 'https://via.placeholder.com/40'; }}
-                                    />
-                                ) : (
-                                    <div className="profile-placeholder">
-                                        {user?.username?.[0]}
-                                    </div>
-                                )}
-                            </div>
+                                <UserAvatar
+                                    username={user?.username}
+                                    profilePicUrl={user?.profilePicUrl}
+                                    alt="Profile"
+                                    size="md"
+                                />
+                            </button>
                             {showMenu && (
                                 <div className="dropdown-menu">
                                     <button onClick={handleProfileClick}>Profile</button>

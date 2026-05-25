@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import BackendApiService from '../services/BackendApiService';
 import StarRating from '../components/StarRating.jsx';
+import UserAvatar from '../components/UserAvatar.jsx';
 import '../App.css';
 
 const FIVE_STAR_SCALE = { max: 5, symbol: 'star' };
@@ -292,17 +293,12 @@ const Home = () => {
                 <div className="comment-thread" key={comment.id}>
                     <div className="comment-row" style={{ marginLeft: `${depth * 18}px` }}>
                         <div className="comment-avatar-column">
-                            {comment.author?.profilePicUrl ? (
-                                <img
-                                    src={`/api/s3/images/${comment.author.profilePicUrl}`}
-                                    alt=""
-                                    className="comment-avatar"
-                                />
-                            ) : (
-                                <div className="comment-avatar comment-avatar-placeholder">
-                                    {comment.author?.username?.charAt(0)?.toUpperCase() || '?'}
-                                </div>
-                            )}
+                            <UserAvatar
+                                username={comment.author?.username}
+                                profilePicUrl={comment.author?.profilePicUrl}
+                                alt=""
+                                size="sm"
+                            />
                         </div>
 
                         <div className="comment-body">
@@ -467,17 +463,12 @@ const Home = () => {
                                         key={item.ratingId}
                                     >
                                         <div className="tweet-avatar-column">
-                                            {item.author?.profilePicUrl ? (
-                                                <img
-                                                    src={`/api/s3/images/${item.author.profilePicUrl}`}
-                                                    alt=""
-                                                    className="tweet-avatar"
-                                                />
-                                            ) : (
-                                                <div className="tweet-avatar tweet-avatar-placeholder">
-                                                    {item.author?.username?.charAt(0)?.toUpperCase() || '?'}
-                                                </div>
-                                            )}
+                                            <UserAvatar
+                                                username={item.author?.username}
+                                                profilePicUrl={item.author?.profilePicUrl}
+                                                alt=""
+                                                size="lg"
+                                            />
                                         </div>
 
                                         <div className="tweet-main">
