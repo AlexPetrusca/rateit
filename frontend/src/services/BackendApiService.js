@@ -106,6 +106,28 @@ const BackendApiService = {
         return await response.json();
     },
 
+    createRating: async ({ title, body, reviewText, score, mediaObjectKey, mediaContentType }) => {
+        const response = await fetch('/api/feed/ratings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title,
+                body,
+                reviewText,
+                score,
+                mediaObjectKey,
+                mediaContentType
+            })
+        });
+
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to create rating');
+        }
+
+        return await response.json();
+    },
+
     getUploadUrl: async (filename, contentType) => {
         const response = await fetch('/api/s3/images', {
             method: 'POST',

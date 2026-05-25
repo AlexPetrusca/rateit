@@ -2,6 +2,7 @@ package com.rateit.backend.controller;
 
 import com.rateit.backend.entity.dto.FeedItemDto;
 import com.rateit.backend.entity.dto.RatingCommentDto;
+import com.rateit.backend.entity.rest.CreateRatingRequest;
 import com.rateit.backend.entity.rest.CreateRatingCommentRequest;
 import com.rateit.backend.entity.rest.CreateRerateRequest;
 import com.rateit.backend.service.FeedActionService;
@@ -29,6 +30,15 @@ public class FeedController {
         JwtAuthenticationToken token
     ) {
         return ResponseEntity.ok(feedService.getRecentRatings(limit, token.getToken().getSubject()));
+    }
+
+    @PostMapping("/ratings")
+    public ResponseEntity<FeedItemDto> createRating(
+        @RequestBody @Valid CreateRatingRequest request,
+        JwtAuthenticationToken token
+    ) {
+        FeedItemDto created = feedActionService.createRating(request, token.getToken().getSubject());
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PostMapping("/ratings/{ratingId}/like")

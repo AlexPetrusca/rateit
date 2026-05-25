@@ -1,0 +1,195 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import BackendApiService from '../services/BackendApiService';
+import {
+    buildCreateRatingRequest,
+    MAX_RATING_SCORE,
+    MIN_RATING_SCORE,
+    RATING_SCORE_STEP,
+    validateCreateRatingDraft
+} from '../utils/createRating.js';
+import '../App.css';
+
+const Create = () => {
+    const navigate = useNavigate();
+    const [title, setTitle] = useState('');
+    const [body, setBody] = useState('');
+    const [reviewText, setReviewText] = useState('');
+    const [score, setScore] = useState('4');
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const [previewUrl, setPreviewUrl] = useState(null);
+
+    useEffect(() => {
+        if (!selectedFile) {
+            setPreviewUrl(null);
+            return undefined;
+        }
+
+        const objectUrl = URL.createObjectURL(selectedFile);
+        setPreviewUrl(objectUrl);
+
+        return () => {
+            URL.revokeObjectURL(objectUrl);
+        };
+    }, [selectedFile]);
+
+    const handleFileChange = (event) => {
+        setSelectedFile(event.target.files?.[0] || null);
+    };
+
+    const handleSubmit = async () => {
+        const validationError = validateCreateRatingDraft({ body, selectedFile, score });
+
+        if (validationError) {
+            setError(validationError);
+            return;
+        }
+
+        setIsLoading(true);
+        setError('');
+
+        try {
+            let mediaObjectKey = null;
+            let mediaContentType = null;
+
+            if (selectedFile) {
+                const { uploadUrl, key } = await BackendApiService.getUploadUrl(selectedFile.name, selectedFile.type);
+                await BackendApiService.uploadFileToS3(uploadUrl, selectedFile);
+                mediaObjectKey = key;
+                mediaContentType = selectedFile.type;
+            }
+
+            await BackendApiService.createRating({
+                ...buildCreateRatingRequest({
+                    title,
+                    body,
+                    reviewText,
+                    score,
+                    mediaObjectKey,
+                    mediaContentType
+                }),
+                mediaObjectKey,
+                mediaContentType
+            });
+
+            navigate('/');
+        } catch (err) {
+            setError(err.message || 'Failed to post rating');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="feed-page">
+            <main className="twitter-shell create-shell">
+                <div className="timeline-header">
+                    <h1>Create</h1>
+                </div>
+
+                <section className="create-form">
+                    {error && <p className="inline-error">{error}</p>}
+
+                    <div className="create-layout">
+                        <div className="create-fields">
+                            <div className="form-group">
+                                <label htmlFor="create-title">Title</label>
+                                <input
+                                    id="create-title"
+                                    type="text"
+                                    value={title}
+                                    onChange={(event) => setTitle(event.target.value)}
+                                    placeholder="Optional short title"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="create-body">Post</label>
+                                <textarea
+                                    id="create-body"
+                                    value={body}
+                                    onChange={(event) => setBody(event.target.value)}
+                                    placeholder="Write the thing you want to rate, or add a caption for your photo"
+                                    rows="5"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="create-review">Your review</label>
+                                <textarea
+                                    id="create-review"
+                                    value={reviewText}
+                                    onChange={(event) => setReviewText(event.target.value)}
+                                    placeholder="Add your rating context"
+                                    rows="4"
+                                />
+                            </div>
+
+                            <div className="form-group score-group">
+                                <label htmlFor="create-score">Rating</label>
+                                <div className="score-row">
+                                    <output className="score-value">{Number(score).toFixed(1)} / 5</output>
+                                    <input
+                                        id="create-score"
+                                        type="range"
+                                        min={MIN_RATING_SCORE}
+                                        max={MAX_RATING_SCORE}
+                                        step={RATING_SCORE_STEP}
+                                        value={score}
+                                        onChange={(event) => setScore(event.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="create-image">Photo</label>
+                                <input
+                                    id="create-image"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                />
+                                {selectedFile && (
+                                    <button
+                                        type="button"
+                                        className="link-button"
+                                        onClick={() => setSelectedFile(null)}
+                                    >
+                                        Remove photo
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="composer-actions create-actions">
+                                <button type="button" onClick={handleSubmit} disabled={isLoading}>
+                                    {isLoading ? 'Posting...' : 'Post rating'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <aside className="create-preview">
+                            <div className="create-preview-frame">
+                                {previewUrl ? (
+                                    <img src={previewUrl} alt="Selected upload preview" />
+                                ) : (
+                                    <div className="create-preview-placeholder">
+                                        Your photo preview will appear here
+                                    </div>
+                                )}
+                            </div>
+                            <div className="create-preview-meta">
+                                <strong>{title.trim() || 'Untitled post'}</strong>
+                                <p>{body.trim() || 'Add text to describe the thing you are rating.'}</p>
+                            </div>
+                        </aside>
+                    </div>
+                </section>
+            </main>
+        </div>
+    );
+};
+
+export default Create;

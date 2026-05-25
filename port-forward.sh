@@ -24,6 +24,6 @@ kubectl port-forward -n "$NAMESPACE" svc/rateit-redis-master 6379:6379 &
 kubectl port-forward -n "$NAMESPACE" svc/rateit-prometheus-server 9090:80 &
 kubectl port-forward -n "$NAMESPACE" svc/rateit-grafana 9091:80 &
 kubectl port-forward -n "$NAMESPACE" svc/rateit-mocker 8099:8099 8098:8098 &
-kubectl port-forward -n "$NAMESPACE" svc/rateit-nginx 8080:80 &
+kubectl port-forward -n "$NAMESPACE" svc/rateit-nginx 3001:80 &
 
 wait
