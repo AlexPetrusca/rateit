@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
-import BackendApiService from '../services/BackendApiService';
+import CommentThread from '../components/CommentThread.jsx';
+import FeedTimeline from '../components/FeedTimeline.jsx';
 import StarRating from '../components/StarRating.jsx';
-import UserAvatar from '../components/UserAvatar.jsx';
+import BackendApiService from '../services/BackendApiService';
 import '../App.css';
 
 const FIVE_STAR_SCALE = { max: 5, symbol: 'star' };
@@ -140,10 +141,6 @@ const Home = () => {
 
     const formatScore = (item) => {
         return formatScoreValue(item.score, item.ratingScale);
-    };
-
-    const formatCommentScore = (comment) => {
-        return formatScoreValue(comment.score, FIVE_STAR_SCALE);
     };
 
     const getCommentDraftKey = (ratingId, parentCommentId = null) => {
@@ -355,81 +352,6 @@ const Home = () => {
         );
     };
 
-    const renderCommentThread = (item, comments, depth = 0) => {
-        return comments.map((comment) => {
-            const replyKey = getCommentReplyKey(item.ratingId, comment.id);
-            const replies = comment.replies || [];
-
-            return (
-                <div className="comment-thread" key={comment.id}>
-                    <div className="comment-row" style={{ marginLeft: `${depth * 18}px` }}>
-                    <div className="comment-avatar-column">
-                        {comment.author?.userId != null ? (
-                            <button
-                                type="button"
-                                className="profile-link profile-link-avatar"
-                                onClick={() => openProfile(comment.author.userId)}
-                                aria-label={`Open profile for ${comment.author.username}`}
-                            >
-                                <UserAvatar
-                                    username={comment.author?.username}
-                                    profilePicUrl={comment.author?.profilePicUrl}
-                                    alt=""
-                                    size="sm"
-                                />
-                            </button>
-                        ) : (
-                            <UserAvatar
-                                username={comment.author?.username}
-                                profilePicUrl={comment.author?.profilePicUrl}
-                                alt=""
-                                size="sm"
-                            />
-                        )}
-                    </div>
-
-                        <div className="comment-body">
-                            <div className="comment-meta">
-                                {comment.author?.userId != null ? (
-                                    <button
-                                        type="button"
-                                        className="profile-link profile-link-text"
-                                        onClick={() => openProfile(comment.author.userId)}
-                                    >
-                                        <div className="comment-author">{comment.author?.username || 'Someone'}</div>
-                                    </button>
-                                ) : (
-                                    <div className="comment-author">{comment.author?.username || 'Someone'}</div>
-                                )}
-                                {comment.score != null && (
-                                    <div className="comment-score">
-                                        <StarRating value={comment.score} label={formatCommentScore(comment)} size="sm" />
-                                    </div>
-                                )}
-                            </div>
-                            <div className="comment-text">{comment.text}</div>
-                            <button
-                                type="button"
-                                className="comment-reply-button"
-                                onClick={() => setActiveComposer((current) => (
-                                    current === replyKey ? getComposerKey(item.ratingId, 'comment') : replyKey
-                                ))}
-                            >
-                                Reply
-                            </button>
-                        </div>
-                    </div>
-                    {activeComposer === replyKey && renderCommentComposer(item, comment.id)}
-                    {replies.length > 0 && (
-                        <div className="comment-replies">
-                            {renderCommentThread(item, replies, depth + 1)}
-                        </div>
-                    )}
-                </div>
-            );
-        });
-    };
-
     const submitRerate = async (ratingId) => {
         const draft = rerateDrafts[ratingId] || {};
         const score = Number(draft.score);
@@ -462,7 +384,23 @@ const Home = () => {
                 <div className="comment-list">
                     {comments.length === 0 ? (
                         <p className="feed-muted">No comments yet.</p>
-                    ) : renderCommentThread(item, comments)}
+                    ) : (
+                        <CommentThread
+                            comments={comments}
+                            onAuthorClick={openProfile}
+                            onReplyClick={(comment) => {
+                                const replyKey = getCommentReplyKey(item.ratingId, comment.id);
+                                setActiveComposer((current) => (
+                                    current === replyKey
+                                        ? getComposerKey(item.ratingId, 'comment')
+                                        : replyKey
+                                ));
+                            }}
+                            activeReplyKey={activeComposer}
+                            getReplyKey={(comment) => getCommentReplyKey(item.ratingId, comment.id)}
+                            renderReplyComposer={(comment) => renderCommentComposer(item, comment.id)}
+                        />
+                    )}
                 </div>
                 {activeComposer === getComposerKey(ratingId, 'comment') && renderCommentComposer(item)}
             </div>
@@ -543,136 +481,62 @@ const Home = () => {
                             <p className="feed-status">No ratings yet.</p>
                         )}
 
-                        <section className="timeline" aria-label="Recent ratings">
-                            {feedItems.map((item) => {
+                        <FeedTimeline
+                            items={feedItems}
+                            onAuthorClick={openProfile}
+                            onPostClick={openPost}
+                            renderFooter={(item) => {
+                                const rerateKey = getComposerKey(item.ratingId, 'rerate');
+                                return (
+                                    <div className="tweet-actions" aria-label="Rating actions">
+                                        <button
+                                            type="button"
+                                            className={item.likedByCurrentUser ? 'tweet-action is-liked' : 'tweet-action'}
+                                            onClick={() => toggleLike(item)}
+                                        >
+                                            <span className="action-icon">Like</span>
+                                            <span>{item.likeCount || 0}</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="tweet-action"
+                                            onClick={() => setActiveComposer((current) => (
+                                                current === rerateKey ? null : rerateKey
+                                            ))}
+                                        >
+                                            <span className="action-icon">Re-rate</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="tweet-action"
+                                            onClick={() => openComments(item.ratingId)}
+                                        >
+                                            <span className="action-icon">Comment</span>
+                                            <span>{item.commentCount || 0}</span>
+                                        </button>
+                                    </div>
+                                );
+                            }}
+                            renderAfterItem={(item) => {
                                 const rerateKey = getComposerKey(item.ratingId, 'rerate');
                                 const isCommentThreadActive = activeComposer?.startsWith(`${item.ratingId}:comment`);
-                                const hasMedia = Boolean(item.rateableItem?.mediaObjectKey);
-                                const isTextOnlyPost = !hasMedia;
 
                                 return (
-                                    <article
-                                        className={isTextOnlyPost ? 'tweet-card tweet-card-text' : 'tweet-card tweet-card-media'}
-                                        key={item.ratingId}
-                                    >
-                                        <div className="tweet-avatar-column">
-                                            {item.author?.userId != null ? (
-                                                <button
-                                                    type="button"
-                                                    className="profile-link profile-link-avatar"
-                                                    onClick={() => openProfile(item.author.userId)}
-                                                    aria-label={`Open profile for ${item.author.username}`}
-                                                >
-                                                    <UserAvatar
-                                                        username={item.author?.username}
-                                                        profilePicUrl={item.author?.profilePicUrl}
-                                                        alt=""
-                                                        size="lg"
-                                                    />
-                                                </button>
-                                            ) : (
-                                                <UserAvatar
-                                                    username={item.author?.username}
-                                                    profilePicUrl={item.author?.profilePicUrl}
-                                                    alt=""
-                                                    size="lg"
-                                                />
-                                            )}
-                                        </div>
-
-                                        <div className="tweet-main">
-                                            <header className="tweet-meta">
-                                                {item.author?.userId != null ? (
-                                                    <button
-                                                        type="button"
-                                                        className="profile-link profile-link-text"
-                                                        onClick={() => openProfile(item.author.userId)}
-                                                    >
-                                                        <span className="tweet-name">{item.author?.username}</span>
-                                                        <span className="tweet-handle">@{item.author?.username}</span>
-                                                    </button>
-                                                ) : (
-                                                    <>
-                                                        <span className="tweet-name">{item.author?.username}</span>
-                                                        <span className="tweet-handle">@{item.author?.username}</span>
-                                                    </>
-                                                )}
-                                                <span className="tweet-dot">.</span>
-                                                <time dateTime={item.createdAt}>{formatDate(item.createdAt)}</time>
-                                            </header>
-
-                                            <button
-                                                type="button"
-                                                className="post-click-target"
-                                                onClick={() => openPost(item.ratingId)}
-                                            >
-                                                {hasMedia && (
-                                                    <div className="rating-object">
-                                                        <img
-                                                            src={`/api/s3/images/${item.rateableItem.mediaObjectKey}`}
-                                                            alt="Rated item"
-                                                            className="rating-object-media"
-                                                        />
-                                                    </div>
-                                                )}
-
-                                                <div className="text-rating">
-                                                    {item.rateableItem?.body && (
-                                                        <p className="text-post-body">{item.rateableItem.body}</p>
-                                                    )}
-                                                    <div className="text-rating-score">
-                                                        <strong className="op-rating-stars">
-                                                            <StarRating value={item.score} label={formatScore(item)} max={item.ratingScale?.max} size="sm" />
-                                                        </strong>
-                                                    </div>
-                                                </div>
-                                                {item.reviewText && (
-                                                    <p className="tweet-review">{item.reviewText}</p>
-                                                )}
-                                            </button>
-
-                                            <div className="tweet-actions" aria-label="Rating actions">
-                                                <button
-                                                    type="button"
-                                                    className={item.likedByCurrentUser ? 'tweet-action is-liked' : 'tweet-action'}
-                                                    onClick={() => toggleLike(item)}
-                                                >
-                                                    <span className="action-icon">Like</span>
-                                                    <span>{item.likeCount || 0}</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="tweet-action"
-                                                    onClick={() => setActiveComposer((current) => (
-                                                        current === rerateKey ? null : rerateKey
-                                                    ))}
-                                                >
-                                                    <span className="action-icon">Re-rate</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="tweet-action"
-                                                    onClick={() => openComments(item.ratingId)}
-                                                >
-                                                    <span className="action-icon">Comment</span>
-                                                    <span>{item.commentCount || 0}</span>
-                                                </button>
-                                            </div>
-
-                                            {activeComposer === rerateKey && renderRerate(item)}
-                                            {isCommentThreadActive && renderComments(item)}
-                                        </div>
-                                    </article>
+                                    <>
+                                        {activeComposer === rerateKey && renderRerate(item)}
+                                        {isCommentThreadActive && renderComments(item)}
+                                    </>
                                 );
-                            })}
-                        </section>
+                            }}
+                            sentinelRef={feedSentinelRef}
+                            hasMore={hasMoreFeed}
+                            isLoadingMore={isFeedLoadingMore}
+                            loadingMoreMessage="Loading more ratings..."
+                            endMessage="You’ve reached the end of the feed."
+                        />
 
-                        <div ref={feedSentinelRef} className="feed-sentinel" aria-hidden="true" />
-                        {!isFeedLoading && !feedError && feedItems.length > 0 && !hasMoreFeed && (
-                            <p className="feed-end-message">You’ve reached the end of the feed.</p>
-                        )}
-                        {isFeedLoadingMore && (
-                            <p className="feed-status">Loading more ratings...</p>
+                        {!isFeedLoading && feedError && (
+                            <div className="inline-error">{feedError}</div>
                         )}
                     </>
                 </main>

@@ -1,0 +1,157 @@
+import StarRating from './StarRating.jsx';
+import UserAvatar from './UserAvatar.jsx';
+
+const formatScoreValue = (scoreValue, ratingScale) => {
+    const score = Number(scoreValue);
+    const max = Number(ratingScale?.max);
+    const symbol = ratingScale?.symbol === 'star'
+        ? 'stars'
+        : ratingScale?.symbol;
+
+    if (!Number.isFinite(score)) {
+        return '';
+    }
+
+    const displayScore = Number.isInteger(score) ? score.toString() : score.toFixed(1);
+    const displayMax = Number.isFinite(max)
+        ? (Number.isInteger(max) ? max.toString() : max.toFixed(1))
+        : '';
+
+    return `${displayScore}${Number.isFinite(max) ? ` / ${displayMax}` : ''}${symbol ? ` ${symbol}` : ''}`;
+};
+
+const PostCard = ({
+    post,
+    onAuthorClick,
+    onPostClick,
+    footer,
+    actions,
+    className = '',
+    avatarSize = 'lg',
+    postBodyClassName = '',
+    bodyClassName = ''
+}) => {
+    if (!post) {
+        return null;
+    }
+
+    const hasMedia = Boolean(post.rateableItem?.mediaObjectKey);
+    const cardClassName = [
+        'tweet-card',
+        hasMedia ? 'tweet-card-media' : 'tweet-card-text',
+        className
+    ].filter(Boolean).join(' ');
+
+    const postContent = (
+        <>
+            {hasMedia && (
+                <div className="rating-object">
+                    <img
+                        src={`/api/s3/images/${post.rateableItem.mediaObjectKey}`}
+                        alt="Rated item"
+                        className="rating-object-media"
+                    />
+                </div>
+            )}
+
+            <div className="text-rating">
+                {post.rateableItem?.body && (
+                    <p className={['text-post-body', bodyClassName].filter(Boolean).join(' ')}>
+                        {post.rateableItem.body}
+                    </p>
+                )}
+                <div className="text-rating-score">
+                    <strong className="op-rating-stars">
+                        <StarRating
+                            value={post.score}
+                            label={formatScoreValue(post.score, post.ratingScale)}
+                            max={post.ratingScale?.max}
+                            size="sm"
+                        />
+                    </strong>
+                </div>
+            </div>
+
+            {post.reviewText && (
+                <p className={['tweet-review', postBodyClassName].filter(Boolean).join(' ')}>
+                    {post.reviewText}
+                </p>
+            )}
+        </>
+    );
+
+    return (
+        <article className={cardClassName}>
+            <div className="tweet-avatar-column">
+                {post.author?.userId != null && typeof onAuthorClick === 'function' ? (
+                    <button
+                        type="button"
+                        className="profile-link profile-link-avatar"
+                        onClick={() => onAuthorClick(post.author.userId)}
+                        aria-label={`Open profile for ${post.author.username}`}
+                    >
+                        <UserAvatar
+                            username={post.author?.username}
+                            profilePicUrl={post.author?.profilePicUrl}
+                            alt=""
+                            size={avatarSize}
+                        />
+                    </button>
+                ) : (
+                    <UserAvatar
+                        username={post.author?.username}
+                        profilePicUrl={post.author?.profilePicUrl}
+                        alt=""
+                        size={avatarSize}
+                    />
+                )}
+            </div>
+
+            <div className="tweet-main">
+                <header className="tweet-meta">
+                    {post.author?.userId != null && typeof onAuthorClick === 'function' ? (
+                        <button
+                            type="button"
+                            className="profile-link profile-link-text"
+                            onClick={() => onAuthorClick(post.author.userId)}
+                        >
+                            <span className="tweet-name">{post.author?.username}</span>
+                            <span className="tweet-handle">@{post.author?.username}</span>
+                        </button>
+                    ) : (
+                        <>
+                            <span className="tweet-name">{post.author?.username}</span>
+                            <span className="tweet-handle">@{post.author?.username}</span>
+                        </>
+                    )}
+                    <span className="tweet-dot">.</span>
+                    <time dateTime={post.createdAt}>{new Intl.DateTimeFormat(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    }).format(new Date(post.createdAt))}</time>
+                </header>
+
+                {typeof onPostClick === 'function' ? (
+                    <button
+                        type="button"
+                        className="post-click-target"
+                        onClick={() => onPostClick(post.ratingId)}
+                    >
+                        {postContent}
+                    </button>
+                ) : (
+                    <div className="post-click-target post-click-target-static">
+                        {postContent}
+                    </div>
+                )}
+
+                {footer ?? actions}
+            </div>
+        </article>
+    );
+};
+
+export default PostCard;
