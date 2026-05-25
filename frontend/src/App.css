@@ -133,6 +133,21 @@ body {
     background-color: #0056b3;
 }
 
+.admin-button {
+    background-color: transparent;
+    color: #0f1419;
+    border: 1px solid #cfd9de;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.admin-button:hover {
+    background-color: #f7f9f9;
+}
+
 .login-button {
     background-color: transparent;
     color: #333;
@@ -866,6 +881,30 @@ button:disabled {
     color: #536471;
     font-size: 0.95rem;
     text-align: center;
+}
+
+.admin-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px 0 0;
+}
+
+.admin-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid #e2e5ea;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.admin-label {
+    display: block;
+    margin-bottom: 4px;
+    color: #536471;
+    font-size: 0.9rem;
 }
 
 .comment-composer {

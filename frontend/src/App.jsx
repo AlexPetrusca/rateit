@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import CreateAccount from './pages/CreateAccount';
 import Create from './pages/Create';
+import Admin from './pages/Admin';
 import Profile from './pages/Profile';
 import GuardedRoute from './components/GuardedRoute.jsx';
 import UnguardedRoute from "./components/UnguardedRoute.jsx";
@@ -47,6 +48,15 @@ function App() {
                                 element={
                                     <GuardedRoute>
                                         <Profile />
+                                    </GuardedRoute>
+                                }
+                            />
+
+                            <Route
+                                path="/admin"
+                                element={
+                                    <GuardedRoute requiredRole="ROLE_ADMIN">
+                                        <Admin />
                                     </GuardedRoute>
                                 }
                             />

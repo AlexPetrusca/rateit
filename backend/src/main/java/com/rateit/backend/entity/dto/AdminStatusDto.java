@@ -2,19 +2,17 @@ package com.rateit.backend.entity.dto;
 
 import com.rateit.backend.entity.User;
 
-public record UserDto(
+public record AdminStatusDto(
     Long userId,
     String phoneNumber,
     String username,
-    String profilePicUrl,
     String role
 ) {
-    public static UserDto fromUser(User user) {
-        return new UserDto(
+    public static AdminStatusDto fromUser(User user) {
+        return new AdminStatusDto(
             user.getId(),
             user.getPhoneNumber(),
             user.getUsername(),
-            user.getProfilePicUrl(),
             user.getRole() != null ? user.getRole() : "ROLE_USER"
         );
     }

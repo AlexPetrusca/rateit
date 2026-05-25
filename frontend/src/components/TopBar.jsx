@@ -12,6 +12,7 @@ const TopBar = () => {
     const menuRef = useRef(null);
 
     const isFullyAuthenticated = isAuthenticated && user != null;
+    const isAdmin = user?.role === 'ROLE_ADMIN';
 
     useClickOutside(menuRef, () => setShowMenu(false));
 
@@ -36,6 +37,11 @@ const TopBar = () => {
             <div className="top-bar-right">
                 {isFullyAuthenticated ? (
                     <>
+                        {isAdmin && (
+                            <button className="admin-button" onClick={() => navigate('/admin')}>
+                                Admin
+                            </button>
+                        )}
                         <button className="create-button" onClick={() => navigate('/create')}>
                             + Create
                         </button>

@@ -161,6 +161,19 @@ const BackendApiService = {
             throw new Error('Failed to update profile');
         }
         return await response.json();
+    },
+
+    getAdminStatus: async () => {
+        const response = await fetch('/api/admin/status');
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            throw new Error('Failed to load admin status');
+        }
+        return await response.json();
     }
 };
 

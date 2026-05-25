@@ -19,6 +19,14 @@ public class UserService {
     }
 
     public User create(User user) {
+        if (user.getRole() == null) {
+            user = User.builder()
+                .phoneNumber(user.getPhoneNumber())
+                .username(user.getUsername())
+                .profilePicUrl(user.getProfilePicUrl())
+                .role("ROLE_USER")
+                .build();
+        }
         return userRepository.save(user);
     }
 
@@ -27,6 +35,7 @@ public class UserService {
             .phoneNumber(phoneNumber)
             .username(username)
             .profilePicUrl(profilePicUrl)
+            .role("ROLE_USER")
             .build();
         return userRepository.save(user);
     }

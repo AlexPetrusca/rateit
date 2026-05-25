@@ -24,4 +24,7 @@ public class User extends BaseEntity {
 
     @Column(name = "profile_pic_url")
     private String profilePicUrl;
+
+    @Column(name = "role")
+    private String role;
 }
