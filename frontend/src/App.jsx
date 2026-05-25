@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import CreateAccount from './pages/CreateAccount';
@@ -13,48 +14,50 @@ import './App.css';
 function App() {
     return (
         <AuthProvider>
-            <Router>
-                <Layout>
-                    <Routes>
-                        <Route path="/login" element={
-                            <UnguardedRoute>
-                                <Login />
-                            </UnguardedRoute>
-                        } />
+            <NotificationProvider>
+                <Router>
+                    <Layout>
+                        <Routes>
+                            <Route path="/login" element={
+                                <UnguardedRoute>
+                                    <Login />
+                                </UnguardedRoute>
+                            } />
 
-                        <Route
-                            path="/create"
-                            element={
-                                <GuardedRoute>
-                                    <Create />
-                                </GuardedRoute>
-                            }
-                        />
+                            <Route
+                                path="/create"
+                                element={
+                                    <GuardedRoute>
+                                        <Create />
+                                    </GuardedRoute>
+                                }
+                            />
 
-                        <Route
-                            path="/create-account"
-                            element={
-                                <GuardedRoute requireUser={false}>
-                                    <CreateAccount />
-                                </GuardedRoute>
-                            }
-                        />
+                            <Route
+                                path="/create-account"
+                                element={
+                                    <GuardedRoute requireUser={false}>
+                                        <CreateAccount />
+                                    </GuardedRoute>
+                                }
+                            />
 
-                        <Route
-                            path="/profile"
-                            element={
-                                <GuardedRoute>
-                                    <Profile />
-                                </GuardedRoute>
-                            }
-                        />
+                            <Route
+                                path="/profile"
+                                element={
+                                    <GuardedRoute>
+                                        <Profile />
+                                    </GuardedRoute>
+                                }
+                            />
 
-                        <Route path="/" element={
-                            <Home />
-                        } />
-                    </Routes>
-                </Layout>
-            </Router>
+                            <Route path="/" element={
+                                <Home />
+                            } />
+                        </Routes>
+                    </Layout>
+                </Router>
+            </NotificationProvider>
         </AuthProvider>
     );
 }

@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
 import '../App.css';
 
 const CreateAccount = () => {
     const [username, setUsername] = useState('');
     const [selectedFile, setSelectedFile] = useState(null);
-    const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { user, updateUser } = useAuth();
+    const { updateUser } = useAuth();
+    const { notify } = useNotifications();
     const navigate = useNavigate();
 
     const handleFileSelect = (event) => {
@@ -18,11 +19,10 @@ const CreateAccount = () => {
 
     const handleSubmit = async () => {
         if (!username) {
-            setError('Please enter a username');
+            notify({ message: 'Please enter a username', type: 'warning' });
             return;
         }
         setIsLoading(true);
-        setError('');
 
         try {
             let profilePicUrl = null;
@@ -44,7 +44,8 @@ const CreateAccount = () => {
             navigate('/');
         } catch (err) {
             console.error(err);
-            setError('Error creating account');
+            const message = 'Error creating account';
+            notify({ message, type: 'error' });
         } finally {
             setIsLoading(false);
         }
@@ -69,7 +70,6 @@ const CreateAccount = () => {
                     onChange={handleFileSelect}
                 />
             </div>
-            {error && <div className="error">{error}</div>}
             <button onClick={handleSubmit} disabled={isLoading}>
                 {isLoading ? 'Creating...' : 'Create Account'}
             </button>

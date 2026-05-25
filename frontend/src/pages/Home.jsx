@@ -1,58 +1,115 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
 import StarRating from '../components/StarRating.jsx';
 import UserAvatar from '../components/UserAvatar.jsx';
 import '../App.css';
 
 const FIVE_STAR_SCALE = { max: 5, symbol: 'star' };
+const FEED_PAGE_SIZE = 5;
 
 const Home = () => {
     const { user, isAuthenticated } = useAuth();
     const [feedItems, setFeedItems] = useState([]);
     const [isFeedLoading, setIsFeedLoading] = useState(false);
+    const [isFeedLoadingMore, setIsFeedLoadingMore] = useState(false);
     const [feedError, setFeedError] = useState(null);
+    const [feedLimit, setFeedLimit] = useState(FEED_PAGE_SIZE);
+    const [hasMoreFeed, setHasMoreFeed] = useState(true);
     const [activeComposer, setActiveComposer] = useState(null);
     const [commentsByRating, setCommentsByRating] = useState({});
     const [commentDrafts, setCommentDrafts] = useState({});
     const [hoveredCommentScores, setHoveredCommentScores] = useState({});
     const [hoveredRerateScores, setHoveredRerateScores] = useState({});
     const [rerateDrafts, setRerateDrafts] = useState({});
-    const [actionError, setActionError] = useState(null);
+    const feedSentinelRef = useRef(null);
+    const { notify } = useNotifications();
 
     const isFullyAuthenticated = isAuthenticated && user != null;
 
     useEffect(() => {
         if (!isFullyAuthenticated) {
+            return;
+        }
+
+        setFeedItems([]);
+        setFeedLimit(FEED_PAGE_SIZE);
+        setHasMoreFeed(true);
+        setActiveComposer(null);
+        setCommentsByRating({});
+        setCommentDrafts({});
+        setHoveredCommentScores({});
+        setHoveredRerateScores({});
+        setRerateDrafts({});
+    }, [isFullyAuthenticated]);
+
+    useEffect(() => {
+        if (!isFullyAuthenticated) {
             setFeedItems([]);
+            setFeedLimit(FEED_PAGE_SIZE);
+            setHasMoreFeed(true);
+            setIsFeedLoading(false);
+            setIsFeedLoadingMore(false);
             return;
         }
 
         let isMounted = true;
-        setIsFeedLoading(true);
+        const isInitialLoad = feedLimit === FEED_PAGE_SIZE;
+        setIsFeedLoading(isInitialLoad);
+        setIsFeedLoadingMore(!isInitialLoad);
         setFeedError(null);
 
-        BackendApiService.getFeed()
+        BackendApiService.getFeed(feedLimit)
             .then((items) => {
                 if (isMounted) {
                     setFeedItems(items);
+                    setHasMoreFeed(items.length >= feedLimit);
                 }
             })
             .catch((error) => {
                 if (isMounted) {
                     setFeedError(error.message);
+                    notify({ message: error.message, type: 'error', persistent: true });
                 }
             })
             .finally(() => {
                 if (isMounted) {
                     setIsFeedLoading(false);
+                    setIsFeedLoadingMore(false);
                 }
             });
 
         return () => {
             isMounted = false;
         };
-    }, [isFullyAuthenticated]);
+    }, [isFullyAuthenticated, feedLimit]);
+
+    useEffect(() => {
+        if (!isFullyAuthenticated || feedError || isFeedLoading || isFeedLoadingMore || !hasMoreFeed) {
+            return undefined;
+        }
+
+        const sentinel = feedSentinelRef.current;
+
+        if (!sentinel) {
+            return undefined;
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0]?.isIntersecting) {
+                setFeedLimit((current) => current + FEED_PAGE_SIZE);
+            }
+        }, {
+            root: null,
+            rootMargin: '200px 0px',
+            threshold: 0
+        });
+
+        observer.observe(sentinel);
+
+        return () => observer.disconnect();
+    }, [isFullyAuthenticated, feedError, isFeedLoading, isFeedLoadingMore, hasMoreFeed]);
 
     const updateFeedItem = (ratingId, updater) => {
         setFeedItems((items) => items.map((item) => (
@@ -144,7 +201,6 @@ const Home = () => {
     );
 
     const toggleLike = async (item) => {
-        setActionError(null);
         const wasLiked = Boolean(item.likedByCurrentUser);
 
         updateFeedItem(item.ratingId, (current) => ({
@@ -178,7 +234,6 @@ const Home = () => {
     const openComments = async (ratingId) => {
         const key = getComposerKey(ratingId, 'comment');
         setActiveComposer((current) => (current === key ? null : key));
-        setActionError(null);
 
         if (commentsByRating[ratingId]) {
             return;
@@ -203,16 +258,14 @@ const Home = () => {
         const score = Number(draft.score || getDefaultCommentScore(item));
 
         if (!text) {
-            setActionError('Add a comment before replying.');
+            notify({ message: 'Add a comment before replying.', type: 'warning' });
             return;
         }
 
         if (!isScoreInRange(score, item)) {
-            setActionError('Add a rating before replying.');
+            notify({ message: 'Add a rating before replying.', type: 'warning' });
             return;
         }
-
-        setActionError(null);
 
         try {
             await BackendApiService.createRatingComment(ratingId, text, score, parentCommentId);
@@ -231,7 +284,7 @@ const Home = () => {
                 commentCount: (item.commentCount || 0) + 1
             }));
         } catch (error) {
-            setActionError(error.message);
+            notify({ message: error.message, type: 'error' });
         }
     };
 
@@ -338,11 +391,9 @@ const Home = () => {
         const score = Number(draft.score);
 
         if (!score) {
-            setActionError('Add a score before re-rating.');
+            notify({ message: 'Add a score before re-rating.', type: 'warning' });
             return;
         }
-
-        setActionError(null);
 
         try {
             await BackendApiService.rerate(ratingId, score, draft.reviewText || '');
@@ -354,7 +405,7 @@ const Home = () => {
             const items = await BackendApiService.getFeed();
             setFeedItems(items);
         } catch (error) {
-            setActionError(error.message);
+            notify({ message: error.message, type: 'error' });
         }
     };
 
@@ -443,9 +494,7 @@ const Home = () => {
                             <h1>Home</h1>
                         </div>
 
-                        {actionError && <p className="inline-error">{actionError}</p>}
                         {isFeedLoading && <p className="feed-status">Loading ratings...</p>}
-                        {feedError && <p className="error">{feedError}</p>}
                         {!isFeedLoading && !feedError && feedItems.length === 0 && (
                             <p className="feed-status">No ratings yet.</p>
                         )}
@@ -553,6 +602,14 @@ const Home = () => {
                                 );
                             })}
                         </section>
+
+                        <div ref={feedSentinelRef} className="feed-sentinel" aria-hidden="true" />
+                        {!isFeedLoading && !feedError && feedItems.length > 0 && !hasMoreFeed && (
+                            <p className="feed-end-message">You’ve reached the end of the feed.</p>
+                        )}
+                        {isFeedLoadingMore && (
+                            <p className="feed-status">Loading more ratings...</p>
+                        )}
                     </>
                 ) : (
                     <div className="container">

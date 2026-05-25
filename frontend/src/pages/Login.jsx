@@ -1,30 +1,44 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
 import '../App.css';
 
+const LOGIN_PHONE_STORAGE_KEY = 'rateit.loginPhoneNumber';
+
 const Login = () => {
-    const [phoneNumber, setPhoneNumber] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState(() => localStorage.getItem(LOGIN_PHONE_STORAGE_KEY) || '');
     const [verificationCode, setVerificationCode] = useState('');
     const [step, setStep] = useState('phone'); // 'phone' or 'otp'
-    const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { login, checkAuthStatus } = useAuth();
+    const { checkAuthStatus } = useAuth();
+    const { notify } = useNotifications();
     const navigate = useNavigate();
+
+    const handlePhoneNumberChange = (event) => {
+        const nextValue = event.target.value;
+        setPhoneNumber(nextValue);
+
+        if (nextValue) {
+            localStorage.setItem(LOGIN_PHONE_STORAGE_KEY, nextValue);
+        } else {
+            localStorage.removeItem(LOGIN_PHONE_STORAGE_KEY);
+        }
+    };
 
     const handleSendOtp = async () => {
         if (!phoneNumber) {
-            setError('Please enter a phone number');
+            notify({ message: 'Please enter a phone number', type: 'warning' });
             return;
         }
         setIsLoading(true);
-        setError('');
         try {
             await BackendApiService.sendOtp(phoneNumber);
             setStep('otp');
         } catch (err) {
-            setError(err.message || 'Network error. Please try again.');
+            const message = err.message || 'Network error. Please try again.';
+            notify({ message, type: 'error' });
         } finally {
             setIsLoading(false);
         }
@@ -32,11 +46,10 @@ const Login = () => {
 
     const handleVerifyOtp = async () => {
         if (!verificationCode) {
-            setError('Please enter the code');
+            notify({ message: 'Please enter the code', type: 'warning' });
             return;
         }
         setIsLoading(true);
-        setError('');
         try {
             await BackendApiService.verifyOtp(phoneNumber, verificationCode);
 
@@ -50,7 +63,8 @@ const Login = () => {
                 navigate('/');
             }
         } catch (err) {
-            setError(err.message || 'Network error. Please try again.');
+            const message = err.message || 'Network error. Please try again.';
+            notify({ message, type: 'error' });
         } finally {
             setIsLoading(false);
         }
@@ -63,9 +77,12 @@ const Login = () => {
                 <div className="form-group">
                     <label>Phone Number</label>
                     <input
+                        id="phoneNumber"
                         type="tel"
+                        name="phoneNumber"
+                        autoComplete="tel"
                         value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        onChange={handlePhoneNumberChange}
                         placeholder="+1234567890"
                     />
                     <button onClick={handleSendOtp} disabled={isLoading}>
@@ -76,7 +93,10 @@ const Login = () => {
                 <div className="form-group">
                     <label>Verification Code</label>
                     <input
+                        id="verificationCode"
                         type="text"
+                        name="verificationCode"
+                        autoComplete="one-time-code"
                         value={verificationCode}
                         onChange={(e) => setVerificationCode(e.target.value)}
                         placeholder="123456"
@@ -89,7 +109,6 @@ const Login = () => {
                     </button>
                 </div>
             )}
-            {error && <div className="error">{error}</div>}
         </div>
     );
 };

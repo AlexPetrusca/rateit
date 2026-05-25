@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StarRating from '../components/StarRating.jsx';
+import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
 import {
     buildCreateRatingRequest,
@@ -15,9 +16,9 @@ const Create = () => {
     const [reviewText, setReviewText] = useState('');
     const [score, setScore] = useState('4');
     const [selectedFile, setSelectedFile] = useState(null);
-    const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [hoveredScore, setHoveredScore] = useState(null);
+    const { notify } = useNotifications();
 
     const [previewUrl, setPreviewUrl] = useState(null);
 
@@ -43,12 +44,11 @@ const Create = () => {
         const validationError = validateCreateRatingDraft({ body, selectedFile, score });
 
         if (validationError) {
-            setError(validationError);
+            notify({ message: validationError, type: 'warning' });
             return;
         }
 
         setIsLoading(true);
-        setError('');
 
         try {
             let mediaObjectKey = null;
@@ -76,7 +76,8 @@ const Create = () => {
 
             navigate('/');
         } catch (err) {
-            setError(err.message || 'Failed to post rating');
+            const message = err.message || 'Failed to post rating';
+            notify({ message, type: 'error' });
         } finally {
             setIsLoading(false);
         }
@@ -94,8 +95,6 @@ const Create = () => {
                 </div>
 
                 <section className="create-form">
-                    {error && <p className="inline-error">{error}</p>}
-
                     <div className="create-layout">
                         <div className="create-fields">
                             <div className="form-group">
