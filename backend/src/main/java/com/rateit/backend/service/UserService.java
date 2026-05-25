@@ -151,6 +151,18 @@ public class UserService {
     }
 
     @Transactional
+    public AdminDeleteUsersResultDto deleteAdminUsers(List<Long> userIds, String currentPhoneNumber) {
+        int deletedCount = 0;
+
+        for (Long userId : userIds) {
+            deleteAdminUser(userId, currentPhoneNumber);
+            deletedCount++;
+        }
+
+        return new AdminDeleteUsersResultDto(deletedCount);
+    }
+
+    @Transactional
     public AdminDeleteUsersResultDto deleteAllTestUsers() {
         List<User> testUsers = userRepository.findAllByRole("ROLE_TEST_USER");
         int deletedCount = 0;

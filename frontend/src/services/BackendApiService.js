@@ -226,6 +226,24 @@ const BackendApiService = {
         return await response.json();
     },
 
+    bulkDeleteAdminUsers: async (ids) => {
+        const response = await fetch('/api/admin/users/bulk-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids })
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to delete users');
+        }
+        return await response.json();
+    },
+
     getAdminStatus: async () => {
         const response = await fetch('/api/admin/status');
         if (response.status === 401 || response.status === 403) {
@@ -284,6 +302,24 @@ const BackendApiService = {
             throw new Error(data.message || 'Failed to delete post');
         }
         return response.status === 204 ? null : await response.json();
+    },
+
+    bulkDeleteAdminPosts: async (ids) => {
+        const response = await fetch('/api/admin/posts/bulk-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids })
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to delete posts');
+        }
+        return await response.json();
     },
 
     createUsersJob: async ({ count, usernamePrefix, phonePrefix }) => {

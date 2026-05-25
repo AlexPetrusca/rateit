@@ -88,6 +88,50 @@ test('getAdminPosts requests the paged admin post endpoint', async () => {
     }
 });
 
+test('bulkDeleteAdminUsers posts selected ids', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            json: async () => ({ deletedCount: 2 })
+        };
+    };
+
+    try {
+        const result = await BackendApiService.bulkDeleteAdminUsers([1, 2]);
+
+        assert.deepEqual(result, { deletedCount: 2 });
+        assert.equal(calls[0].url, '/api/admin/users/bulk-delete');
+        assert.equal(calls[0].options.method, 'POST');
+        assert.deepEqual(JSON.parse(calls[0].options.body), { ids: [1, 2] });
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
+test('bulkDeleteAdminPosts posts selected ids', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            json: async () => ({ deletedCount: 2 })
+        };
+    };
+
+    try {
+        const result = await BackendApiService.bulkDeleteAdminPosts([10, 11]);
+
+        assert.deepEqual(result, { deletedCount: 2 });
+        assert.equal(calls[0].url, '/api/admin/posts/bulk-delete');
+        assert.equal(calls[0].options.method, 'POST');
+        assert.deepEqual(JSON.parse(calls[0].options.body), { ids: [10, 11] });
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
 test('createRating surfaces backend error messages', async () => {
     globalThis.fetch = async () => ({
         ok: false,

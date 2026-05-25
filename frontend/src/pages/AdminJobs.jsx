@@ -9,7 +9,7 @@ import {
     TextField,
     Typography
 } from '@mui/material';
-import { DataGrid as MUIDataGrid } from '@mui/x-data-grid';
+import AdminDataGrid from '../components/AdminDataGrid.jsx';
 import Modal from '../components/Modal.jsx';
 import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
@@ -390,44 +390,31 @@ const AdminJobs = () => {
                     {isLoading ? (
                         <Typography color="text.secondary">Loading jobs...</Typography>
                     ) : (
-                        <Box
-                            sx={{
-                                width: '100%',
-                                '& .MuiDataGrid-root': {
-                                    border: 'none'
-                                },
-                                '& .MuiDataGrid-columnHeaders': {
-                                    backgroundColor: '#f7f9f9'
-                                },
-                                        '& .MuiDataGrid-row': {
-                                            cursor: 'pointer'
-                                        },
-                                        '& .MuiDataGrid-cell, & .MuiDataGrid-columnHeader': {
-                                            justifyContent: 'center'
-                                        },
-                                        '& .MuiDataGrid-row.Mui-selected': {
-                                            backgroundColor: 'rgba(25, 118, 210, 0.08)'
-                                        }
+                        <AdminDataGrid
+                            autoHeight
+                            rows={jobs}
+                            columns={jobColumns}
+                            disableRowSelectionOnClick
+                            hideFooter
+                            localeText={{ noRowsLabel: 'No jobs queued yet.' }}
+                            onRowClick={(params) => openJobDetail(params.id)}
+                            getRowClassName={(params) => (
+                                params.id === selectedJobId ? 'Mui-selected' : ''
+                            )}
+                            initialState={{
+                                sorting: {
+                                    sortModel: [{ field: 'createdAt', sort: 'desc' }]
+                                }
                             }}
-                        >
-                            <MUIDataGrid
-                                autoHeight
-                                rows={jobs}
-                                columns={jobColumns}
-                                disableRowSelectionOnClick
-                                hideFooter
-                                localeText={{ noRowsLabel: 'No jobs queued yet.' }}
-                                onRowClick={(params) => openJobDetail(params.id)}
-                                getRowClassName={(params) => (
-                                    params.id === selectedJobId ? 'Mui-selected' : ''
-                                )}
-                                initialState={{
-                                    sorting: {
-                                        sortModel: [{ field: 'createdAt', sort: 'desc' }]
-                                    }
-                                }}
-                            />
-                        </Box>
+                            sx={{
+                                '& .MuiDataGrid-row': {
+                                    cursor: 'pointer'
+                                },
+                                '& .MuiDataGrid-row.Mui-selected': {
+                                    backgroundColor: 'rgba(25, 118, 210, 0.08)'
+                                }
+                            }}
+                        />
                     )}
                 </Stack>
             </Paper>
@@ -438,7 +425,7 @@ const AdminJobs = () => {
                 onClose={closeJobDetail}
             >
                 {isDetailLoading ? (
-                    <Stack alignItems="center" sx={{ py: 4, justifyContent: 'center' }}>
+                <Stack sx={{ py: 4, justifyContent: 'center', alignItems: 'center' }}>
                         <Typography color="text.secondary">Loading job details...</Typography>
                     </Stack>
                 ) : detailError ? (
@@ -501,26 +488,14 @@ const AdminJobs = () => {
                                 <Typography variant="h6" component="h3" gutterBottom>
                                     Created users
                                 </Typography>
-                                <Box
-                                    sx={{
-                                        width: '100%',
-                                        '& .MuiDataGrid-root': {
-                                            border: 'none'
-                                        },
-                                        '& .MuiDataGrid-columnHeaders': {
-                                            backgroundColor: '#f7f9f9'
-                                        }
-                                    }}
-                                >
-                                    <MUIDataGrid
-                                        autoHeight
-                                        rows={createdUserRows}
-                                        columns={createdUserColumns}
-                                        getRowId={(row) => row.userId}
-                                        hideFooter
-                                        disableRowSelectionOnClick
-                                    />
-                                </Box>
+                                <AdminDataGrid
+                                    autoHeight
+                                    rows={createdUserRows}
+                                    columns={createdUserColumns}
+                                    getRowId={(row) => row.userId}
+                                    hideFooter
+                                    disableRowSelectionOnClick
+                                />
                             </Paper>
                         )}
 

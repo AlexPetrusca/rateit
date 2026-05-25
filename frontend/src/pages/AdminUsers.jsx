@@ -13,7 +13,7 @@ import {
     TextField,
     Typography
 } from '@mui/material';
-import { DataGrid as MUIDataGrid } from '@mui/x-data-grid';
+import AdminDataGrid from '../components/AdminDataGrid.jsx';
 import Modal from '../components/Modal.jsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -40,6 +40,9 @@ const AdminUsers = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [selectedUserIds, setSelectedUserIds] = useState([]);
+    const [isBulkDeleteUsersOpen, setIsBulkDeleteUsersOpen] = useState(false);
+    const [isDeletingSelectedUsers, setIsDeletingSelectedUsers] = useState(false);
     const [isDeleteAllTestUsersOpen, setIsDeleteAllTestUsersOpen] = useState(false);
     const [isDeletingAllTestUsers, setIsDeletingAllTestUsers] = useState(false);
 
@@ -55,6 +58,7 @@ const AdminUsers = () => {
             const nextRows = page.content || [];
             setUsers(nextRows);
             setRowCount(page.totalElements || 0);
+            setSelectedUserIds([]);
 
             if (nextPaginationModel.page > 0 && nextRows.length === 0 && (page.totalElements || 0) > 0) {
                 setPaginationModel((current) => ({
@@ -85,6 +89,7 @@ const AdminUsers = () => {
                 setUsers(nextRows);
                 setRowCount(page.totalElements || 0);
                 setLoadError('');
+                setSelectedUserIds([]);
 
                 if (paginationModel.page > 0 && nextRows.length === 0 && (page.totalElements || 0) > 0) {
                     setPaginationModel((current) => ({
@@ -202,6 +207,41 @@ const AdminUsers = () => {
         }
     };
 
+    const selectedUsers = useMemo(
+        () => users.filter((user) => selectedUserIds.includes(user.userId)),
+        [users, selectedUserIds]
+    );
+
+    const selectedUserSelectionModel = useMemo(() => ({
+        type: 'include',
+        ids: new Set(selectedUserIds)
+    }), [selectedUserIds]);
+
+    const handleBulkDeleteSelectedUsers = async () => {
+        if (selectedUsers.length === 0) {
+            notify({ message: 'Select at least one user first', type: 'warning' });
+            return;
+        }
+
+        setIsDeletingSelectedUsers(true);
+        try {
+            const result = await BackendApiService.bulkDeleteAdminUsers(selectedUsers.map((user) => user.userId));
+            notify({
+                message: result.deletedCount > 0
+                    ? `Deleted ${result.deletedCount} users`
+                    : 'No users were deleted',
+                type: 'info'
+            });
+            setIsBulkDeleteUsersOpen(false);
+            setSelectedUserIds([]);
+            await loadUsers(paginationModel);
+        } catch (error) {
+            notify({ message: error.message || 'Failed to delete selected users', type: 'error' });
+        } finally {
+            setIsDeletingSelectedUsers(false);
+        }
+    };
+
     const isCurrentAccount = (row) => currentUser?.userId != null && row.userId === currentUser.userId;
 
     const columns = useMemo(() => [
@@ -308,7 +348,7 @@ const AdminUsers = () => {
                 );
             }
         }
-    ], [currentUser]);
+    ], [currentUser, loadUsers, notify, paginationModel]);
 
     return (
         <Stack spacing={3}>
@@ -333,43 +373,67 @@ const AdminUsers = () => {
                         </Button>
                     </Box>
 
+                    {selectedUsers.length > 0 && (
+                        <Paper variant="outlined" sx={{ p: 1.5, backgroundColor: '#f7f9f9' }}>
+                            <Stack
+                                direction={{ xs: 'column', sm: 'row' }}
+                                spacing={1}
+                                sx={{ justifyContent: 'space-between', alignItems: 'center' }}
+                            >
+                                <Typography variant="body2" color="text.secondary">
+                                    {selectedUsers.length} user{selectedUsers.length === 1 ? '' : 's'} selected
+                                </Typography>
+                                <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
+                                    <Button
+                                        variant="outlined"
+                                        color="error"
+                                        onClick={() => setIsBulkDeleteUsersOpen(true)}
+                                    >
+                                        Delete selected
+                                    </Button>
+                                    <Button variant="text" onClick={() => setSelectedUserIds([])}>
+                                        Clear selection
+                                    </Button>
+                                </Stack>
+                            </Stack>
+                        </Paper>
+                    )}
+
                     {loadError && <Alert severity="error">{loadError}</Alert>}
 
-                    <Box
+                    <AdminDataGrid
+                        autoHeight
+                        rows={users}
+                        columns={columns}
+                        getRowId={(row) => row.userId}
+                        loading={isLoading}
+                        paginationMode="server"
+                        rowCount={rowCount}
+                        paginationModel={paginationModel}
+                        onPaginationModelChange={setPaginationModel}
+                        pageSizeOptions={[10, 25, 50]}
+                        checkboxSelection
+                        rowSelectionModel={selectedUserSelectionModel}
+                        onRowSelectionModelChange={(selectionModel) => {
+                            setSelectedUserIds(Array.from(selectionModel?.ids || []));
+                        }}
+                        disableRowSelectionOnClick
+                        isRowSelectable={(params) => !isCurrentAccount(params.row) && !params.row.deletedAt}
+                        onRowClick={(params) => {
+                            if (params.field === '__check__') {
+                                return;
+                            }
+
+                            openEdit(params.row);
+                        }}
+                        getRowClassName={(params) => (params.row.deletedAt ? 'deleted-user' : '')}
                         sx={{
-                            width: '100%',
-                            '& .MuiDataGrid-root': {
-                                border: 'none'
-                            },
-                            '& .MuiDataGrid-columnHeaders': {
-                                backgroundColor: '#f7f9f9'
-                            },
-                            '& .MuiDataGrid-cell, & .MuiDataGrid-columnHeader': {
-                                justifyContent: 'center',
-                                alignItems: 'center'
-                            },
                             '& .MuiDataGrid-row.deleted-user': {
                                 backgroundColor: '#fafafa',
                                 color: '#8a8d91'
                             }
                         }}
-                    >
-                        <MUIDataGrid
-                            autoHeight
-                            rows={users}
-                            columns={columns}
-                            getRowId={(row) => row.userId}
-                            loading={isLoading}
-                            paginationMode="server"
-                            rowCount={rowCount}
-                            paginationModel={paginationModel}
-                            onPaginationModelChange={setPaginationModel}
-                            pageSizeOptions={[10, 25, 50]}
-                            disableRowSelectionOnClick
-                            onRowClick={(params) => openEdit(params.row)}
-                            getRowClassName={(params) => (params.row.deletedAt ? 'deleted-user' : '')}
-                        />
-                    </Box>
+                    />
                 </Stack>
             </Paper>
 
@@ -476,6 +540,35 @@ const AdminUsers = () => {
                         </Stack>
                     </Stack>
                 )}
+            </Modal>
+
+            <Modal
+                isOpen={isBulkDeleteUsersOpen}
+                title={`Delete ${selectedUsers.length} selected user${selectedUsers.length === 1 ? '' : 's'}`}
+                onClose={() => setIsBulkDeleteUsersOpen(false)}
+            >
+                <Stack spacing={2}>
+                    <Alert severity="warning">
+                        This uses the same soft-delete / hard-delete policy as the single-user action.
+                    </Alert>
+                    <Typography variant="body1">
+                        Delete {selectedUsers.length} selected user{selectedUsers.length === 1 ? '' : 's'}?
+                    </Typography>
+
+                    <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
+                        <Button variant="outlined" onClick={() => setIsBulkDeleteUsersOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            color="error"
+                            variant="contained"
+                            onClick={handleBulkDeleteSelectedUsers}
+                            disabled={isDeletingSelectedUsers}
+                        >
+                            {isDeletingSelectedUsers ? 'Deleting...' : 'Delete selected'}
+                        </Button>
+                    </Stack>
+                </Stack>
             </Modal>
 
             <Modal

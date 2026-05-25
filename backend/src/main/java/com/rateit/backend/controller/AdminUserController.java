@@ -2,6 +2,7 @@ package com.rateit.backend.controller;
 
 import com.rateit.backend.entity.dto.UserDto;
 import com.rateit.backend.entity.dto.AdminDeleteUsersResultDto;
+import com.rateit.backend.entity.rest.BulkDeleteAdminItemsRequest;
 import com.rateit.backend.entity.rest.UpdateAdminUserRequest;
 import com.rateit.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,14 @@ public class AdminUserController {
     ) {
         userService.deleteAdminUser(userId, token.getToken().getSubject());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/bulk-delete")
+    public ResponseEntity<AdminDeleteUsersResultDto> deleteUsers(
+        @RequestBody BulkDeleteAdminItemsRequest request,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.ok(userService.deleteAdminUsers(request.ids(), token.getToken().getSubject()));
     }
 
     @DeleteMapping("/test-users")

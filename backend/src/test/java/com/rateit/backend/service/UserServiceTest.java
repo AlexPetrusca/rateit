@@ -252,4 +252,29 @@ class UserServiceTest {
         verify(userRepository).delete(testUserB);
         assertEquals(2, result.deletedCount());
     }
+
+    @Test
+    void deleteAdminUsersBulkDeletesEachUser() {
+        User userA = User.builder()
+            .phoneNumber("+15550000001")
+            .username("alpha")
+            .role("ROLE_USER")
+            .build();
+        ReflectionTestUtils.setField(userA, "id", 1L);
+        User userB = User.builder()
+            .phoneNumber("+15550000002")
+            .username("beta")
+            .role("ROLE_USER")
+            .build();
+        ReflectionTestUtils.setField(userB, "id", 2L);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(userA));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(userB));
+
+        AdminDeleteUsersResultDto result = userService.deleteAdminUsers(List.of(1L, 2L), "+15550000099");
+
+        verify(userRepository).delete(userA);
+        verify(userRepository).delete(userB);
+        assertEquals(2, result.deletedCount());
+    }
 }
