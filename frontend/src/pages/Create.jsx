@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import StarRating from '../components/StarRating.jsx';
 import BackendApiService from '../services/BackendApiService';
 import {
     buildCreateRatingRequest,
-    MAX_RATING_SCORE,
-    MIN_RATING_SCORE,
-    RATING_SCORE_STEP,
     validateCreateRatingDraft
 } from '../utils/createRating.js';
 import '../App.css';
@@ -19,6 +17,7 @@ const Create = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [hoveredScore, setHoveredScore] = useState(null);
 
     const [previewUrl, setPreviewUrl] = useState(null);
 
@@ -83,6 +82,10 @@ const Create = () => {
         }
     };
 
+    const currentScore = Number(score);
+    const previewScore = hoveredScore ?? currentScore;
+    const scoreLabel = Number.isFinite(previewScore) ? `${previewScore.toFixed(1)} / 5` : '0.0 / 5';
+
     return (
         <div className="feed-page">
             <main className="twitter-shell create-shell">
@@ -129,17 +132,16 @@ const Create = () => {
                             </div>
 
                             <div className="form-group score-group">
-                                <label htmlFor="create-score">Rating</label>
+                                <label id="create-score-label">Rating</label>
                                 <div className="score-row">
-                                    <output className="score-value">{Number(score).toFixed(1)} / 5</output>
-                                    <input
-                                        id="create-score"
-                                        type="range"
-                                        min={MIN_RATING_SCORE}
-                                        max={MAX_RATING_SCORE}
-                                        step={RATING_SCORE_STEP}
-                                        value={score}
-                                        onChange={(event) => setScore(event.target.value)}
+                                    <output className="score-value">{scoreLabel}</output>
+                                    <StarRating
+                                        value={previewScore}
+                                        label={`Selected rating: ${scoreLabel}`}
+                                        size="lg"
+                                        interactive
+                                        onChange={(nextScore) => setScore(nextScore.toString())}
+                                        onHoverChange={setHoveredScore}
                                     />
                                 </div>
                             </div>

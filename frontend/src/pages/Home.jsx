@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import BackendApiService from '../services/BackendApiService';
+import StarRating from '../components/StarRating.jsx';
 import '../App.css';
 
-const STAR_TEXT = String.fromCharCode(9733).repeat(5);
 const FIVE_STAR_SCALE = { max: 5, symbol: 'star' };
 
 const Home = () => {
@@ -83,28 +83,6 @@ const Home = () => {
 
     const formatCommentScore = (comment) => {
         return formatScoreValue(comment.score, FIVE_STAR_SCALE);
-    };
-
-    const getStarRatingPercent = (scoreValue, maxValue = 5) => {
-        const score = Number(scoreValue);
-        const max = Number(maxValue);
-
-        if (!Number.isFinite(score) || !Number.isFinite(max) || max <= 0) {
-            return '0%';
-        }
-
-        return `${Math.max(0, Math.min(100, (score / max) * 100))}%`;
-    };
-
-    const renderStarDisplay = (scoreValue, label, maxValue = 5) => {
-        return (
-            <span className="star-rating-display" aria-label={label}>
-                <span className="star-rating-empty">{STAR_TEXT}</span>
-                <span className="star-rating-filled" style={{ width: getStarRatingPercent(scoreValue, maxValue) }}>
-                    {STAR_TEXT}
-                </span>
-            </span>
-        );
     };
 
     const getCommentDraftKey = (ratingId, parentCommentId = null) => {
@@ -270,45 +248,24 @@ const Home = () => {
                     <output aria-live="polite">
                         {formatScoreValue(previewScore, FIVE_STAR_SCALE)}
                     </output>
-                    <div className="star-rating-picker" role="radiogroup" aria-labelledby={`${scoreInputId}-label`}>
-                        {renderStarDisplay(previewScore, `Selected rating: ${formatScoreValue(commentScore, FIVE_STAR_SCALE)}`)}
-                        <div className="star-rating-hit-grid">
-                            {Array.from({ length: 10 }, (_, index) => {
-                                const score = (index + 1) / 2;
-                                const isSelected = Number(commentScore) === score;
+                    <StarRating
+                        value={previewScore}
+                        label={`Selected rating: ${formatScoreValue(commentScore, FIVE_STAR_SCALE)}`}
+                        size="sm"
+                        interactive
+                        onChange={(nextScore) => updateCommentDraft(ratingId, parentCommentId, 'score', nextScore.toString())}
+                        onHoverChange={(nextScore) => setHoveredCommentScores((current) => {
+                            const next = { ...current };
 
-                                return (
-                                    <button
-                                        key={score}
-                                        type="button"
-                                        className="star-rating-hit"
-                                        role="radio"
-                                        aria-checked={isSelected}
-                                        aria-label={`${score} out of 5 stars`}
-                                        onMouseEnter={() => setHoveredCommentScores((current) => ({
-                                            ...current,
-                                            [draftKey]: score
-                                        }))}
-                                        onFocus={() => setHoveredCommentScores((current) => ({
-                                            ...current,
-                                            [draftKey]: score
-                                        }))}
-                                        onMouseLeave={() => setHoveredCommentScores((current) => {
-                                            const next = { ...current };
-                                            delete next[draftKey];
-                                            return next;
-                                        })}
-                                        onBlur={() => setHoveredCommentScores((current) => {
-                                            const next = { ...current };
-                                            delete next[draftKey];
-                                            return next;
-                                        })}
-                                        onClick={() => updateCommentDraft(ratingId, parentCommentId, 'score', score.toString())}
-                                    />
-                                );
-                            })}
-                        </div>
-                    </div>
+                            if (nextScore == null) {
+                                delete next[draftKey];
+                            } else {
+                                next[draftKey] = nextScore;
+                            }
+
+                            return next;
+                        })}
+                    />
                 </div>
                 <textarea
                     value={draft.text}
@@ -333,24 +290,40 @@ const Home = () => {
             return (
                 <div className="comment-thread" key={comment.id}>
                     <div className="comment-row" style={{ '--thread-depth': depth }}>
-                        <div className="comment-meta">
-                            <div className="comment-author">{comment.author?.username || 'Someone'}</div>
-                            {comment.score != null && (
-                                <div className="comment-score">
-                                    {renderStarDisplay(comment.score, formatCommentScore(comment))}
+                        <div className="comment-avatar-column">
+                            {comment.author?.profilePicUrl ? (
+                                <img
+                                    src={`/api/s3/images/${comment.author.profilePicUrl}`}
+                                    alt=""
+                                    className="comment-avatar"
+                                />
+                            ) : (
+                                <div className="comment-avatar comment-avatar-placeholder">
+                                    {comment.author?.username?.charAt(0)?.toUpperCase() || '?'}
                                 </div>
                             )}
                         </div>
-                        <div className="comment-text">{comment.text}</div>
-                        <button
-                            type="button"
-                            className="comment-reply-button"
-                            onClick={() => setActiveComposer((current) => (
-                                current === replyKey ? getComposerKey(item.ratingId, 'comment') : replyKey
-                            ))}
-                        >
-                            Reply
-                        </button>
+
+                        <div className="comment-body">
+                            <div className="comment-meta">
+                                <div className="comment-author">{comment.author?.username || 'Someone'}</div>
+                                {comment.score != null && (
+                                    <div className="comment-score">
+                                        <StarRating value={comment.score} label={formatCommentScore(comment)} size="sm" />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="comment-text">{comment.text}</div>
+                            <button
+                                type="button"
+                                className="comment-reply-button"
+                                onClick={() => setActiveComposer((current) => (
+                                    current === replyKey ? getComposerKey(item.ratingId, 'comment') : replyKey
+                                ))}
+                            >
+                                Reply
+                            </button>
+                        </div>
                     </div>
                     {activeComposer === replyKey && renderCommentComposer(item, comment.id)}
                     {replies.length > 0 && (
@@ -513,7 +486,7 @@ const Home = () => {
                                                     <div className="rating-summary">
                                                         <span>OP rating</span>
                                                         <strong className="op-rating-stars">
-                                                            {renderStarDisplay(item.score, formatScore(item), item.ratingScale?.max)}
+                                                            <StarRating value={item.score} label={formatScore(item)} max={item.ratingScale?.max} size="sm" />
                                                         </strong>
                                                     </div>
                                                 </div>
@@ -525,7 +498,7 @@ const Home = () => {
                                                     <div className="text-rating-score">
                                                         <span>OP rating</span>
                                                         <strong className="op-rating-stars">
-                                                            {renderStarDisplay(item.score, formatScore(item), item.ratingScale?.max)}
+                                                            <StarRating value={item.score} label={formatScore(item)} max={item.ratingScale?.max} size="sm" />
                                                         </strong>
                                                     </div>
                                                 </div>

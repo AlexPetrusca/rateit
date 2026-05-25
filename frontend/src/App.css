@@ -624,45 +624,44 @@ button:disabled {
 }
 
 .star-rating-picker {
-    grid-column: 1 / -1;
     position: relative;
-    width: max-content;
-    max-width: 100%;
+    display: inline-grid;
+    grid-auto-flow: column;
+    width: fit-content;
     line-height: 1;
 }
 
 .star-rating-display {
-    position: relative;
-    display: inline-block;
-    color: #cfd9de;
-    font-size: 1.45rem;
-    letter-spacing: 1px;
+    display: inline-grid;
+    grid-auto-flow: column;
+    width: fit-content;
+    line-height: 1;
     white-space: nowrap;
 }
 
-.star-rating-empty,
-.star-rating-filled {
-    display: block;
-}
-
-.star-rating-filled {
-    position: absolute;
-    inset: 0 auto 0 0;
-    overflow: hidden;
-    color: #00e054;
-    pointer-events: none;
+.star-rating-star {
+    grid-column: span 2;
+    display: inline-flex;
+    width: 1em;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .star-rating-hit-grid {
     position: absolute;
     inset: 0;
     display: grid;
-    grid-template-columns: repeat(10, 1fr);
 }
 
 .star-rating-hit {
     width: 100%;
-    min-width: 10px;
+    min-width: 0;
     height: 100%;
     margin: 0;
     padding: 0;
@@ -678,11 +677,6 @@ button:disabled {
 
 .comment-score .star-rating-display {
     font-size: 0.92rem;
-    letter-spacing: 0;
-}
-
-.comment-score .star-rating-filled {
-    color: #00c030;
 }
 
 .comment-rating-control input[type="range"] {
@@ -724,10 +718,41 @@ button:disabled {
 }
 
 .comment-row {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 10px;
     margin-left: calc(var(--thread-depth, 0) * 18px);
     padding: 8px 0 8px 12px;
     border-bottom: 1px solid #eff3f4;
     border-left: 2px solid #eff3f4;
+}
+
+.comment-avatar-column {
+    display: flex;
+    justify-content: center;
+    padding-top: 2px;
+}
+
+.comment-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 auto;
+}
+
+.comment-avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #cfd9de;
+    color: #0f1419;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.comment-body {
+    min-width: 0;
 }
 
 .comment-meta {
