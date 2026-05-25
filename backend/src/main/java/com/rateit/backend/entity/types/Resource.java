@@ -5,7 +5,8 @@ public enum Resource {
     RATING("Rating"),
     RATING_COMMENT("Rating comment"),
     RATEABLE_ITEM("Rateable item"),
-    RATING_SCALE("Rating scale");
+    RATING_SCALE("Rating scale"),
+    ADMIN_JOB("Admin job");
 
     private final String value;
 

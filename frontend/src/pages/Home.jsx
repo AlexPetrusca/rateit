@@ -487,8 +487,8 @@ const Home = () => {
 
     return (
         <div className="feed-page">
-            <main className="twitter-shell">
-                {isFullyAuthenticated ? (
+            {isFullyAuthenticated ? (
+                <main className="twitter-shell">
                     <>
                         <div className="timeline-header">
                             <h1>Home</h1>
@@ -611,13 +611,15 @@ const Home = () => {
                             <p className="feed-status">Loading more ratings...</p>
                         )}
                     </>
-                ) : (
-                    <div className="container">
+                </main>
+            ) : (
+                <main className="guest-shell">
+                    <div className="guest-card">
                         <h2>Welcome to RateIt!</h2>
                         <p>Please login to continue.</p>
                     </div>
-                )}
-            </main>
+                </main>
+            )}
         </div>
     );
 };

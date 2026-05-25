@@ -46,8 +46,8 @@ public class AuthController {
         List<String> authorities = new ArrayList<>(List.of("ROLE_USER"));
         try {
             String role = userService.findByPhoneNumber(req.phoneNumber()).getRole();
-            if ("ROLE_ADMIN".equals(role)) {
-                authorities.add("ROLE_ADMIN");
+            if (role != null && !role.isBlank() && !"ROLE_USER".equals(role)) {
+                authorities.add(role);
             }
         } catch (ResourceNotFoundException ignored) {
             // Users without a profile fall back to the base user role.

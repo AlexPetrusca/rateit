@@ -174,6 +174,50 @@ const BackendApiService = {
             throw new Error('Failed to load admin status');
         }
         return await response.json();
+    },
+
+    createUsersJob: async ({ count, usernamePrefix, phonePrefix }) => {
+        const response = await fetch('/api/admin/jobs/create-users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ count, usernamePrefix, phonePrefix })
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to queue user job');
+        }
+        return await response.json();
+    },
+
+    getAdminJobs: async (limit = 20) => {
+        const response = await fetch(`/api/admin/jobs?limit=${encodeURIComponent(limit)}`);
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            throw new Error('Failed to load jobs');
+        }
+        return await response.json();
+    },
+
+    getAdminJob: async (jobId) => {
+        const response = await fetch(`/api/admin/jobs/${encodeURIComponent(jobId)}`);
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            throw new Error('Failed to load job');
+        }
+        return await response.json();
     }
 };
 

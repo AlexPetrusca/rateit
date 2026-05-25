@@ -71,8 +71,9 @@ public class SecurityConfig {
 
         try {
             User user = userService.findByPhoneNumber(phoneNumber);
-            if ("ROLE_ADMIN".equals(user.getRole())) {
-                authorities.add("ROLE_ADMIN");
+            String role = user.getRole();
+            if (role != null && !role.isBlank() && !"ROLE_USER".equals(role)) {
+                authorities.add(role);
             }
         } catch (ResourceNotFoundException ignored) {
             // Users without a profile stay on the base role.

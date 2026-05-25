@@ -31,11 +31,15 @@ public class UserService {
     }
 
     public User create(String phoneNumber, String username, String profilePicUrl) {
+        return create(phoneNumber, username, profilePicUrl, "ROLE_USER");
+    }
+
+    public User create(String phoneNumber, String username, String profilePicUrl, String role) {
         User user = User.builder()
             .phoneNumber(phoneNumber)
             .username(username)
             .profilePicUrl(profilePicUrl)
-            .role("ROLE_USER")
+            .role(role == null || role.isBlank() ? "ROLE_USER" : role)
             .build();
         return userRepository.save(user);
     }
