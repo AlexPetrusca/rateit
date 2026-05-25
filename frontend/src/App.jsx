@@ -10,6 +10,7 @@ import AdminJobs from './pages/AdminJobs';
 import AdminPosts from './pages/AdminPosts';
 import AdminUsers from './pages/AdminUsers';
 import Profile from './pages/Profile';
+import Post from './pages/Post';
 import GuardedRoute from './components/GuardedRoute.jsx';
 import UnguardedRoute from "./components/UnguardedRoute.jsx";
 import Layout from './components/Layout.jsx';
@@ -59,6 +60,14 @@ function App() {
                                 element={
                                     <GuardedRoute>
                                         <Profile />
+                                    </GuardedRoute>
+                                }
+                            />
+                            <Route
+                                path="/posts/:ratingId"
+                                element={
+                                    <GuardedRoute>
+                                        <Post />
                                     </GuardedRoute>
                                 }
                             />

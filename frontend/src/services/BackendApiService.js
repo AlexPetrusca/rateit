@@ -83,6 +83,14 @@ const BackendApiService = {
         return await response.json();
     },
 
+    getRating: async (ratingId) => {
+        const response = await fetch(`/api/feed/ratings/${encodeURIComponent(ratingId)}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch post');
+        }
+        return await response.json();
+    },
+
     likeRating: async (ratingId) => {
         const response = await fetch(`/api/feed/ratings/${ratingId}/like`, {
             method: 'POST'

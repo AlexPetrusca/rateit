@@ -53,6 +53,23 @@ public class FeedService {
     }
 
     @Transactional(readOnly = true)
+    public FeedItemDto getRating(long ratingId, String currentUserPhoneNumber) {
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+        var rating = ratingRepository.findById(ratingId)
+            .orElseThrow(() -> com.rateit.backend.exception.ResourceNotFoundException.resource(
+                com.rateit.backend.entity.types.Resource.RATING,
+                ratingId
+            ));
+
+        return FeedItemDto.fromRating(
+            rating,
+            ratingLikeRepository.countByRating(rating),
+            ratingCommentRepository.countByRating(rating),
+            ratingLikeRepository.existsByRatingAndUser(rating, currentUser)
+        );
+    }
+
+    @Transactional(readOnly = true)
     public Page<FeedItemDto> getProfileRatings(
         long authorUserId,
         Integer requestedLimit,

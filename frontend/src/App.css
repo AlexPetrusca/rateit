@@ -885,6 +885,28 @@ button:disabled {
     font-size: 1.1rem;
 }
 
+.post-click-target {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.post-click-target:hover,
+.post-click-target:focus,
+.post-click-target:active {
+    background: transparent;
+    background-color: transparent;
+}
+
 .tweet-body,
 .tweet-review {
     margin: 10px 0 0;
@@ -895,9 +917,6 @@ button:disabled {
 
 .tweet-review {
     color: #536471;
-}
-
-.tweet-card-text .tweet-review {
     padding-left: 12px;
     border-left: 3px solid #cfd9de;
 }

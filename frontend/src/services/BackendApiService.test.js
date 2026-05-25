@@ -65,6 +65,29 @@ test('getUploadUrl posts filename and content type', async () => {
     }
 });
 
+test('getRating requests the single-post endpoint', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({ ratingId: 7 })
+        };
+    };
+
+    try {
+        const result = await BackendApiService.getRating(7);
+
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].url, '/api/feed/ratings/7');
+        assert.equal(calls[0].options.method, undefined);
+        assert.deepEqual(result, { ratingId: 7 });
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
 test('getAdminPosts requests the paged admin post endpoint', async () => {
     const calls = [];
     globalThis.fetch = async (url, options = {}) => {

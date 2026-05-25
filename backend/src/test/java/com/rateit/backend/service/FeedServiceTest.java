@@ -8,6 +8,7 @@ import com.rateit.backend.entity.dto.FeedItemDto;
 import com.rateit.backend.entity.types.RateableItemType;
 import com.rateit.backend.entity.types.RatingScaleType;
 import com.rateit.backend.entity.types.Visibility;
+import com.rateit.backend.exception.ResourceNotFoundException;
 import com.rateit.backend.repository.RatingCommentRepository;
 import com.rateit.backend.repository.RatingLikeRepository;
 import com.rateit.backend.repository.RatingRepository;
@@ -23,6 +24,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -103,6 +105,41 @@ class FeedServiceTest {
         assertEquals(1, page.getTotalElements());
         assertEquals(owner.getId(), itemDto.author().userId());
         assertFalse(itemDto.likedByCurrentUser());
+    }
+
+    @Test
+    void getRatingReturnsCurrentUserViewModel() {
+        User viewer = user(9L, "+15550000099", "viewer");
+        User owner = user(1L, "+15550000001", "alpha");
+        RatingScale scale = ratingScale(2L);
+        RateableItem item = rateableItem(3L, owner, "Body", Visibility.PUBLIC);
+        Rating rating = rating(4L, owner, item, scale, "Review", Visibility.PUBLIC);
+
+        when(userService.findByPhoneNumber(viewer.getPhoneNumber())).thenReturn(viewer);
+        when(ratingRepository.findById(4L)).thenReturn(Optional.of(rating));
+        when(ratingLikeRepository.countByRating(rating)).thenReturn(5L);
+        when(ratingCommentRepository.countByRating(rating)).thenReturn(2L);
+        when(ratingLikeRepository.existsByRatingAndUser(rating, viewer)).thenReturn(true);
+
+        FeedItemDto result = feedService.getRating(4L, viewer.getPhoneNumber());
+
+        assertEquals(4L, result.ratingId());
+        assertEquals(owner.getId(), result.author().userId());
+        assertEquals(5L, result.likeCount());
+        assertTrue(result.likedByCurrentUser());
+    }
+
+    @Test
+    void getRatingThrowsWhenMissing() {
+        User viewer = user(9L, "+15550000099", "viewer");
+
+        when(userService.findByPhoneNumber(viewer.getPhoneNumber())).thenReturn(viewer);
+        when(ratingRepository.findById(404L)).thenReturn(Optional.empty());
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+            ResourceNotFoundException.class,
+            () -> feedService.getRating(404L, viewer.getPhoneNumber())
+        );
     }
 
     private User user(Long id, String phoneNumber, String username) {

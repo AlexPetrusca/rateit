@@ -205,6 +205,14 @@ const Home = () => {
         navigate(`/users/${userId}`);
     };
 
+    const openPost = (ratingId) => {
+        if (ratingId == null) {
+            return;
+        }
+
+        navigate(`/posts/${ratingId}`);
+    };
+
     const getComposerKey = (ratingId, type) => `${ratingId}:${type}`;
     const getCommentReplyKey = (ratingId, parentCommentId = null) => (
         parentCommentId == null ? getComposerKey(ratingId, 'comment') : `${ratingId}:comment:${parentCommentId}`
@@ -593,23 +601,21 @@ const Home = () => {
                                                 <time dateTime={item.createdAt}>{formatDate(item.createdAt)}</time>
                                             </header>
 
-                                            {hasMedia ? (
-                                                <div className="rating-object">
-                                                    <img
-                                                        src={`/api/s3/images/${item.rateableItem.mediaObjectKey}`}
-                                                        alt="Rated item"
-                                                        className="rating-object-media"
-                                                    />
-
-                                                    <div className="rating-object-header">
-                                                        <div className="rating-summary">
-                                                            <strong className="op-rating-stars">
-                                                                <StarRating value={item.score} label={formatScore(item)} max={item.ratingScale?.max} size="sm" />
-                                                            </strong>
-                                                        </div>
+                                            <button
+                                                type="button"
+                                                className="post-click-target"
+                                                onClick={() => openPost(item.ratingId)}
+                                            >
+                                                {hasMedia && (
+                                                    <div className="rating-object">
+                                                        <img
+                                                            src={`/api/s3/images/${item.rateableItem.mediaObjectKey}`}
+                                                            alt="Rated item"
+                                                            className="rating-object-media"
+                                                        />
                                                     </div>
-                                                </div>
-                                            ) : (
+                                                )}
+
                                                 <div className="text-rating">
                                                     {item.rateableItem?.body && (
                                                         <p className="text-post-body">{item.rateableItem.body}</p>
@@ -620,14 +626,10 @@ const Home = () => {
                                                         </strong>
                                                     </div>
                                                 </div>
-                                            )}
-
-                                            {hasMedia && item.rateableItem?.body && (
-                                                <p className="tweet-body">{item.rateableItem.body}</p>
-                                            )}
-                                            {item.reviewText && (
-                                                <p className="tweet-review">{item.reviewText}</p>
-                                            )}
+                                                {item.reviewText && (
+                                                    <p className="tweet-review">{item.reviewText}</p>
+                                                )}
+                                            </button>
 
                                             <div className="tweet-actions" aria-label="Rating actions">
                                                 <button
