@@ -4,7 +4,7 @@
 # Usage: ./push.sh [--dev|--prod]
 # Default is --dev if no flag is provided
 
-set -e  # Exit immediately if a command exits with a non-zero status
+set -euo pipefail
 
 # Default environment
 ENVIRONMENT="dev"
@@ -35,14 +35,23 @@ done
 echo "Building and pushing to $ENVIRONMENT environment with tag: $IMAGE_TAG"
 echo "Target platforms: $PLATFORMS"
 
-# Check Docker is available. The push step below will fail clearly if auth is missing.
+# Check Docker is available
 if ! docker system info >/dev/null 2>&1; then
   echo "Docker is not running or not reachable"
   exit 1
 fi
 
-# Ensure buildx is available and selected
-docker buildx inspect >/dev/null 2>&1 || docker buildx create --use >/dev/null 2>&1 || true
+# Ensure buildx builder exists and supports multi-arch
+if ! docker buildx inspect multiarch >/dev/null 2>&1; then
+  docker buildx create \
+    --name multiarch \
+    --driver docker-container \
+    --use
+fi
+
+# Ensure builder is active and bootstrapped
+docker buildx use multiarch
+docker buildx inspect --bootstrap >/dev/null 2>&1
 
 # Function to build and push
 build_and_push() {
@@ -78,6 +87,7 @@ echo "----------------------------------------------------------------"
 echo "All components processed successfully!"
 echo "Environment: $ENVIRONMENT"
 echo "Backend Image: alexpetrusca/rateit-backend:$IMAGE_TAG"
+
 if [ "$ENVIRONMENT" == "prod" ]; then
   echo "Also tagged as: latest"
 fi
