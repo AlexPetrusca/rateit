@@ -3,7 +3,7 @@ package com.rateit.backend.controller;
 import com.rateit.backend.entity.rest.SendOtpRequest;
 import com.rateit.backend.entity.rest.VerifyOtpRequest;
 import com.rateit.backend.entity.types.OtpChannel;
-import com.rateit.backend.exception.ResourceNotFoundException;
+import com.rateit.backend.exception.BadRequestException;
 import com.rateit.backend.service.CookieService;
 import com.rateit.backend.service.JwtService;
 import com.rateit.backend.service.UserService;
@@ -44,14 +44,17 @@ public class AuthController {
         otpService.verifyOtp(req.phoneNumber(), req.code());
 
         List<String> authorities = new ArrayList<>(List.of("ROLE_USER"));
-        try {
-            String role = userService.findByPhoneNumber(req.phoneNumber()).getRole();
-            if (role != null && !role.isBlank() && !"ROLE_USER".equals(role)) {
-                authorities.add(role);
-            }
-        } catch (ResourceNotFoundException ignored) {
-            // Users without a profile fall back to the base user role.
-        }
+        userService.findByPhoneNumberIncludingDeleted(req.phoneNumber())
+            .ifPresent(user -> {
+                if (user.getDeletedAt() != null) {
+                    throw BadRequestException.invalidRequest("This account has been deleted");
+                }
+
+                String role = user.getRole();
+                if (role != null && !role.isBlank() && !"ROLE_USER".equals(role)) {
+                    authorities.add(role);
+                }
+            });
 
         String jwt = jwtService.generateToken(req.phoneNumber(), authorities);
         ResponseCookie authCookie = cookieService.getAuthCookie(jwt);

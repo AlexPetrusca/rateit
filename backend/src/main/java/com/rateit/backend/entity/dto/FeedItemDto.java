@@ -36,6 +36,7 @@ public record FeedItemDto(
         RateableItem item = rating.getRateableItem();
         RatingScale scale = rating.getRatingScale();
         MediaAsset mediaAsset = item.getMediaAsset();
+        boolean authorDeleted = author.getDeletedAt() != null;
 
         return new FeedItemDto(
             rating.getId(),
@@ -46,8 +47,8 @@ public record FeedItemDto(
             commentCount,
             likedByCurrentUser,
             new Author(
-                author.getUsername(),
-                author.getProfilePicUrl()
+                authorDeleted ? "[deleted]" : author.getUsername(),
+                authorDeleted ? null : author.getProfilePicUrl()
             ),
             new Item(
                 item.getId(),

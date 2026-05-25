@@ -67,6 +67,27 @@ test('getUploadUrl posts filename and content type', async () => {
     }
 });
 
+test('getAdminPosts requests the paged admin post endpoint', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            json: async () => ({ content: [], totalElements: 0 })
+        };
+    };
+
+    try {
+        const result = await BackendApiService.getAdminPosts({ page: 2, size: 15 });
+
+        assert.deepEqual(result, { content: [], totalElements: 0 });
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].url, '/api/admin/posts?page=2&size=15');
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
 test('createRating surfaces backend error messages', async () => {
     globalThis.fetch = async () => ({
         ok: false,

@@ -17,7 +17,7 @@ const UserAvatar = ({
 }) => {
     const [imageFailed, setImageFailed] = useState(false);
     const sizeValue = typeof size === 'number' ? size : (SIZE_TO_PX[size] || SIZE_TO_PX.md);
-    const fallback = fallbackText || username?.charAt(0)?.toUpperCase() || '?';
+    const fallback = fallbackText || (username && username !== '[deleted]' ? username.charAt(0).toUpperCase() : '?');
     const classes = ['user-avatar', `user-avatar-${typeof size === 'string' ? size : 'custom'}`, className]
         .filter(Boolean)
         .join(' ');

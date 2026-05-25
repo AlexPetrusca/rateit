@@ -8,6 +8,10 @@ public class BadRequestException extends BaseException {
         super(message, null, ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST);
     }
 
+    public static BadRequestException invalidRequest(String message) {
+        return new BadRequestException(message);
+    }
+
     public static BadRequestException invalidRating(String message) {
         return new BadRequestException(message);
     }

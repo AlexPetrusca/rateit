@@ -163,6 +163,69 @@ const BackendApiService = {
         return await response.json();
     },
 
+    getAdminUsers: async ({ page = 0, size = 20 } = {}) => {
+        const response = await fetch(`/api/admin/users?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`);
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            throw new Error('Failed to load users');
+        }
+        return await response.json();
+    },
+
+    updateAdminUser: async (userId, userData) => {
+        const response = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to update user');
+        }
+        return await response.json();
+    },
+
+    deleteAdminUser: async (userId) => {
+        const response = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
+            method: 'DELETE'
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to delete user');
+        }
+        return response.status === 204 ? null : await response.json();
+    },
+
+    deleteAllTestUsers: async () => {
+        const response = await fetch('/api/admin/users/test-users', {
+            method: 'DELETE'
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to delete test users');
+        }
+        return await response.json();
+    },
+
     getAdminStatus: async () => {
         const response = await fetch('/api/admin/status');
         if (response.status === 401 || response.status === 403) {
@@ -174,6 +237,53 @@ const BackendApiService = {
             throw new Error('Failed to load admin status');
         }
         return await response.json();
+    },
+
+    getAdminPosts: async ({ page = 0, size = 20 } = {}) => {
+        const response = await fetch(`/api/admin/posts?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`);
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            throw new Error('Failed to load posts');
+        }
+        return await response.json();
+    },
+
+    updateAdminPost: async (postId, postData) => {
+        const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(postData)
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to update post');
+        }
+        return await response.json();
+    },
+
+    deleteAdminPost: async (postId) => {
+        const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}`, {
+            method: 'DELETE'
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to delete post');
+        }
+        return response.status === 204 ? null : await response.json();
     },
 
     createUsersJob: async ({ count, usernamePrefix, phonePrefix }) => {

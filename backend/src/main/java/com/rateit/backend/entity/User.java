@@ -3,7 +3,10 @@ package com.rateit.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Instant;
+
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -27,4 +30,7 @@ public class User extends BaseEntity {
 
     @Column(name = "role")
     private String role;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 }

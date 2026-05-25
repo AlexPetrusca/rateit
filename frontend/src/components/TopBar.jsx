@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {useClickOutside} from "../hooks/ClickOutside.jsx";
 import UserAvatar from './UserAvatar.jsx';
@@ -8,11 +8,13 @@ import '../App.css';
 const TopBar = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef(null);
 
     const isFullyAuthenticated = isAuthenticated && user != null;
     const isAdmin = user?.role === 'ROLE_ADMIN';
+    const isOnAdminPage = location.pathname.startsWith('/admin');
 
     useClickOutside(menuRef, () => setShowMenu(false));
 
@@ -38,7 +40,11 @@ const TopBar = () => {
                 {isFullyAuthenticated ? (
                     <>
                         {isAdmin && (
-                            <button className="admin-button" onClick={() => navigate('/admin')}>
+                            <button
+                                className={isOnAdminPage ? 'admin-button is-active' : 'admin-button'}
+                                aria-current={isOnAdminPage ? 'page' : undefined}
+                                onClick={() => navigate('/admin/posts')}
+                            >
                                 Admin
                             </button>
                         )}

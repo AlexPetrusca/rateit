@@ -2,6 +2,7 @@ package com.rateit.backend.security;
 
 import com.rateit.backend.service.CookieService;
 import com.rateit.backend.service.JwtService;
+import com.rateit.backend.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -25,6 +27,7 @@ public class SessionRefreshFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CookieService cookieService;
+    private final UserService userService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -39,6 +42,13 @@ public class SessionRefreshFilter extends OncePerRequestFilter {
         String phoneNumber = jwt.getSubject();
         if (phoneNumber == null || phoneNumber.isBlank()) {
             filterChain.doFilter(request, response);
+            return;
+        }
+
+        Optional<com.rateit.backend.entity.User> user = userService.findByPhoneNumberIncludingDeleted(phoneNumber);
+        if (user.isPresent() && user.get().getDeletedAt() != null) {
+            response.addHeader("Set-Cookie", cookieService.getEmptyAuthCookie().toString());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Account has been deleted");
             return;
         }
 

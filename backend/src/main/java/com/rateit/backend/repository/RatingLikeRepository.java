@@ -12,6 +12,8 @@ import java.util.Optional;
 public interface RatingLikeRepository extends JpaRepository<RatingLike, Long> {
 
     long countByRating(Rating rating);
+    long countByUser(User user);
+    void deleteByRating(Rating rating);
 
     boolean existsByRatingAndUser(Rating rating, User user);
 

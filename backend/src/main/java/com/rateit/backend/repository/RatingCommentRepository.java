@@ -2,6 +2,7 @@ package com.rateit.backend.repository;
 
 import com.rateit.backend.entity.Rating;
 import com.rateit.backend.entity.RatingComment;
+import com.rateit.backend.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -24,4 +25,5 @@ public interface RatingCommentRepository extends JpaRepository<RatingComment, Lo
     List<RatingComment> findThreadByRatingOrderByCreatedAtAsc(Rating rating);
 
     long countByRating(Rating rating);
+    long countByAuthorUser(User authorUser);
 }

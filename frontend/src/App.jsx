@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import Home from './pages/Home';
@@ -6,6 +6,9 @@ import Login from './pages/Login';
 import CreateAccount from './pages/CreateAccount';
 import Create from './pages/Create';
 import Admin from './pages/Admin';
+import AdminJobs from './pages/AdminJobs';
+import AdminPosts from './pages/AdminPosts';
+import AdminUsers from './pages/AdminUsers';
 import Profile from './pages/Profile';
 import GuardedRoute from './components/GuardedRoute.jsx';
 import UnguardedRoute from "./components/UnguardedRoute.jsx";
@@ -53,13 +56,20 @@ function App() {
                             />
 
                             <Route
-                                path="/admin"
                                 element={
-                                    <GuardedRoute requiredRole="ROLE_ADMIN">
-                                        <Admin />
-                                    </GuardedRoute>
+                                    <GuardedRoute requiredRole="ROLE_ADMIN" />
                                 }
-                            />
+                            >
+                                <Route
+                                    path="/admin"
+                                    element={<Admin />}
+                                >
+                                    <Route index element={<Navigate to="posts" replace />} />
+                                    <Route path="posts" element={<AdminPosts />} />
+                                    <Route path="users" element={<AdminUsers />} />
+                                    <Route path="jobs" element={<AdminJobs />} />
+                                </Route>
+                            </Route>
 
                             <Route path="/" element={
                                 <Home />

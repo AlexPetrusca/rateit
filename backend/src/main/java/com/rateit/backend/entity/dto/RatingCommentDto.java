@@ -23,6 +23,7 @@ public record RatingCommentDto(
 
     public static RatingCommentDto fromComment(RatingComment comment, List<RatingCommentDto> replies) {
         User author = comment.getAuthorUser();
+        boolean authorDeleted = author.getDeletedAt() != null;
 
         return new RatingCommentDto(
             comment.getId(),
@@ -32,8 +33,8 @@ public record RatingCommentDto(
             comment.getScore(),
             comment.getCreatedAt(),
             new Author(
-                author.getUsername(),
-                author.getProfilePicUrl()
+                authorDeleted ? "[deleted]" : author.getUsername(),
+                authorDeleted ? null : author.getProfilePicUrl()
             ),
             replies
         );

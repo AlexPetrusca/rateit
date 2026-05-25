@@ -1,7 +1,6 @@
 package com.rateit.backend.config;
 
 import com.rateit.backend.entity.User;
-import com.rateit.backend.exception.ResourceNotFoundException;
 import com.rateit.backend.security.SessionRefreshFilter;
 import com.rateit.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +18,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Configuration
 @RequiredArgsConstructor
@@ -69,14 +69,12 @@ public class SecurityConfig {
     private List<String> getCurrentAuthorities(String phoneNumber) {
         List<String> authorities = new ArrayList<>(List.of("ROLE_USER"));
 
-        try {
-            User user = userService.findByPhoneNumber(phoneNumber);
-            String role = user.getRole();
+        Optional<User> user = userService.findByPhoneNumberIncludingDeleted(phoneNumber);
+        if (user.isPresent() && user.get().getDeletedAt() == null) {
+            String role = user.get().getRole();
             if (role != null && !role.isBlank() && !"ROLE_USER".equals(role)) {
                 authorities.add(role);
             }
-        } catch (ResourceNotFoundException ignored) {
-            // Users without a profile stay on the base role.
         }
 
         return authorities;

@@ -2,7 +2,6 @@ package com.rateit.backend.controller;
 
 import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.rest.VerifyOtpRequest;
-import com.rateit.backend.exception.ResourceNotFoundException;
 import com.rateit.backend.service.CookieService;
 import com.rateit.backend.service.JwtService;
 import com.rateit.backend.service.UserService;
@@ -18,6 +17,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -49,11 +49,11 @@ class AuthControllerTest {
         VerifyOtpRequest request = new VerifyOtpRequest(phoneNumber, "123456");
         ResponseCookie authCookie = ResponseCookie.from("AUTH_TOKEN", "jwt").build();
 
-        when(userService.findByPhoneNumber(phoneNumber)).thenReturn(User.builder()
+        when(userService.findByPhoneNumberIncludingDeleted(phoneNumber)).thenReturn(Optional.of(User.builder()
             .phoneNumber(phoneNumber)
             .username("admin")
             .role("ROLE_ADMIN")
-            .build());
+            .build()));
         when(jwtService.generateToken(eq(phoneNumber), anyList())).thenReturn("jwt");
         when(cookieService.getAuthCookie("jwt")).thenReturn(authCookie);
 
@@ -73,7 +73,7 @@ class AuthControllerTest {
         VerifyOtpRequest request = new VerifyOtpRequest(phoneNumber, "123456");
         ResponseCookie authCookie = ResponseCookie.from("AUTH_TOKEN", "jwt").build();
 
-        when(userService.findByPhoneNumber(phoneNumber)).thenThrow(ResourceNotFoundException.user(phoneNumber));
+        when(userService.findByPhoneNumberIncludingDeleted(phoneNumber)).thenReturn(Optional.empty());
         when(jwtService.generateToken(eq(phoneNumber), anyList())).thenReturn("jwt");
         when(cookieService.getAuthCookie("jwt")).thenReturn(authCookie);
 
