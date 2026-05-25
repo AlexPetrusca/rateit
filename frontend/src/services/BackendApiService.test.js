@@ -140,6 +140,64 @@ test('createPostsJob posts the expected payload and returns the response body', 
     }
 });
 
+test('createCommentsJob posts the expected payload and returns the response body', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            json: async () => ({ id: 101, status: 'PENDING' })
+        };
+    };
+
+    try {
+        const result = await BackendApiService.createCommentsJob({
+            count: 7,
+            maxDepth: 3,
+            replyChance: 0.5,
+            commentPrefix: 'root',
+            replyPrefix: 'reply'
+        });
+
+        assert.deepEqual(result, { id: 101, status: 'PENDING' });
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].url, '/api/admin/jobs/create-comments');
+        assert.equal(calls[0].options.method, 'POST');
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            count: 7,
+            maxDepth: 3,
+            replyChance: 0.5,
+            commentPrefix: 'root',
+            replyPrefix: 'reply'
+        });
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
+test('createLikesJob posts the expected payload and returns the response body', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            json: async () => ({ id: 102, status: 'PENDING' })
+        };
+    };
+
+    try {
+        const result = await BackendApiService.createLikesJob({ count: 9 });
+
+        assert.deepEqual(result, { id: 102, status: 'PENDING' });
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].url, '/api/admin/jobs/create-likes');
+        assert.equal(calls[0].options.method, 'POST');
+        assert.deepEqual(JSON.parse(calls[0].options.body), { count: 9 });
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
 test('bulkDeleteAdminUsers posts selected ids', async () => {
     const calls = [];
     globalThis.fetch = async (url, options = {}) => {

@@ -23,7 +23,7 @@ public class AdminJobSchemaUpdater {
         jdbcTemplate.execute("""
             alter table if exists admin_jobs
                 add constraint admin_jobs_job_type_check
-                check (job_type in ('CREATE_USER', 'CREATE_POST'))
+                check (job_type in ('CREATE_USER', 'CREATE_POST', 'CREATE_COMMENT', 'CREATE_LIKE'))
             """);
     }
 }

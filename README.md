@@ -1,24 +1,29 @@
-# RateIt ⭐
+# RateIt
 
-A Twitter-like social platform for sharing ratings and reviews with threaded star ratings.
+RateIt is a social app for ratings and reviews with threaded comments, a feed, user profiles, post detail pages, and an admin automation console.
 
-## Features
+## Current Features
 
-- **Star Ratings**: Rate items on any scale you define
-- **Threaded Comments**: Comment on ratings with their own star ratings (0-5 scale)
-- **Re-rating**: Update past ratings with explanations of how your opinion changed
-- **Social Feed**: See recent ratings from users you follow in real-time
-- **Like System**: Show appreciation for great ratings
-- **OTP Authentication**: Phone number-based login via SMS
+- phone OTP authentication
+- admin and test-user roles
+- infinite-scroll feed
+- rating creation and re-rating
+- likes
+- threaded comments
+- user profile pages
+- post detail pages
+- admin user management
+- admin post management
+- admin job automation for users, posts, comments, and likes
+- shared React components for feed, posts, comments, stars, avatars, modals, notifications, and admin grids
 
-## Tech Stack
+## Docs
 
-**Backend**: Java/Spring Boot with REST API  
-**Frontend**: React/Vite  
-**Authentication**: OAuth2 JWT + OTP SMS  
-**Storage**: AWS S3 for media assets  
-**Database**: PostgreSQL via JPA/Hibernate  
-**Deployment**: Docker containers
+Start here if you are continuing the codebase:
+
+- [`docs/agent_handoff.md`](docs/agent_handoff.md)
+- [`docs/feed.md`](docs/feed.md)
+- [`docs/design_doc.md`](docs/design_doc.md)
 
 ## Getting Started
 
@@ -31,7 +36,7 @@ cd rateit
 docker-compose up -d
 
 # Or build locally
-cd backend && ./scripts/dev.sh
+cd backend && ./mvnw spring-boot:run
 cd ../frontend && npm install && npm run dev
 ```
 
@@ -57,6 +62,7 @@ docker buildx inspect --bootstrap
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/feed` | Get feed of ratings |
+| GET | `/api/feed/ratings/{id}` | Get a rating detail page |
 | POST | `/api/feed/ratings/{id}/comments` | Create comment |
 | POST | `/api/feed/ratings/{id}/like` | Like rating |
 | POST | `/api/feed/ratings/{id}/rerate` | Re-rate an item |

@@ -61,6 +61,12 @@ const AdminJobs = () => {
     const [postCount, setPostCount] = useState(20);
     const [postBodyPrefix, setPostBodyPrefix] = useState('');
     const [postReviewPrefix, setPostReviewPrefix] = useState('');
+    const [commentCount, setCommentCount] = useState(20);
+    const [commentMaxDepth, setCommentMaxDepth] = useState(3);
+    const [commentReplyChance, setCommentReplyChance] = useState(0.5);
+    const [commentPrefix, setCommentPrefix] = useState('');
+    const [commentReplyPrefix, setCommentReplyPrefix] = useState('');
+    const [likeCount, setLikeCount] = useState(20);
 
     const loadJobs = useCallback(async () => {
         const nextJobs = await BackendApiService.getAdminJobs(20);
@@ -194,6 +200,67 @@ const AdminJobs = () => {
         } catch (error) {
             if (error.status !== 403) {
                 notify({ message: error.message || 'Failed to queue job', type: 'error' });
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleCreateCommentsJob = async () => {
+        if (!Number.isInteger(Number(commentCount)) || Number(commentCount) < 1) {
+            notify({ message: 'Count must be at least 1', type: 'warning' });
+            return;
+        }
+
+        const normalizedReplyChance = Number(commentReplyChance);
+        if (!Number.isFinite(normalizedReplyChance) || normalizedReplyChance < 0 || normalizedReplyChance > 1) {
+            notify({ message: 'Reply chance must be between 0 and 1', type: 'warning' });
+            return;
+        }
+
+        if (!Number.isInteger(Number(commentMaxDepth)) || Number(commentMaxDepth) < 1) {
+            notify({ message: 'Max depth must be at least 1', type: 'warning' });
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const job = await BackendApiService.createCommentsJob({
+                count: Number(commentCount),
+                maxDepth: Number(commentMaxDepth),
+                replyChance: normalizedReplyChance,
+                commentPrefix,
+                replyPrefix: commentReplyPrefix
+            });
+            notify({ message: `Queued job #${job.id}`, type: 'info' });
+            await loadJobs();
+            setSelectedJobId(job.id);
+            setIsDetailOpen(true);
+        } catch (error) {
+            if (error.status !== 403) {
+                notify({ message: error.message || 'Failed to queue comment job', type: 'error' });
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleCreateLikesJob = async () => {
+        if (!Number.isInteger(Number(likeCount)) || Number(likeCount) < 1) {
+            notify({ message: 'Count must be at least 1', type: 'warning' });
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const job = await BackendApiService.createLikesJob({ count: Number(likeCount) });
+            notify({ message: `Queued job #${job.id}`, type: 'info' });
+            await loadJobs();
+            setSelectedJobId(job.id);
+            setIsDetailOpen(true);
+        } catch (error) {
+            if (error.status !== 403) {
+                notify({ message: error.message || 'Failed to queue like job', type: 'error' });
             }
         } finally {
             setIsSubmitting(false);
@@ -369,7 +436,76 @@ const AdminJobs = () => {
         }
     ], []);
 
+    const createdCommentColumns = useMemo(() => [
+        {
+            field: 'authorUsername',
+            headerName: 'Author',
+            width: 160,
+            align: 'center',
+            headerAlign: 'center'
+        },
+        {
+            field: 'ratingId',
+            headerName: 'Post',
+            width: 110,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params) => `#${params.value}`
+        },
+        {
+            field: 'parentCommentId',
+            headerName: 'Parent',
+            width: 110,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params) => (params.value ? `#${params.value}` : 'Root')
+        },
+        {
+            field: 'score',
+            headerName: 'Score',
+            width: 100,
+            align: 'center',
+            headerAlign: 'center'
+        },
+        {
+            field: 'text',
+            headerName: 'Comment',
+            flex: 1,
+            minWidth: 260,
+            align: 'center',
+            headerAlign: 'center'
+        }
+    ], []);
+
+    const createdLikeColumns = useMemo(() => [
+        {
+            field: 'authorUsername',
+            headerName: 'User',
+            width: 160,
+            align: 'center',
+            headerAlign: 'center'
+        },
+        {
+            field: 'ratingId',
+            headerName: 'Post',
+            width: 110,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params) => `#${params.value}`
+        },
+        {
+            field: 'createdAt',
+            headerName: 'Liked At',
+            width: 170,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params) => formatTimestamp(params.value)
+        }
+    ], []);
+
     const createdUserRows = selectedJobDetail?.createdUsers || [];
+    const createdCommentRows = selectedJobDetail?.createdComments || [];
+    const createdLikeRows = selectedJobDetail?.createdLikes || [];
 
     return (
         <Stack spacing={3}>
@@ -427,6 +563,128 @@ const AdminJobs = () => {
                     <Box>
                         <Button variant="contained" onClick={handleCreateUsersJob} disabled={isSubmitting}>
                             {isSubmitting ? 'Queueing...' : 'Queue User Job'}
+                        </Button>
+                    </Box>
+                </Stack>
+            </Paper>
+
+            <Paper elevation={1} sx={{ p: 2.5 }}>
+                <Stack spacing={1.5}>
+                    <Box>
+                        <Typography variant="h6" component="h2" gutterBottom>
+                            Create Comments
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Generates threaded comments from active test users on public posts. Replies will chain up to the configured depth.
+                        </Typography>
+                    </Box>
+
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gap: 2,
+                            gridTemplateColumns: {
+                                xs: '1fr',
+                                md: '180px repeat(4, minmax(180px, 1fr))'
+                            }
+                        }}
+                    >
+                        <TextField
+                            id="admin-comment-count"
+                            label="Count"
+                            type="number"
+                            slotProps={{ htmlInput: { min: 1 } }}
+                            value={commentCount}
+                            onChange={(event) => setCommentCount(event.target.value)}
+                            fullWidth
+                            size="small"
+                        />
+                        <TextField
+                            id="admin-comment-max-depth"
+                            label="Max Depth"
+                            type="number"
+                            helperText="How deep threaded replies can go."
+                            slotProps={{ htmlInput: { min: 1 } }}
+                            value={commentMaxDepth}
+                            onChange={(event) => setCommentMaxDepth(event.target.value)}
+                            fullWidth
+                            size="small"
+                        />
+                        <TextField
+                            id="admin-comment-reply-chance"
+                            label="Reply Chance"
+                            type="number"
+                            helperText="0 to 1. Higher means more replies."
+                            slotProps={{ htmlInput: { min: 0, max: 1, step: 0.05 } }}
+                            value={commentReplyChance}
+                            onChange={(event) => setCommentReplyChance(event.target.value)}
+                            fullWidth
+                            size="small"
+                        />
+                        <TextField
+                            id="admin-comment-prefix"
+                            label="Comment Prefix"
+                            helperText="Prepended to root comments."
+                            value={commentPrefix}
+                            onChange={(event) => setCommentPrefix(event.target.value)}
+                            fullWidth
+                            size="small"
+                        />
+                        <TextField
+                            id="admin-comment-reply-prefix"
+                            label="Reply Prefix"
+                            helperText="Prepended to reply comments."
+                            value={commentReplyPrefix}
+                            onChange={(event) => setCommentReplyPrefix(event.target.value)}
+                            fullWidth
+                            size="small"
+                        />
+                    </Box>
+
+                    <Box>
+                        <Button variant="contained" onClick={handleCreateCommentsJob} disabled={isSubmitting}>
+                            {isSubmitting ? 'Queueing...' : 'Queue Comment Job'}
+                        </Button>
+                    </Box>
+                </Stack>
+            </Paper>
+
+            <Paper elevation={1} sx={{ p: 2.5 }}>
+                <Stack spacing={1.5}>
+                    <Box>
+                        <Typography variant="h6" component="h2" gutterBottom>
+                            Create Likes
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Generates likes from active test users on public posts. Existing likes are skipped.
+                        </Typography>
+                    </Box>
+
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gap: 2,
+                            gridTemplateColumns: {
+                                xs: '1fr',
+                                md: '180px'
+                            }
+                        }}
+                    >
+                        <TextField
+                            id="admin-like-count"
+                            label="Count"
+                            type="number"
+                            slotProps={{ htmlInput: { min: 1 } }}
+                            value={likeCount}
+                            onChange={(event) => setLikeCount(event.target.value)}
+                            fullWidth
+                            size="small"
+                        />
+                    </Box>
+
+                    <Box>
+                        <Button variant="contained" onClick={handleCreateLikesJob} disabled={isSubmitting}>
+                            {isSubmitting ? 'Queueing...' : 'Queue Like Job'}
                         </Button>
                     </Box>
                 </Stack>
@@ -611,6 +869,32 @@ const AdminJobs = () => {
                             </Paper>
                         )}
 
+                        {selectedJobDetail.createCommentsRequest && (
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                                <Typography variant="h6" component="h3" gutterBottom>
+                                    Planned config
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Create {selectedJobDetail.createCommentsRequest.count} comments with max depth{' '}
+                                    <strong>{selectedJobDetail.createCommentsRequest.maxDepth}</strong>, reply chance{' '}
+                                    <strong>{Number(selectedJobDetail.createCommentsRequest.replyChance).toFixed(2)}</strong>, comment prefix{' '}
+                                    <strong>{selectedJobDetail.createCommentsRequest.commentPrefix || 'None'}</strong>, and reply prefix{' '}
+                                    <strong>{selectedJobDetail.createCommentsRequest.replyPrefix || 'None'}</strong>.
+                                </Typography>
+                            </Paper>
+                        )}
+
+                        {selectedJobDetail.createLikesRequest && (
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                                <Typography variant="h6" component="h3" gutterBottom>
+                                    Planned config
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Create {selectedJobDetail.createLikesRequest.count} likes from active test users on public posts.
+                                </Typography>
+                            </Paper>
+                        )}
+
                         {createdUserRows.length > 0 && (
                             <Paper variant="outlined" sx={{ p: 2 }}>
                                 <Typography variant="h6" component="h3" gutterBottom>
@@ -637,6 +921,38 @@ const AdminJobs = () => {
                                     rows={selectedJobDetail.createdPosts}
                                     columns={createdPostColumns}
                                     getRowId={(row) => row.ratingId}
+                                    hideFooter
+                                    disableRowSelectionOnClick
+                                />
+                            </Paper>
+                        )}
+
+                        {createdCommentRows.length > 0 && (
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                                <Typography variant="h6" component="h3" gutterBottom>
+                                    Created comments
+                                </Typography>
+                                <AdminDataGrid
+                                    autoHeight
+                                    rows={createdCommentRows}
+                                    columns={createdCommentColumns}
+                                    getRowId={(row) => row.commentId}
+                                    hideFooter
+                                    disableRowSelectionOnClick
+                                />
+                            </Paper>
+                        )}
+
+                        {createdLikeRows.length > 0 && (
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                                <Typography variant="h6" component="h3" gutterBottom>
+                                    Created likes
+                                </Typography>
+                                <AdminDataGrid
+                                    autoHeight
+                                    rows={createdLikeRows}
+                                    columns={createdLikeColumns}
+                                    getRowId={(row) => row.likeId}
                                     hideFooter
                                     disableRowSelectionOnClick
                                 />

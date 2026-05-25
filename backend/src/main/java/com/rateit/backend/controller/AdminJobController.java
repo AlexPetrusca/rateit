@@ -2,6 +2,8 @@ package com.rateit.backend.controller;
 
 import com.rateit.backend.entity.dto.AdminJobDto;
 import com.rateit.backend.entity.dto.AdminJobDetailDto;
+import com.rateit.backend.entity.rest.CreateCommentsJobRequest;
+import com.rateit.backend.entity.rest.CreateLikesJobRequest;
 import com.rateit.backend.entity.rest.CreatePostsJobRequest;
 import com.rateit.backend.entity.rest.CreateUsersJobRequest;
 import com.rateit.backend.service.AdminJobService;
@@ -37,6 +39,20 @@ public class AdminJobController {
         @RequestBody @Valid CreatePostsJobRequest request
     ) {
         return ResponseEntity.accepted().body(adminJobService.queueCreatePostsJob(request));
+    }
+
+    @PostMapping("/create-comments")
+    public ResponseEntity<AdminJobDto> queueCreateComments(
+        @RequestBody @Valid CreateCommentsJobRequest request
+    ) {
+        return ResponseEntity.accepted().body(adminJobService.queueCreateCommentsJob(request));
+    }
+
+    @PostMapping("/create-likes")
+    public ResponseEntity<AdminJobDto> queueCreateLikes(
+        @RequestBody @Valid CreateLikesJobRequest request
+    ) {
+        return ResponseEntity.accepted().body(adminJobService.queueCreateLikesJob(request));
     }
 
     @GetMapping

@@ -457,6 +457,12 @@ const Profile = () => {
             setIsProfileLoading(false);
             setIsPostsLoading(false);
             setHasMorePosts(false);
+            setActiveComposer(null);
+            setCommentsByRating({});
+            setCommentDrafts({});
+            setHoveredCommentScores({});
+            setHoveredRerateScores({});
+            setRerateDrafts({});
             return;
         }
 
@@ -464,6 +470,12 @@ const Profile = () => {
         setPostRowCount(0);
         setPosts([]);
         setHasMorePosts(true);
+        setActiveComposer(null);
+        setCommentsByRating({});
+        setCommentDrafts({});
+        setHoveredCommentScores({});
+        setHoveredRerateScores({});
+        setRerateDrafts({});
         postsInitializedForUserIdRef.current = null;
 
         let isMounted = true;

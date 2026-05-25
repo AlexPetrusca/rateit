@@ -139,10 +139,6 @@ const Home = () => {
         return `${displayScore}${Number.isFinite(max) ? ` / ${displayMax}` : ''}${symbol ? ` ${symbol}` : ''}`;
     };
 
-    const formatScore = (item) => {
-        return formatScoreValue(item.score, item.ratingScale);
-    };
-
     const getCommentDraftKey = (ratingId, parentCommentId = null) => {
         return parentCommentId == null ? `${ratingId}:root` : `${ratingId}:${parentCommentId}`;
     };
@@ -179,19 +175,6 @@ const Home = () => {
         return Number.isFinite(score)
             && score >= 0.5
             && score <= 5;
-    };
-
-    const formatDate = (createdAt) => {
-        if (!createdAt) {
-            return '';
-        }
-
-        return new Intl.DateTimeFormat(undefined, {
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-        }).format(new Date(createdAt));
     };
 
     const openProfile = (userId) => {

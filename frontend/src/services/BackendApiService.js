@@ -395,6 +395,42 @@ const BackendApiService = {
         return await response.json();
     },
 
+    createCommentsJob: async ({ count, maxDepth, replyChance, commentPrefix, replyPrefix }) => {
+        const response = await fetch('/api/admin/jobs/create-comments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ count, maxDepth, replyChance, commentPrefix, replyPrefix })
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to queue comment job');
+        }
+        return await response.json();
+    },
+
+    createLikesJob: async ({ count }) => {
+        const response = await fetch('/api/admin/jobs/create-likes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ count })
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to queue like job');
+        }
+        return await response.json();
+    },
+
     getAdminJobs: async (limit = 20) => {
         const response = await fetch(`/api/admin/jobs?limit=${encodeURIComponent(limit)}`);
         if (response.status === 401 || response.status === 403) {

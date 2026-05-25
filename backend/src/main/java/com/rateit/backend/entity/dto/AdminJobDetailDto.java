@@ -1,6 +1,8 @@
 package com.rateit.backend.entity.dto;
 
 import com.rateit.backend.entity.AdminJob;
+import com.rateit.backend.entity.rest.CreateCommentsJobRequest;
+import com.rateit.backend.entity.rest.CreateLikesJobRequest;
 import com.rateit.backend.entity.rest.CreateUsersJobRequest;
 import com.rateit.backend.entity.rest.CreatePostsJobRequest;
 import com.rateit.backend.entity.types.AdminJobStatus;
@@ -23,7 +25,11 @@ public record AdminJobDetailDto(
     CreateUsersJobRequest createUsersRequest,
     List<CreatedAdminUserDto> createdUsers,
     CreatePostsJobRequest createPostsRequest,
-    List<CreatedAdminPostDto> createdPosts
+    List<CreatedAdminPostDto> createdPosts,
+    CreateCommentsJobRequest createCommentsRequest,
+    List<CreatedAdminCommentDto> createdComments,
+    CreateLikesJobRequest createLikesRequest,
+    List<CreatedAdminLikeDto> createdLikes
 ) {
     public static AdminJobDetailDto fromJob(
         AdminJob job,
@@ -31,7 +37,11 @@ public record AdminJobDetailDto(
         CreateUsersJobRequest createUsersRequest,
         List<CreatedAdminUserDto> createdUsers,
         CreatePostsJobRequest createPostsRequest,
-        List<CreatedAdminPostDto> createdPosts
+        List<CreatedAdminPostDto> createdPosts,
+        CreateCommentsJobRequest createCommentsRequest,
+        List<CreatedAdminCommentDto> createdComments,
+        CreateLikesJobRequest createLikesRequest,
+        List<CreatedAdminLikeDto> createdLikes
     ) {
         return new AdminJobDetailDto(
             job.getId(),
@@ -47,7 +57,11 @@ public record AdminJobDetailDto(
             createUsersRequest,
             createdUsers,
             createPostsRequest,
-            createdPosts
+            createdPosts,
+            createCommentsRequest,
+            createdComments,
+            createLikesRequest,
+            createdLikes
         );
     }
 }

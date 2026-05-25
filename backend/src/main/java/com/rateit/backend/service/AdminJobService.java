@@ -3,18 +3,29 @@ package com.rateit.backend.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rateit.backend.entity.AdminJob;
 import com.rateit.backend.entity.User;
+import com.rateit.backend.entity.Rating;
+import com.rateit.backend.entity.RatingLike;
 import com.rateit.backend.entity.dto.CreatedAdminPostDto;
+import com.rateit.backend.entity.dto.CreatedAdminCommentDto;
+import com.rateit.backend.entity.dto.CreatedAdminLikeDto;
 import com.rateit.backend.entity.dto.AdminJobDetailDto;
 import com.rateit.backend.entity.dto.AdminJobDto;
 import com.rateit.backend.entity.dto.CreatedAdminUserDto;
+import com.rateit.backend.entity.dto.RatingCommentDto;
+import com.rateit.backend.entity.rest.CreateCommentsJobRequest;
+import com.rateit.backend.entity.rest.CreateLikesJobRequest;
 import com.rateit.backend.entity.rest.CreatePostsJobRequest;
 import com.rateit.backend.entity.rest.CreateUsersJobRequest;
+import com.rateit.backend.entity.rest.CreateRatingCommentRequest;
 import com.rateit.backend.entity.rest.CreateRatingRequest;
 import com.rateit.backend.entity.types.UserRoles;
 import com.rateit.backend.entity.types.AdminJobStatus;
 import com.rateit.backend.entity.types.AdminJobType;
+import com.rateit.backend.entity.types.Visibility;
 import com.rateit.backend.exception.ResourceNotFoundException;
 import com.rateit.backend.repository.AdminJobRepository;
+import com.rateit.backend.repository.RatingLikeRepository;
+import com.rateit.backend.repository.RatingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -25,6 +36,7 @@ import org.springframework.util.StringUtils;
 import java.time.Instant;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -41,6 +53,8 @@ public class AdminJobService {
     private final ObjectMapper objectMapper;
     private final UserService userService;
     private final FeedActionService feedActionService;
+    private final RatingRepository ratingRepository;
+    private final RatingLikeRepository ratingLikeRepository;
 
     @Transactional
     public AdminJobDto queueCreateUsersJob(CreateUsersJobRequest request) {
@@ -68,6 +82,38 @@ public class AdminJobService {
             .status(AdminJobStatus.PENDING)
             .description(String.format("Create %d test posts", count))
             .payloadJson(writePayload(new CreatePostsJobRequest(count, bodyPrefix, reviewPrefix)))
+            .build();
+
+        return AdminJobDto.fromJob(adminJobRepository.save(job));
+    }
+
+    @Transactional
+    public AdminJobDto queueCreateCommentsJob(CreateCommentsJobRequest request) {
+        int count = Math.max(1, request.count());
+        int maxDepth = Math.max(1, request.maxDepth());
+        double replyChance = clampReplyChance(request.replyChance());
+        String commentPrefix = normalizeOptionalPrefix(request.commentPrefix());
+        String replyPrefix = normalizeOptionalPrefix(request.replyPrefix());
+
+        AdminJob job = AdminJob.builder()
+            .jobType(AdminJobType.CREATE_COMMENT)
+            .status(AdminJobStatus.PENDING)
+            .description(String.format("Create %d test comments", count))
+            .payloadJson(writePayload(new CreateCommentsJobRequest(count, maxDepth, replyChance, commentPrefix, replyPrefix)))
+            .build();
+
+        return AdminJobDto.fromJob(adminJobRepository.save(job));
+    }
+
+    @Transactional
+    public AdminJobDto queueCreateLikesJob(CreateLikesJobRequest request) {
+        int count = Math.max(1, request.count());
+
+        AdminJob job = AdminJob.builder()
+            .jobType(AdminJobType.CREATE_LIKE)
+            .status(AdminJobStatus.PENDING)
+            .description(String.format("Create %d test likes", count))
+            .payloadJson(writePayload(new CreateLikesJobRequest(count)))
             .build();
 
         return AdminJobDto.fromJob(adminJobRepository.save(job));
@@ -134,6 +180,44 @@ public class AdminJobService {
     }
 
     @Transactional
+    public void executeCreateCommentsJob(long jobId) {
+        AdminJob job = adminJobRepository.findById(jobId)
+            .orElseThrow(() -> ResourceNotFoundException.resource(com.rateit.backend.entity.types.Resource.ADMIN_JOB, jobId));
+
+        if (job.getJobType() != AdminJobType.CREATE_COMMENT) {
+            throw new IllegalStateException("Unsupported job type: " + job.getJobType());
+        }
+
+        CreateCommentsJobRequest request = readCommentPayload(job.getPayloadJson());
+        List<CreatedAdminCommentDto> createdComments = createComments(job.getId(), request);
+
+        job.setStatus(AdminJobStatus.DONE);
+        job.setFinishedAt(Instant.now());
+        job.setResultSummary(String.format("Created %d test comments", createdComments.size()));
+        job.setResultJson(writeCommentResult(createdComments));
+        adminJobRepository.save(job);
+    }
+
+    @Transactional
+    public void executeCreateLikesJob(long jobId) {
+        AdminJob job = adminJobRepository.findById(jobId)
+            .orElseThrow(() -> ResourceNotFoundException.resource(com.rateit.backend.entity.types.Resource.ADMIN_JOB, jobId));
+
+        if (job.getJobType() != AdminJobType.CREATE_LIKE) {
+            throw new IllegalStateException("Unsupported job type: " + job.getJobType());
+        }
+
+        CreateLikesJobRequest request = readLikePayload(job.getPayloadJson());
+        List<CreatedAdminLikeDto> createdLikes = createLikes(job.getId(), request);
+
+        job.setStatus(AdminJobStatus.DONE);
+        job.setFinishedAt(Instant.now());
+        job.setResultSummary(String.format("Created %d test likes", createdLikes.size()));
+        job.setResultJson(writeLikeResult(createdLikes));
+        adminJobRepository.save(job);
+    }
+
+    @Transactional
     public void markJobFailed(long jobId, String errorMessage) {
         AdminJob job = adminJobRepository.findById(jobId)
             .orElseThrow(() -> ResourceNotFoundException.resource(com.rateit.backend.entity.types.Resource.ADMIN_JOB, jobId));
@@ -152,12 +236,20 @@ public class AdminJobService {
         List<CreatedAdminUserDto> createdUsers = readCreatedUsers(job.getResultJson());
         CreatePostsJobRequest createPostsRequest = readPostPayload(job.getPayloadJson());
         List<CreatedAdminPostDto> createdPosts = readCreatedPosts(job.getResultJson());
+        CreateCommentsJobRequest createCommentsRequest = readCommentPayload(job.getPayloadJson());
+        List<CreatedAdminCommentDto> createdComments = readCreatedComments(job.getResultJson());
+        CreateLikesJobRequest createLikesRequest = readLikePayload(job.getPayloadJson());
+        List<CreatedAdminLikeDto> createdLikes = readCreatedLikes(job.getResultJson());
         return switch (job.getJobType()) {
             case CREATE_USER -> AdminJobDetailDto.fromJob(
                 job,
                 buildUserNarrative(job, request),
                 request,
                 createdUsers,
+                null,
+                List.of(),
+                null,
+                List.of(),
                 null,
                 List.of()
             );
@@ -167,7 +259,35 @@ public class AdminJobService {
                 null,
                 List.of(),
                 createPostsRequest,
-                createdPosts
+                createdPosts,
+                null,
+                List.of(),
+                null,
+                List.of()
+            );
+            case CREATE_COMMENT -> AdminJobDetailDto.fromJob(
+                job,
+                buildCommentNarrative(job, createCommentsRequest),
+                null,
+                List.of(),
+                null,
+                List.of(),
+                createCommentsRequest,
+                createdComments,
+                null,
+                List.of()
+            );
+            case CREATE_LIKE -> AdminJobDetailDto.fromJob(
+                job,
+                buildLikeNarrative(job, createLikesRequest),
+                null,
+                List.of(),
+                null,
+                List.of(),
+                null,
+                List.of(),
+                createLikesRequest,
+                createdLikes
             );
         };
     }
@@ -218,6 +338,109 @@ public class AdminJobService {
         }
 
         return createdPosts;
+    }
+
+    private List<CreatedAdminCommentDto> createComments(long jobId, CreateCommentsJobRequest request) {
+        List<User> testUsers = new ArrayList<>(userService.findAllTestUsers());
+        if (testUsers.isEmpty()) {
+            throw new IllegalStateException("No active test users are available to author comments");
+        }
+
+        List<Rating> ratings = ratingRepository.findRecentByVisibility(Visibility.PUBLIC, PageRequest.of(0, 100));
+        if (ratings.isEmpty()) {
+            throw new IllegalStateException("No public posts are available for comment generation");
+        }
+
+        Random random = new Random(jobId);
+        List<BigDecimal> scores = List.of(
+            new BigDecimal("1"),
+            new BigDecimal("1.5"),
+            new BigDecimal("2"),
+            new BigDecimal("2.5"),
+            new BigDecimal("3"),
+            new BigDecimal("3.5"),
+            new BigDecimal("4"),
+            new BigDecimal("4.5"),
+            new BigDecimal("5")
+        );
+
+        Map<Long, List<CommentNode>> commentsByRating = new HashMap<>();
+        List<CreatedAdminCommentDto> createdComments = new ArrayList<>();
+
+        for (int index = 1; index <= request.count(); index++) {
+            Rating targetRating = ratings.get(random.nextInt(ratings.size()));
+            List<CommentNode> thread = commentsByRating.computeIfAbsent(targetRating.getId(), key -> new ArrayList<>());
+
+            CommentNode parentNode = null;
+            boolean canReply = !thread.isEmpty() && request.maxDepth() > 1;
+            if (canReply && random.nextDouble() < request.replyChance()) {
+                List<CommentNode> replyTargets = thread.stream()
+                    .filter(candidate -> candidate.depth < request.maxDepth())
+                    .toList();
+                if (!replyTargets.isEmpty()) {
+                    parentNode = replyTargets.get(random.nextInt(replyTargets.size()));
+                }
+            }
+
+            User author = testUsers.get(random.nextInt(testUsers.size()));
+            String prefix = parentNode == null ? request.commentPrefix() : request.replyPrefix();
+            String text = buildCommentText(prefix, random, parentNode != null);
+            BigDecimal score = scores.get(random.nextInt(scores.size()));
+
+            RatingCommentDto createdComment = feedActionService.createComment(
+                targetRating.getId(),
+                new CreateRatingCommentRequest(text, score, parentNode == null ? null : parentNode.commentId()),
+                author.getPhoneNumber()
+            );
+
+            CommentNode createdNode = new CommentNode(createdComment.id(), createdComment.parentCommentId(), parentNode == null ? 1 : parentNode.depth() + 1);
+            thread.add(createdNode);
+            createdComments.add(CreatedAdminCommentDto.fromComment(createdComment, author));
+        }
+
+        return createdComments;
+    }
+
+    private List<CreatedAdminLikeDto> createLikes(long jobId, CreateLikesJobRequest request) {
+        List<User> testUsers = new ArrayList<>(userService.findAllTestUsers());
+        if (testUsers.isEmpty()) {
+            throw new IllegalStateException("No active test users are available to like posts");
+        }
+
+        List<Rating> ratings = ratingRepository.findRecentByVisibility(Visibility.PUBLIC, PageRequest.of(0, 100));
+        if (ratings.isEmpty()) {
+            throw new IllegalStateException("No public posts are available for like generation");
+        }
+
+        Random random = new Random(jobId);
+        List<CreatedAdminLikeDto> createdLikes = new ArrayList<>();
+        int attempts = 0;
+        int maxAttempts = Math.max(request.count() * 10, 50);
+
+        while (createdLikes.size() < request.count() && attempts < maxAttempts) {
+            attempts++;
+            User author = testUsers.get(random.nextInt(testUsers.size()));
+            Rating targetRating = ratings.get(random.nextInt(ratings.size()));
+
+            if (ratingLikeRepository.existsByRatingAndUser(targetRating, author)) {
+                continue;
+            }
+
+            feedActionService.likeRating(targetRating.getId(), author.getPhoneNumber());
+            RatingLike createdLike = ratingLikeRepository.findByRatingAndUser(targetRating, author)
+                .orElseThrow(() -> new IllegalStateException("Failed to persist like"));
+            createdLikes.add(CreatedAdminLikeDto.fromUser(createdLike.getId(), targetRating.getId(), author, createdLike.getCreatedAt()));
+        }
+
+        if (createdLikes.size() < request.count()) {
+            throw new IllegalStateException(String.format(
+                "Only created %d of %d requested likes",
+                createdLikes.size(),
+                request.count()
+            ));
+        }
+
+        return createdLikes;
     }
 
     private String buildUserNarrative(AdminJob job, CreateUsersJobRequest request) {
@@ -278,6 +501,73 @@ public class AdminJobService {
         };
     }
 
+    private String buildCommentNarrative(AdminJob job, CreateCommentsJobRequest request) {
+        int count = request != null ? request.count() : 0;
+        int maxDepth = request != null ? request.maxDepth() : 1;
+        double replyChance = request != null ? request.replyChance() : 0.0;
+
+        return switch (job.getStatus()) {
+            case PENDING -> String.format(
+                "Queued to create %d test comments using active test users, with up to %d levels of threading and a %.0f%% reply chance.",
+                count,
+                maxDepth,
+                replyChance * 100
+            );
+            case IN_PROGRESS -> String.format(
+                "Creating %d test comments using active test users, with up to %d levels of threading.",
+                count,
+                maxDepth
+            );
+            case DONE -> {
+                List<CreatedAdminCommentDto> createdComments = readCreatedComments(job.getResultJson());
+                if (createdComments.isEmpty()) {
+                    yield String.format("Completed creating %d test comments.", count);
+                }
+                String createdCommentSummary = createdComments.stream()
+                    .limit(5)
+                    .map(comment -> String.format(
+                        "%s%s%s",
+                        comment.parentCommentId() == null ? "root" : "reply",
+                        comment.parentCommentId() == null ? "" : " to #" + comment.parentCommentId(),
+                        " by " + comment.authorUsername()
+                    ))
+                    .collect(Collectors.joining(", "));
+                yield String.format("Created %d test comments%s.",
+                    createdComments.size(),
+                    createdCommentSummary.isEmpty() ? "" : ": " + createdCommentSummary
+                );
+            }
+            case FAILED -> "This job failed before completion.";
+        };
+    }
+
+    private String buildLikeNarrative(AdminJob job, CreateLikesJobRequest request) {
+        int count = request != null ? request.count() : 0;
+
+        return switch (job.getStatus()) {
+            case PENDING -> String.format(
+                "Queued to create %d test likes using active test users and public posts.",
+                count
+            );
+            case IN_PROGRESS -> String.format(
+                "Creating %d test likes using active test users and public posts.",
+                count
+            );
+            case DONE -> {
+                List<CreatedAdminLikeDto> createdLikes = readCreatedLikes(job.getResultJson());
+                if (createdLikes.isEmpty()) {
+                    yield String.format("Completed creating %d test likes.", count);
+                }
+                String createdLikeSummary = createdLikes.stream()
+                    .limit(5)
+                    .map(like -> String.format("%s on #%d", like.authorUsername(), like.ratingId()))
+                    .collect(Collectors.joining(", "));
+                yield String.format("Created %d test likes: %s.", createdLikes.size(), createdLikeSummary);
+            }
+            case FAILED -> "This job failed before completion.";
+        };
+    }
+
     private List<CreatedAdminUserDto> readCreatedUsers(String resultJson) {
         if (!StringUtils.hasText(resultJson)) {
             return List.of();
@@ -318,6 +608,46 @@ public class AdminJobService {
         }
     }
 
+    private List<CreatedAdminCommentDto> readCreatedComments(String resultJson) {
+        if (!StringUtils.hasText(resultJson)) {
+            return List.of();
+        }
+
+        try {
+            Map<?, ?> result = objectMapper.readValue(resultJson, Map.class);
+            Object createdComments = result.get("createdComments");
+            if (!(createdComments instanceof List<?> rawComments)) {
+                return List.of();
+            }
+
+            return rawComments.stream()
+                .map(entry -> objectMapper.convertValue(entry, CreatedAdminCommentDto.class))
+                .toList();
+        } catch (Exception ex) {
+            return List.of();
+        }
+    }
+
+    private List<CreatedAdminLikeDto> readCreatedLikes(String resultJson) {
+        if (!StringUtils.hasText(resultJson)) {
+            return List.of();
+        }
+
+        try {
+            Map<?, ?> result = objectMapper.readValue(resultJson, Map.class);
+            Object createdLikes = result.get("createdLikes");
+            if (!(createdLikes instanceof List<?> rawLikes)) {
+                return List.of();
+            }
+
+            return rawLikes.stream()
+                .map(entry -> objectMapper.convertValue(entry, CreatedAdminLikeDto.class))
+                .toList();
+        } catch (Exception ex) {
+            return List.of();
+        }
+    }
+
     private String writeUserResult(List<CreatedAdminUserDto> createdUsers) {
         try {
             return objectMapper.writeValueAsString(Map.of(
@@ -334,6 +664,28 @@ public class AdminJobService {
             return objectMapper.writeValueAsString(Map.of(
                 "createdPosts", createdPosts,
                 "count", createdPosts.size()
+            ));
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to serialize job result", ex);
+        }
+    }
+
+    private String writeCommentResult(List<CreatedAdminCommentDto> createdComments) {
+        try {
+            return objectMapper.writeValueAsString(Map.of(
+                "createdComments", createdComments,
+                "count", createdComments.size()
+            ));
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to serialize job result", ex);
+        }
+    }
+
+    private String writeLikeResult(List<CreatedAdminLikeDto> createdLikes) {
+        try {
+            return objectMapper.writeValueAsString(Map.of(
+                "createdLikes", createdLikes,
+                "count", createdLikes.size()
             ));
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to serialize job result", ex);
@@ -362,6 +714,28 @@ public class AdminJobService {
         }
     }
 
+    private CreateCommentsJobRequest readCommentPayload(String payloadJson) {
+        if (!StringUtils.hasText(payloadJson)) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(payloadJson, CreateCommentsJobRequest.class);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private CreateLikesJobRequest readLikePayload(String payloadJson) {
+        if (!StringUtils.hasText(payloadJson)) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(payloadJson, CreateLikesJobRequest.class);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
     private String writePayload(CreateUsersJobRequest request) {
         try {
             return objectMapper.writeValueAsString(request);
@@ -371,6 +745,22 @@ public class AdminJobService {
     }
 
     private String writePayload(CreatePostsJobRequest request) {
+        try {
+            return objectMapper.writeValueAsString(request);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to serialize job payload", ex);
+        }
+    }
+
+    private String writePayload(CreateCommentsJobRequest request) {
+        try {
+            return objectMapper.writeValueAsString(request);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to serialize job payload", ex);
+        }
+    }
+
+    private String writePayload(CreateLikesJobRequest request) {
         try {
             return objectMapper.writeValueAsString(request);
         } catch (Exception ex) {
@@ -390,6 +780,14 @@ public class AdminJobService {
             return null;
         }
         return value.trim().replaceAll("\\s+", "_");
+    }
+
+    private double clampReplyChance(double replyChance) {
+        if (Double.isNaN(replyChance) || Double.isInfinite(replyChance)) {
+            return 0.5d;
+        }
+
+        return Math.max(0d, Math.min(1d, replyChance));
     }
 
     private String normalizePhonePrefix(String phonePrefix) {
@@ -413,6 +811,32 @@ public class AdminJobService {
             return "Unknown error";
         }
         return errorMessage.length() > 1000 ? errorMessage.substring(0, 1000) : errorMessage;
+    }
+
+    private String buildCommentText(String prefix, Random random, boolean isReply) {
+        List<String> roots = List.of(
+            "I gave this a try and had a clear impression.",
+            "I spent a little time with it and noted what stood out.",
+            "I kept coming back to it because it was reliable.",
+            "I wanted to see how it would hold up over a few days.",
+            "I tried it in a couple of different situations.",
+            "I paid attention to the details and it was easy to judge.",
+            "I took a straightforward approach and it was pretty consistent.",
+            "I used it enough to feel confident about the result."
+        );
+        List<String> replies = List.of(
+            "That matched my experience too.",
+            "I saw the same thing on my end.",
+            "That was the part that stood out to me as well.",
+            "I went in a different direction and got a similar result.",
+            "That was basically my read on it too.",
+            "I had the same takeaway after using it.",
+            "That's the bit that made it click for me.",
+            "I got to the same conclusion after a few tries."
+        );
+
+        String body = (isReply ? replies : roots).get(random.nextInt(isReply ? replies.size() : roots.size()));
+        return applyPrefix(prefix, body);
     }
 
     private String buildBody(String prefix, Random random) {
@@ -449,4 +873,6 @@ public class AdminJobService {
         }
         return prefix.trim() + " " + value;
     }
+
+    private record CommentNode(Long commentId, Long parentCommentId, int depth) {}
 }
