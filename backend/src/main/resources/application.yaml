@@ -9,10 +9,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update  # auto-update tables
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:
@@ -52,7 +52,7 @@ security:
 
 logging:
   level:
-    root: DEBUG
+    root: INFO
 
 management:
   endpoints:
