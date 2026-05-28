@@ -307,6 +307,19 @@ const BackendApiService = {
         return await response.json();
     },
 
+    getAdminComments: async ({ page = 0, size = 20 } = {}) => {
+        const response = await fetch(`/api/admin/comments?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`);
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            throw new Error('Failed to load comments');
+        }
+        return await response.json();
+    },
+
     updateAdminPost: async (postId, postData) => {
         const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}`, {
             method: 'PUT',
@@ -339,6 +352,58 @@ const BackendApiService = {
             throw new Error(data.message || 'Failed to delete post');
         }
         return response.status === 204 ? null : await response.json();
+    },
+
+    updateAdminComment: async (commentId, commentData) => {
+        const response = await fetch(`/api/admin/comments/${encodeURIComponent(commentId)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(commentData)
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to update comment');
+        }
+        return await response.json();
+    },
+
+    deleteAdminComment: async (commentId) => {
+        const response = await fetch(`/api/admin/comments/${encodeURIComponent(commentId)}`, {
+            method: 'DELETE'
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to delete comment');
+        }
+        return response.status === 204 ? null : await response.json();
+    },
+
+    bulkDeleteAdminComments: async (ids) => {
+        const response = await fetch('/api/admin/comments/bulk-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids })
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to delete comments');
+        }
+        return await response.json();
     },
 
     bulkDeleteAdminPosts: async (ids) => {

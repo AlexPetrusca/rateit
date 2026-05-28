@@ -23,6 +23,7 @@ RateIt is a React + Spring Boot app with phone-number login, JWT cookie auth, a 
 - Admin pages for:
   - user management
   - post management
+  - comment management
   - job automation
 - Admin pages use MUI DataGrid for paginated table views and bulk actions.
 - Admin automation queue for:

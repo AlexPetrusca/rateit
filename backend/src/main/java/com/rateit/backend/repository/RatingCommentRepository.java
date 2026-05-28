@@ -4,6 +4,8 @@ import com.rateit.backend.entity.Rating;
 import com.rateit.backend.entity.RatingComment;
 import com.rateit.backend.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -13,6 +15,7 @@ import java.util.List;
 public interface RatingCommentRepository extends JpaRepository<RatingComment, Long> {
 
     List<RatingComment> findByRatingOrderByCreatedAtAsc(Rating rating);
+    List<RatingComment> findByParentCommentOrderByCreatedAtAsc(RatingComment parentComment);
     void deleteByAuthorUser(User authorUser);
 
     @Query("""
@@ -25,6 +28,23 @@ public interface RatingCommentRepository extends JpaRepository<RatingComment, Lo
         """)
     List<RatingComment> findThreadByRatingOrderByCreatedAtAsc(Rating rating);
 
+    @Query(
+        value = """
+            select distinct c
+            from RatingComment c
+            join fetch c.authorUser
+            join fetch c.rating r
+            join fetch r.authorUser ratingAuthor
+            join fetch r.rateableItem item
+            left join fetch c.parentComment
+            left join fetch item.mediaAsset
+            order by c.createdAt desc
+            """,
+        countQuery = "select count(c) from RatingComment c"
+    )
+    Page<RatingComment> findAdminPage(Pageable pageable);
+
     long countByRating(Rating rating);
+    long countByParentComment(RatingComment parentComment);
     long countByAuthorUser(User authorUser);
 }

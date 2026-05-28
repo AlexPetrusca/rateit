@@ -37,6 +37,10 @@ const Admin = () => {
             return '/admin/posts';
         }
 
+        if (location.pathname.startsWith('/admin/comments')) {
+            return '/admin/comments';
+        }
+
         if (location.pathname.startsWith('/admin/jobs')) {
             return '/admin/jobs';
         }
@@ -80,8 +84,9 @@ const Admin = () => {
                             </Box>
 
                             <Tabs value={tabValue} variant="scrollable" scrollButtons="auto">
-                                <Tab label="Posts" value="/admin/posts" component={NavLink} to="posts" />
                                 <Tab label="Users" value="/admin/users" component={NavLink} to="users" />
+                                <Tab label="Posts" value="/admin/posts" component={NavLink} to="posts" />
+                                <Tab label="Comments" value="/admin/comments" component={NavLink} to="comments" />
                                 <Tab label="Automation" value="/admin/jobs" component={NavLink} to="jobs" />
                             </Tabs>
                         </Stack>

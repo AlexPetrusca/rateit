@@ -31,6 +31,7 @@ Do not use this file for:
 - Keep admin delete flows separate from user-facing delete behavior.
 - Any new admin table should use the shared admin grid wrapper so alignment and selection stay consistent.
 - Any new admin job type must update the enum, schema constraint, service dispatch, controller, UI, and docs together.
+- Comment moderation needs subtree-aware deletion; deleting a parent comment should delete all nested replies before removing the parent row.
 
 ### Backend JSON and time types
 

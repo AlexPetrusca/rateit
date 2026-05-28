@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

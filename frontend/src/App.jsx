@@ -8,6 +8,7 @@ import Create from './pages/Create';
 import Admin from './pages/Admin';
 import AdminJobs from './pages/AdminJobs';
 import AdminPosts from './pages/AdminPosts';
+import AdminComments from './pages/AdminComments';
 import AdminUsers from './pages/AdminUsers';
 import Profile from './pages/Profile';
 import Post from './pages/Post';
@@ -81,8 +82,9 @@ function App() {
                                     path="/admin"
                                     element={<Admin />}
                                 >
-                                    <Route index element={<Navigate to="posts" replace />} />
+                                    <Route index element={<Navigate to="users" replace />} />
                                     <Route path="posts" element={<AdminPosts />} />
+                                    <Route path="comments" element={<AdminComments />} />
                                     <Route path="users" element={<AdminUsers />} />
                                     <Route path="jobs" element={<AdminJobs />} />
                                 </Route>

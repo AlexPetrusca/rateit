@@ -109,6 +109,27 @@ test('getAdminPosts requests the paged admin post endpoint', async () => {
     }
 });
 
+test('getAdminComments requests the paged admin comment endpoint', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            json: async () => ({ content: [], totalElements: 0 })
+        };
+    };
+
+    try {
+        const result = await BackendApiService.getAdminComments({ page: 1, size: 12 });
+
+        assert.deepEqual(result, { content: [], totalElements: 0 });
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].url, '/api/admin/comments?page=1&size=12');
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
 test('createPostsJob posts the expected payload and returns the response body', async () => {
     const calls = [];
     globalThis.fetch = async (url, options = {}) => {
@@ -237,6 +258,50 @@ test('bulkDeleteAdminPosts posts selected ids', async () => {
         assert.equal(calls[0].url, '/api/admin/posts/bulk-delete');
         assert.equal(calls[0].options.method, 'POST');
         assert.deepEqual(JSON.parse(calls[0].options.body), { ids: [10, 11] });
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
+test('updateAdminComment posts editable fields', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            json: async () => ({ commentId: 5, text: 'Updated' })
+        };
+    };
+
+    try {
+        const result = await BackendApiService.updateAdminComment(5, { text: 'Updated', score: 4.5 });
+
+        assert.deepEqual(result, { commentId: 5, text: 'Updated' });
+        assert.equal(calls[0].url, '/api/admin/comments/5');
+        assert.equal(calls[0].options.method, 'PUT');
+        assert.deepEqual(JSON.parse(calls[0].options.body), { text: 'Updated', score: 4.5 });
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
+test('bulkDeleteAdminComments posts selected ids', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            json: async () => ({ deletedCount: 3 })
+        };
+    };
+
+    try {
+        const result = await BackendApiService.bulkDeleteAdminComments([3, 4, 5]);
+
+        assert.deepEqual(result, { deletedCount: 3 });
+        assert.equal(calls[0].url, '/api/admin/comments/bulk-delete');
+        assert.equal(calls[0].options.method, 'POST');
+        assert.deepEqual(JSON.parse(calls[0].options.body), { ids: [3, 4, 5] });
     } finally {
         delete globalThis.fetch;
     }
