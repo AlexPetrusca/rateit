@@ -56,6 +56,13 @@ Deploy to Kubernetes:
 
 `deploy.sh` publishes the current backend image first, then rolls the Kubernetes release and uploads the frontend bundle.
 
+Fast local deploy:
+```bash
+./deploy.sh --local
+```
+
+Local deploy skips the backend image push by default, keeps `app.critic-app.com` on the Twilio backend, and routes `localhost` / `127.0.0.1` API/auth traffic to a separate mocker-profile backend. Use `./deploy.sh --local --push` only when local backend code changes need a fresh image.
+
 # Create buildx builder
 
 docker buildx create --name multiarch --use --driver docker-container

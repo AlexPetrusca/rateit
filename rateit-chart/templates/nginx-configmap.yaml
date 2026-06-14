@@ -24,9 +24,56 @@ data:
             keepalive 32;
         }
 
-        # serve traffic
+        upstream backend_local {
+            server critic-backend-local:{{ .Values.localBackend.service.port }};
+            keepalive 32;
+        }
+
+        # localhost traffic uses the mocker-backed API so local OTP does not hit Twilio.
         server {
             listen 80;
+            server_name localhost 127.0.0.1;
+
+            location / {
+                rewrite ^/$ /index.html break;
+                proxy_pass http://minio/frontend$uri;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_intercept_errors on;
+                error_page 404 = /index.html;
+            }
+
+            location /images/ {
+                proxy_pass http://minio/images/;
+                proxy_set_header Host $http_host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+
+            location /api/ {
+                proxy_pass http://backend_local;
+                proxy_set_header Host $http_host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header X-Forwarded-Host $http_host;
+            }
+
+            location /auth/ {
+                proxy_pass http://backend_local;
+                proxy_set_header Host $http_host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header X-Forwarded-Host $http_host;
+            }
+        }
+
+        # serve public traffic
+        server {
+            listen 80 default_server;
+            server_name app.critic-app.com _;
 
             location / {
                 # If the request is for the root "/", rewrite it to "/index.html"

@@ -21,7 +21,16 @@ backend:
   image: "alexpetrusca/rateit-backend"
   imageTag: "latest"
   pullPolicy: Always
-  springProfiles: "prod,twilio"
+  springProfiles: "twilio"
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+
+localBackend:
+  enabled: true
+  springProfiles: "mocker"
   replicaCount: 1
   service:
     type: ClusterIP

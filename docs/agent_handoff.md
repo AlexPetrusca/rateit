@@ -79,7 +79,7 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 
 - `AuthController` handles OTP send/login/logout.
 - `AuthService` contains the login policy, including test-user bypass behavior.
-- `TwilioService` handles production OTP delivery, while `MockerService` handles local/dev OTP delivery under the `mocker` profile.
+- `TwilioService` handles production OTP delivery under the public `critic-backend` deployment with the `twilio` profile. `MockerService` handles localhost OTP delivery under the separate `critic-backend-local` deployment with the `mocker` profile; nginx routes `localhost` / `127.0.0.1` API/auth traffic there while `app.critic-app.com` stays on Twilio.
 - `UserController` exposes `/api/users/me`, user search, user profile lookup, user posts, followers, and following.
 - `UserService` owns user creation, updates, delete behavior, and test-user queries.
 - `FollowController` exposes follow and unfollow endpoints.

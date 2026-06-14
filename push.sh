@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Top-level script to push all application components to Docker Hub
-# Usage: ./push.sh [--dev|--prod]
+# Usage: ./push.sh [--dev|--prod] [--tag <tag>] [--no-cache]
 # Default is --dev if no flag is provided
 
 set -euo pipefail
@@ -10,6 +10,7 @@ set -euo pipefail
 ENVIRONMENT="dev"
 IMAGE_TAG="latest"
 PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
+NO_CACHE=false
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -24,9 +25,17 @@ while [[ $# -gt 0 ]]; do
       IMAGE_TAG="v$(date +%Y%m%d)-$(git rev-parse --short HEAD)"
       shift
       ;;
+    --tag)
+      IMAGE_TAG="$2"
+      shift 2
+      ;;
+    --no-cache)
+      NO_CACHE=true
+      shift
+      ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--dev|--prod]"
+      echo "Usage: $0 [--dev|--prod] [--tag <tag>] [--no-cache]"
       exit 1
       ;;
   esac
@@ -34,6 +43,9 @@ done
 
 echo "Building and pushing to $ENVIRONMENT environment with tag: $IMAGE_TAG"
 echo "Target platforms: $PLATFORMS"
+if [ "$NO_CACHE" = true ]; then
+  echo "Docker cache: disabled"
+fi
 
 # Check Docker is available
 if ! docker system info >/dev/null 2>&1; then
@@ -65,6 +77,10 @@ build_and_push() {
   echo "Building Docker image: $image_name:$IMAGE_TAG"
 
   build_args=(--platform "$PLATFORMS" -t "$image_name:$IMAGE_TAG")
+
+  if [ "$NO_CACHE" = true ]; then
+    build_args+=(--no-cache)
+  fi
 
   if [ "$ENVIRONMENT" == "prod" ]; then
     echo "Also tagging as latest for production"

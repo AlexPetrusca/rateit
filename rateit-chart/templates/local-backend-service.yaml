@@ -1,0 +1,16 @@
+{{- if and .Values.backend.enabled .Values.localBackend.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: critic-backend-local
+  labels:
+    {{- include "critic.selectorLabels" . | nindent 4 }}
+spec:
+  type: {{ .Values.localBackend.service.type }}
+  selector:
+    {{- include "critic.selectorLabels" . | nindent 4 }}
+    component: backend-local
+  ports:
+    - port: {{ .Values.localBackend.service.port }}
+      targetPort: {{ .Values.localBackend.service.targetPort }}
+{{- end }}
