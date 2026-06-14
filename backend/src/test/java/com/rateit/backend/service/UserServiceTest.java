@@ -4,7 +4,9 @@ import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.Rating;
 import com.rateit.backend.entity.dto.AdminDeleteUsersResultDto;
 import com.rateit.backend.entity.dto.UserProfileDto;
+import com.rateit.backend.entity.dto.UserSearchResultDto;
 import com.rateit.backend.entity.rest.UpdateAdminUserRequest;
+import com.rateit.backend.entity.types.FollowRelation;
 import com.rateit.backend.exception.BadRequestException;
 import com.rateit.backend.repository.ExternalReviewRepository;
 import com.rateit.backend.repository.FeedEventRepository;
@@ -130,11 +132,46 @@ class UserServiceTest {
         ReflectionTestUtils.setField(user, "id", 1L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.findByPhoneNumber("+15550000001")).thenReturn(Optional.of(user));
 
-        UserProfileDto profile = userService.getProfile(1L);
+        UserProfileDto profile = userService.getProfile(1L, "+15550000001");
 
         assertEquals("alpha", profile.username());
         assertEquals("alpha.png", profile.profilePicUrl());
+        assertEquals(FollowRelation.SELF, profile.followRelation());
+        assertEquals(0, profile.followerCount());
+        assertEquals(0, profile.followingCount());
+    }
+
+    @Test
+    void searchUsersReturnsPublicSafeResultsWithRelationshipState() {
+        User currentUser = User.builder()
+            .phoneNumber("+15550000001")
+            .username("alpha")
+            .profilePicUrl("alpha.png")
+            .role("ROLE_USER")
+            .build();
+        ReflectionTestUtils.setField(currentUser, "id", 1L);
+        User resultUser = User.builder()
+            .phoneNumber("+15550000002")
+            .username("beta")
+            .profilePicUrl("beta.png")
+            .role("ROLE_USER")
+            .build();
+        ReflectionTestUtils.setField(resultUser, "id", 2L);
+
+        when(userRepository.findByPhoneNumber("+15550000001")).thenReturn(Optional.of(currentUser));
+        when(userRepository.searchVisibleUsersByUsername(any(String.class), any(PageRequest.class)))
+            .thenReturn(List.of(resultUser));
+        when(followRepository.existsByFollowerUserAndFollowedUser(currentUser, resultUser)).thenReturn(false);
+
+        List<UserSearchResultDto> results = userService.searchUsers("bet", 10, "+15550000001");
+
+        assertEquals(1, results.size());
+        assertEquals(2L, results.get(0).userId());
+        assertEquals("beta", results.get(0).username());
+        assertEquals("beta.png", results.get(0).profilePicUrl());
+        assertEquals(FollowRelation.NOT_FOLLOWING, results.get(0).followRelation());
     }
 
     @Test

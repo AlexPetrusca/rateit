@@ -4,6 +4,7 @@ import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.dto.FeedItemDto;
 import com.rateit.backend.entity.dto.UserDto;
 import com.rateit.backend.entity.dto.UserProfileDto;
+import com.rateit.backend.entity.dto.UserSearchResultDto;
 import com.rateit.backend.entity.rest.CreateUserRequest;
 import com.rateit.backend.exception.ResourceNotFoundException;
 import com.rateit.backend.service.FeedService;
@@ -13,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -55,9 +58,18 @@ public class UserController {
         return ResponseEntity.ok(body);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<UserSearchResultDto>> searchUsers(
+        @RequestParam String query,
+        @RequestParam(defaultValue = "10") int limit,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.ok(userService.searchUsers(query, limit, token.getToken().getSubject()));
+    }
+
     @GetMapping("/{userId:\\d+}")
-    public ResponseEntity<UserProfileDto> getProfile(@PathVariable long userId) {
-        return ResponseEntity.ok(userService.getProfile(userId));
+    public ResponseEntity<UserProfileDto> getProfile(@PathVariable long userId, JwtAuthenticationToken token) {
+        return ResponseEntity.ok(userService.getProfile(userId, token.getToken().getSubject()));
     }
 
     @GetMapping("/{userId:\\d+}/posts")
@@ -70,5 +82,21 @@ public class UserController {
         return ResponseEntity.ok(
             feedService.getProfileRatings(userId, size, page, token.getToken().getSubject())
         );
+    }
+
+    @GetMapping("/{userId:\\d+}/followers")
+    public ResponseEntity<List<UserSearchResultDto>> getFollowers(
+        @PathVariable long userId,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.ok(userService.listFollowers(userId, token.getToken().getSubject()));
+    }
+
+    @GetMapping("/{userId:\\d+}/following")
+    public ResponseEntity<List<UserSearchResultDto>> getFollowing(
+        @PathVariable long userId,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.ok(userService.listFollowing(userId, token.getToken().getSubject()));
     }
 }

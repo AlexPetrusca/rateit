@@ -4,7 +4,7 @@ This file is the entry point for a new agent joining the repo. Read it first, th
 
 ## Current Product State
 
-RateIt is a React + Spring Boot app with phone-number login, JWT cookie auth, a public feed of ratings, threaded comments, re-rating, user profiles, a post detail page, and an admin area for moderation plus synthetic-data automation.
+RateIt is a React + Spring Boot app with phone-number login, JWT cookie auth, a public feed of ratings, threaded comments, re-rating, user profiles, user search, followers/following, a post detail page, and an admin area for moderation plus synthetic-data automation.
 
 ### What is implemented now
 
@@ -15,6 +15,8 @@ RateIt is a React + Spring Boot app with phone-number login, JWT cookie auth, a 
 - Infinite-scroll home feed with pagination in chunks of 5.
 - Shared feed/post/comment UI components used across home, profile, and post detail pages.
 - User profile pages with user info and that user’s posts.
+- Public-safe user search by username for finding people to follow.
+- Profiles show follower/following counts, and those counts open list pages.
 - Post detail pages with the post and its threaded comments.
 - A shared notification system for info, warning, and error toasts.
 - Reusable modal component.
@@ -64,6 +66,9 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 - `/profile`
 - `/users/:userId`
 - `/posts/:ratingId`
+- `/search`
+- `/users/:userId/followers`
+- `/users/:userId/following`
 - `/admin/users`
 - `/admin/posts`
 - `/admin/jobs`
@@ -74,8 +79,10 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 
 - `AuthController` handles OTP send/login/logout.
 - `AuthService` contains the login policy, including test-user bypass behavior.
-- `UserController` exposes `/api/users/me`, user profile lookup, and user posts.
+- `UserController` exposes `/api/users/me`, user search, user profile lookup, user posts, followers, and following.
 - `UserService` owns user creation, updates, delete behavior, and test-user queries.
+- `FollowController` exposes follow and unfollow endpoints.
+- `FollowService` owns follow/unfollow transitions.
 
 ### Feed and post actions
 
@@ -99,6 +106,7 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 - `ROLE_TEST_USER` is used only for synthetic test accounts.
 - `admin_jobs` persists queue state with `PENDING`, `IN_PROGRESS`, `DONE`, and `FAILED`.
 - Job payload/result JSON is stored in the database so details can be reconstructed later.
+- `follows` stores directed follower/followed relationships.
 
 ## Shared Frontend Components
 

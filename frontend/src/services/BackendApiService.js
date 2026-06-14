@@ -71,6 +71,52 @@ const BackendApiService = {
         return await response.json();
     },
 
+    searchUsers: async ({ query, limit = 10 } = {}) => {
+        const response = await fetch(`/api/users/search?query=${encodeURIComponent(query || '')}&limit=${encodeURIComponent(limit)}`);
+        if (!response.ok) {
+            throw new Error('Failed to search users');
+        }
+        return await response.json();
+    },
+
+    followUser: async (userId) => {
+        const response = await fetch(`/api/follows/${encodeURIComponent(userId)}`, {
+            method: 'POST'
+        });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to follow user');
+        }
+        return await response.json();
+    },
+
+    unfollowUser: async (userId) => {
+        const response = await fetch(`/api/follows/${encodeURIComponent(userId)}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to unfollow user');
+        }
+        return await response.json();
+    },
+
+    getFollowers: async (userId) => {
+        const response = await fetch(`/api/users/${encodeURIComponent(userId)}/followers`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch followers');
+        }
+        return await response.json();
+    },
+
+    getFollowing: async (userId) => {
+        const response = await fetch(`/api/users/${encodeURIComponent(userId)}/following`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch following');
+        }
+        return await response.json();
+    },
+
     logout: async () => {
         await fetch('/auth/logout', { method: 'POST' });
     },

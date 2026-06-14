@@ -88,6 +88,70 @@ test('getRating requests the single-post endpoint', async () => {
     }
 });
 
+test('searchUsers requests encoded user search endpoint', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            json: async () => ([{ userId: 2, username: 'bob_bananas' }])
+        };
+    };
+
+    try {
+        const result = await BackendApiService.searchUsers({ query: 'bob bananas', limit: 7 });
+
+        assert.deepEqual(result, [{ userId: 2, username: 'bob_bananas' }]);
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].url, '/api/users/search?query=bob%20bananas&limit=7');
+        assert.equal(calls[0].options.method, undefined);
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
+test('followUser posts to the follow endpoint', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            json: async () => ({ userId: 2, followRelation: 'FOLLOWING' })
+        };
+    };
+
+    try {
+        const result = await BackendApiService.followUser(2);
+
+        assert.deepEqual(result, { userId: 2, followRelation: 'FOLLOWING' });
+        assert.equal(calls[0].url, '/api/follows/2');
+        assert.equal(calls[0].options.method, 'POST');
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
+test('getFollowers requests profile followers endpoint', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            json: async () => ([{ userId: 3, username: 'beta' }])
+        };
+    };
+
+    try {
+        const result = await BackendApiService.getFollowers(2);
+
+        assert.deepEqual(result, [{ userId: 3, username: 'beta' }]);
+        assert.equal(calls[0].url, '/api/users/2/followers');
+        assert.equal(calls[0].options.method, undefined);
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
 test('getAdminPosts requests the paged admin post endpoint', async () => {
     const calls = [];
     globalThis.fetch = async (url, options = {}) => {

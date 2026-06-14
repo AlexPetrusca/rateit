@@ -12,6 +12,8 @@ import AdminComments from './pages/AdminComments';
 import AdminUsers from './pages/AdminUsers';
 import Profile from './pages/Profile';
 import Post from './pages/Post';
+import SearchUsers from './pages/SearchUsers';
+import FollowList from './pages/FollowList';
 import GuardedRoute from './components/GuardedRoute.jsx';
 import UnguardedRoute from "./components/UnguardedRoute.jsx";
 import Layout from './components/Layout.jsx';
@@ -69,6 +71,30 @@ function App() {
                                 element={
                                     <GuardedRoute>
                                         <Post />
+                                    </GuardedRoute>
+                                }
+                            />
+                            <Route
+                                path="/search"
+                                element={
+                                    <GuardedRoute>
+                                        <SearchUsers />
+                                    </GuardedRoute>
+                                }
+                            />
+                            <Route
+                                path="/users/:userId/followers"
+                                element={
+                                    <GuardedRoute>
+                                        <FollowList type="followers" />
+                                    </GuardedRoute>
+                                }
+                            />
+                            <Route
+                                path="/users/:userId/following"
+                                element={
+                                    <GuardedRoute>
+                                        <FollowList type="following" />
                                     </GuardedRoute>
                                 }
                             />

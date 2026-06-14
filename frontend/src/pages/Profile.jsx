@@ -25,6 +25,7 @@ const Profile = () => {
     const [isProfileLoading, setIsProfileLoading] = useState(true);
     const [isPostsLoading, setIsPostsLoading] = useState(true);
     const [isPostsLoadingMore, setIsPostsLoadingMore] = useState(false);
+    const [isFollowActionLoading, setIsFollowActionLoading] = useState(false);
     const [profileError, setProfileError] = useState('');
     const [postsError, setPostsError] = useState('');
     const [hasMorePosts, setHasMorePosts] = useState(true);
@@ -110,6 +111,39 @@ const Profile = () => {
             setIsPostsLoadingMore(false);
         }
     }, [notify]);
+
+    const handleFollowAction = async () => {
+        if (resolvedUserId == null || profile == null || isOwnProfile) {
+            return;
+        }
+
+        setIsFollowActionLoading(true);
+
+        try {
+            if (profile.followRelation === 'NOT_FOLLOWING') {
+                await BackendApiService.followUser(resolvedUserId);
+                setProfile((current) => current ? {
+                    ...current,
+                    followRelation: 'FOLLOWING',
+                    followerCount: (current.followerCount || 0) + 1
+                } : current);
+                notify({ message: 'Now following.', type: 'info' });
+            } else if (profile.followRelation === 'FOLLOWING') {
+                await BackendApiService.unfollowUser(resolvedUserId);
+                setProfile((current) => current ? {
+                    ...current,
+                    followRelation: 'NOT_FOLLOWING',
+                    followerCount: Math.max(0, (current.followerCount || 0) - 1)
+                } : current);
+                notify({ message: 'Unfollowed.', type: 'info' });
+            }
+        } catch (error) {
+            notify({ message: error.message || 'Failed to update follow', type: 'error' });
+            loadProfile(resolvedUserId);
+        } finally {
+            setIsFollowActionLoading(false);
+        }
+    };
 
     const openPost = (ratingId) => {
         if (ratingId == null) {
@@ -525,6 +559,11 @@ const Profile = () => {
     const profileSubtitle = profile
         ? `@${profile.username}`
         : 'View a user profile and their posts';
+    const followActionLabel = {
+        NOT_FOLLOWING: 'Follow',
+        FOLLOWING: 'Following'
+    }[profile?.followRelation];
+    const canUseFollowAction = Boolean(followActionLabel) && profile?.followRelation !== 'SELF';
 
     return (
         <div className="feed-page">
@@ -550,8 +589,38 @@ const Profile = () => {
                             <div className="profile-banner-copy">
                                 <div className="profile-name-row">
                                     <h2>{profile.username}</h2>
+                                    {!isOwnProfile && canUseFollowAction && (
+                                        <button
+                                            type="button"
+                                            className={
+                                                profile.followRelation === 'FOLLOWING'
+                                                    ? 'profile-action-button secondary-action-button'
+                                                    : 'profile-action-button'
+                                            }
+                                            disabled={isFollowActionLoading}
+                                            onClick={handleFollowAction}
+                                        >
+                                            {isFollowActionLoading ? 'Updating...' : followActionLabel}
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="profile-subtitle">{profileSubtitle}</div>
+                                <div className="profile-social-counts">
+                                    <button
+                                        type="button"
+                                        onClick={() => resolvedUserId != null && navigate(`/users/${resolvedUserId}/following`)}
+                                    >
+                                        <strong>{profile.followingCount || 0}</strong>
+                                        <span>Following</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => resolvedUserId != null && navigate(`/users/${resolvedUserId}/followers`)}
+                                    >
+                                        <strong>{profile.followerCount || 0}</strong>
+                                        <span>Followers</span>
+                                    </button>
+                                </div>
                             </div>
                         </section>
 

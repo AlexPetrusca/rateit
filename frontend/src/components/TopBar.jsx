@@ -15,6 +15,7 @@ const TopBar = () => {
     const isFullyAuthenticated = isAuthenticated && user != null;
     const isAdmin = user?.role === 'ROLE_ADMIN';
     const isOnAdminPage = location.pathname.startsWith('/admin');
+    const isOnSearchPage = location.pathname.startsWith('/search');
 
     useClickOutside(menuRef, () => setShowMenu(false));
 
@@ -50,6 +51,13 @@ const TopBar = () => {
                         )}
                         <button className="create-button" onClick={() => navigate('/create')}>
                             + Create
+                        </button>
+                        <button
+                            className={isOnSearchPage ? 'nav-pill-button is-active' : 'nav-pill-button'}
+                            aria-current={isOnSearchPage ? 'page' : undefined}
+                            onClick={() => navigate('/search')}
+                        >
+                            Find People
                         </button>
                         <div className="user-menu-container" ref={menuRef}>
                             <button

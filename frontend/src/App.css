@@ -133,7 +133,8 @@ body {
     background-color: #0056b3;
 }
 
-.admin-button {
+.admin-button,
+.nav-pill-button {
     background-color: transparent;
     color: #0f1419;
     border: 1px solid #cfd9de;
@@ -144,11 +145,13 @@ body {
     font-weight: 500;
 }
 
-.admin-button:hover {
+.admin-button:hover,
+.nav-pill-button:hover {
     background-color: #f7f9f9;
 }
 
-.admin-button.is-active {
+.admin-button.is-active,
+.nav-pill-button.is-active {
     background-color: #eef6ff;
     border-color: #7cb5ff;
     color: #0b5cad;
@@ -386,6 +389,52 @@ button:disabled {
     font-size: 0.95rem;
 }
 
+.profile-action-button {
+    margin: 0;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.profile-social-counts {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.profile-social-counts button {
+    display: inline-flex;
+    gap: 5px;
+    align-items: baseline;
+    margin: 0;
+    padding: 0;
+    color: #536471;
+    background: transparent;
+    border: 0;
+    font-size: 0.95rem;
+}
+
+.profile-social-counts button:hover {
+    color: #0f1419;
+    background: transparent;
+    text-decoration: underline;
+}
+
+.profile-social-counts strong {
+    color: #0f1419;
+}
+
+.secondary-action-button {
+    background: #ffffff;
+    color: #0f1419;
+    border: 1px solid #cfd9de;
+}
+
+.secondary-action-button:hover {
+    background: #f7f9f9;
+}
+
 .profile-posts {
     display: flex;
     flex-direction: column;
@@ -530,6 +579,116 @@ button:disabled {
 .profile-link-text .tweet-name,
 .profile-link-text .comment-author {
     color: inherit;
+}
+
+.notification-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid #e2e5ea;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.notification-person {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    color: #0f1419;
+    background: transparent;
+    border: 0;
+    text-align: left;
+}
+
+.notification-person:hover {
+    background: transparent;
+}
+
+.notification-person > span {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.notification-person strong,
+.notification-person span span {
+    overflow-wrap: anywhere;
+}
+
+.notification-person span span {
+    color: #536471;
+}
+
+.notification-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.notification-actions button {
+    margin: 0;
+    padding: 0.55rem 1rem;
+    border-radius: 20px;
+    font-weight: 700;
+}
+
+.search-shell {
+    width: min(760px, 100%);
+    padding: 24px 16px 40px;
+}
+
+.user-search-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 16px 0;
+}
+
+.user-search-form input {
+    min-width: 0;
+    padding: 0.75rem;
+    border: 1px solid #cfd9de;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.user-search-form button,
+.user-search-result > button:not(.notification-person) {
+    margin: 0;
+    padding: 0.55rem 1rem;
+    border-radius: 20px;
+    font-weight: 700;
+}
+
+.user-search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.user-search-result {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid #e2e5ea;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.user-search-note {
+    color: #536471;
+    font-weight: 700;
 }
 
 .feed-page {

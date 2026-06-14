@@ -13,7 +13,8 @@ This document covers the main user-facing product surface outside the admin area
 - likes
 - re-rates that create additional ratings for the same item
 - threaded comments
-- notifications
+- user search
+- followers/following
 
 ## Pages
 
@@ -24,6 +25,9 @@ This document covers the main user-facing product surface outside the admin area
 - `/profile`
 - `/users/:userId`
 - `/posts/:ratingId`
+- `/search`
+- `/users/:userId/followers`
+- `/users/:userId/following`
 
 ## Shared UI Components
 
@@ -59,6 +63,9 @@ Use the shared components below before creating new copies:
 - Clicking an avatar or username should navigate to the user profile.
 - Clicking a post opens the post detail page.
 - User profiles expose only public-safe profile information: avatar, username, handle, and visible posts.
+- User profiles expose the current viewer's follow relation to that profile user, plus follower/following counts.
+- Follower and following counts are clickable and open public-safe list pages.
+- User search is public-safe and supports finding people by username so users can follow them.
 - Comments are threaded.
 - Comments remain ratings and include a score.
 
@@ -68,6 +75,8 @@ Use the shared components below before creating new copies:
 - `AuthService`
 - `UserController`
 - `UserService`
+- `FollowController`
+- `FollowService`
 - `FeedController`
 - `FeedService`
 - `FeedActionService`
@@ -80,6 +89,8 @@ If you are changing the main app surface, these are the first files to inspect:
 - logged-in state: `frontend/src/contexts/AuthContext.jsx`
 - home feed: `frontend/src/pages/Home.jsx`
 - profile page: `frontend/src/pages/Profile.jsx`
+- user search page: `frontend/src/pages/SearchUsers.jsx`
+- follower/following list page: `frontend/src/pages/FollowList.jsx`
 - post page: `frontend/src/pages/Post.jsx`
 - create page: `frontend/src/pages/Create.jsx`
 - shared feed rendering: `frontend/src/components/FeedTimeline.jsx`
@@ -102,8 +113,13 @@ If you are changing the main app surface, these are the first files to inspect:
 - `DELETE /api/feed/ratings/{ratingId}/like`
 - `POST /api/feed/ratings/{ratingId}/rerate`
 - `GET /api/users/me`
+- `GET /api/users/search?query={query}&limit={limit}`
 - `GET /api/users/{userId}`
 - `GET /api/users/{userId}/posts`
+- `GET /api/users/{userId}/followers`
+- `GET /api/users/{userId}/following`
+- `POST /api/follows/{userId}`
+- `DELETE /api/follows/{userId}`
 
 ## Current Invariants
 

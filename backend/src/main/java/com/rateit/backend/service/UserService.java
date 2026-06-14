@@ -1,10 +1,13 @@
 package com.rateit.backend.service;
 
 import com.rateit.backend.entity.User;
+import com.rateit.backend.entity.Follow;
 import com.rateit.backend.entity.types.UserRoles;
 import com.rateit.backend.entity.dto.AdminDeleteUsersResultDto;
 import com.rateit.backend.entity.dto.UserProfileDto;
+import com.rateit.backend.entity.dto.UserSearchResultDto;
 import com.rateit.backend.entity.rest.UpdateAdminUserRequest;
+import com.rateit.backend.entity.types.FollowRelation;
 import com.rateit.backend.exception.BadRequestException;
 import com.rateit.backend.exception.ConflictException;
 import com.rateit.backend.exception.ResourceNotFoundException;
@@ -22,6 +25,7 @@ import com.rateit.backend.repository.UserRepository;
 import com.rateit.backend.repository.UserExternalAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -86,13 +90,75 @@ public class UserService {
             .orElseThrow(() -> ResourceNotFoundException.user(userId));
     }
 
-    public UserProfileDto getProfile(long userId) {
+    public UserProfileDto getProfile(long userId, String currentPhoneNumber) {
         User user = findById(userId);
         if (user.getDeletedAt() != null) {
             throw ResourceNotFoundException.user(userId);
         }
 
-        return UserProfileDto.fromUser(user);
+        User currentUser = findByPhoneNumber(currentPhoneNumber);
+        return UserProfileDto.fromUser(
+            user,
+            getFollowRelation(currentUser, user),
+            followRepository.countByFollowedUser(user),
+            followRepository.countByFollowerUser(user)
+        );
+    }
+
+    public List<UserSearchResultDto> searchUsers(String query, int limit, String currentPhoneNumber) {
+        String normalizedQuery = normalizeOptional(query);
+        if (normalizedQuery == null) {
+            return List.of();
+        }
+
+        User currentUser = findByPhoneNumber(currentPhoneNumber);
+        int normalizedLimit = Math.max(1, Math.min(limit, 20));
+
+        return userRepository.searchVisibleUsersByUsername(normalizedQuery, PageRequest.of(0, normalizedLimit))
+            .stream()
+            .map(user -> UserSearchResultDto.fromUser(user, getFollowRelation(currentUser, user)))
+            .toList();
+    }
+
+    public List<UserSearchResultDto> listFollowers(long userId, String currentPhoneNumber) {
+        User user = findVisibleUser(userId);
+        User currentUser = findByPhoneNumber(currentPhoneNumber);
+
+        return followRepository.findFollowers(user).stream()
+            .map(Follow::getFollowerUser)
+            .filter(follower -> follower.getDeletedAt() == null)
+            .map(follower -> UserSearchResultDto.fromUser(follower, getFollowRelation(currentUser, follower)))
+            .toList();
+    }
+
+    public List<UserSearchResultDto> listFollowing(long userId, String currentPhoneNumber) {
+        User user = findVisibleUser(userId);
+        User currentUser = findByPhoneNumber(currentPhoneNumber);
+
+        return followRepository.findFollowing(user).stream()
+            .map(Follow::getFollowedUser)
+            .filter(followed -> followed.getDeletedAt() == null)
+            .map(followed -> UserSearchResultDto.fromUser(followed, getFollowRelation(currentUser, followed)))
+            .toList();
+    }
+
+    private FollowRelation getFollowRelation(User currentUser, User profileUser) {
+        if (currentUser.getId().equals(profileUser.getId())) {
+            return FollowRelation.SELF;
+        }
+
+        return followRepository.existsByFollowerUserAndFollowedUser(currentUser, profileUser)
+            ? FollowRelation.FOLLOWING
+            : FollowRelation.NOT_FOLLOWING;
+    }
+
+    private User findVisibleUser(long userId) {
+        User user = findById(userId);
+        if (user.getDeletedAt() != null) {
+            throw ResourceNotFoundException.user(userId);
+        }
+
+        return user;
     }
 
     public User findByPhoneNumber(String phoneNumber) {
