@@ -21,6 +21,10 @@ node_modules/
 
 # Logs
 *.log
+.runlogs/
+
+# Local notes
+wiki/
 
 # Legacy
 frontend-old/
