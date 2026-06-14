@@ -44,16 +44,18 @@ const Profile = () => {
             return Number.isFinite(parsed) ? parsed : null;
         }
 
-        return currentUser?.userId ?? null;
-    }, [routeUserId, currentUser?.userId]);
+        return currentUser?.userId ?? currentUser?.id ?? null;
+    }, [routeUserId, currentUser?.userId, currentUser?.id]);
 
     const isOwnProfile = useMemo(() => {
-        if (resolvedUserId == null || currentUser?.userId == null) {
+        const currentUserId = currentUser?.userId ?? currentUser?.id;
+
+        if (resolvedUserId == null || currentUserId == null) {
             return false;
         }
 
-        return resolvedUserId === currentUser.userId;
-    }, [resolvedUserId, currentUser?.userId]);
+        return resolvedUserId === currentUserId;
+    }, [resolvedUserId, currentUser?.userId, currentUser?.id]);
 
     const loadProfile = useCallback(async (nextUserId) => {
         if (nextUserId == null) {

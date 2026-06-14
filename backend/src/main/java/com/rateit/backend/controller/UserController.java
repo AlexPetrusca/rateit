@@ -49,14 +49,14 @@ public class UserController {
     }
 
     @PostMapping("/me")
-    public ResponseEntity<User> createMe(@RequestBody @Valid CreateUserRequest req, JwtAuthenticationToken token) {
+    public ResponseEntity<UserDto> createMe(@RequestBody @Valid CreateUserRequest req, JwtAuthenticationToken token) {
         String phoneNumber = token.getToken().getSubject();
         User body = userService.create(
             phoneNumber,
             req.username(),
             req.profilePicUrl()
         );
-        return ResponseEntity.ok(body);
+        return ResponseEntity.ok(UserDto.fromUser(body));
     }
 
     @GetMapping("/search")

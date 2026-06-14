@@ -35,10 +35,11 @@ const CreateAccount = () => {
             }
 
             // Create User
-            const updatedUser = await BackendApiService.createOrUpdateUser({
+            await BackendApiService.createOrUpdateUser({
                 username,
                 profilePicUrl
             });
+            const updatedUser = await BackendApiService.getCurrentUser();
 
             updateUser(updatedUser);
             navigate('/');

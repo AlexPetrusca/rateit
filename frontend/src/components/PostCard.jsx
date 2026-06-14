@@ -20,6 +20,10 @@ const formatScoreValue = (scoreValue, ratingScale) => {
     return `${displayScore}${Number.isFinite(max) ? ` / ${displayMax}` : ''}${symbol ? ` ${symbol}` : ''}`;
 };
 
+const formatPostDate = (createdAt, options) => {
+    return new Intl.DateTimeFormat(undefined, options).format(new Date(createdAt));
+};
+
 const PostCard = ({
     post,
     onAuthorClick,
@@ -125,13 +129,21 @@ const PostCard = ({
                         </>
                     )}
                     <span className="tweet-dot">.</span>
-                    <time dateTime={post.createdAt}>{new Intl.DateTimeFormat(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        second: '2-digit'
-                    }).format(new Date(post.createdAt))}</time>
+                    <time className="tweet-time-desktop" dateTime={post.createdAt}>
+                        {formatPostDate(post.createdAt, {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        })}
+                    </time>
+                    <time className="tweet-time-mobile" dateTime={post.createdAt}>
+                        {formatPostDate(post.createdAt, {
+                            month: 'short',
+                            day: 'numeric'
+                        })}
+                    </time>
                 </header>
 
                 {typeof onPostClick === 'function' ? (

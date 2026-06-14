@@ -49,6 +49,12 @@ Use the shared components below before creating new copies:
 - The feed should paginate and load more on scroll.
 - The post detail page should reuse the same post and comment components instead of duplicating its own rendering path.
 
+## Mobile Layout
+
+- At phone widths, the top navigation uses compact labels and keeps every action within the viewport.
+- Feed cards reduce avatar and gutter sizes, use short post dates, and allow action controls to wrap without creating horizontal page overflow.
+- Search forms, profile headers, and composer actions stack vertically when their desktop layout no longer fits.
+
 ## Rating Rules
 
 - Posts use the shared star component.

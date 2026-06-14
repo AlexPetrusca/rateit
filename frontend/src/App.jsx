@@ -17,7 +17,19 @@ import FollowList from './pages/FollowList';
 import GuardedRoute from './components/GuardedRoute.jsx';
 import UnguardedRoute from "./components/UnguardedRoute.jsx";
 import Layout from './components/Layout.jsx';
+import { useAuth } from './contexts/AuthContext';
 import './App.css';
+
+const OwnProfileRedirect = () => {
+    const { user } = useAuth();
+    const currentUserId = user?.userId ?? user?.id;
+
+    if (currentUserId == null) {
+        return <Navigate to="/create-account" replace />;
+    }
+
+    return <Navigate to={`/users/${currentUserId}`} replace />;
+};
 
 function App() {
     return (
@@ -54,7 +66,7 @@ function App() {
                                 path="/profile"
                                 element={
                                     <GuardedRoute>
-                                        <Profile />
+                                        <OwnProfileRedirect />
                                     </GuardedRoute>
                                 }
                             />

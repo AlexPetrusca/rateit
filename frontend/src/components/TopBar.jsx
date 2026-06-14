@@ -6,7 +6,7 @@ import UserAvatar from './UserAvatar.jsx';
 import '../App.css';
 
 const TopBar = () => {
-    const { user, isAuthenticated, logout } = useAuth();
+    const { user, isAuthenticated, logout, checkAuthStatus } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [showMenu, setShowMenu] = useState(false);
@@ -19,8 +19,24 @@ const TopBar = () => {
 
     useClickOutside(menuRef, () => setShowMenu(false));
 
-    const handleProfileClick = () => {
-        navigate('/profile');
+    const handleProfileClick = async () => {
+        const currentUserId = user?.userId ?? user?.id;
+
+        if (currentUserId != null) {
+            navigate(`/users/${currentUserId}`);
+            setShowMenu(false);
+            return;
+        }
+
+        const refreshedUser = await checkAuthStatus();
+        const refreshedUserId = refreshedUser?.userId ?? refreshedUser?.id;
+
+        if (refreshedUserId != null) {
+            navigate(`/users/${refreshedUserId}`);
+        } else {
+            navigate('/create-account');
+        }
+
         setShowMenu(false);
     };
 
@@ -50,20 +66,27 @@ const TopBar = () => {
                             </button>
                         )}
                         <button className="create-button" onClick={() => navigate('/create')}>
-                            + Create
+                            <span aria-hidden="true">+</span>
+                            <span className="nav-label-desktop">Create</span>
+                            <span className="nav-label-mobile">Create</span>
                         </button>
                         <button
                             className={isOnSearchPage ? 'nav-pill-button is-active' : 'nav-pill-button'}
                             aria-current={isOnSearchPage ? 'page' : undefined}
+                            aria-label="Find people"
                             onClick={() => navigate('/search')}
                         >
-                            Find People
+                            <span className="nav-label-desktop">Find People</span>
+                            <span className="nav-label-mobile">Find</span>
                         </button>
                         <div className="user-menu-container" ref={menuRef}>
                             <button
                                 type="button"
                                 className="profile-icon-button"
-                                onClick={() => setShowMenu(!showMenu)}
+                                aria-haspopup="menu"
+                                aria-expanded={showMenu}
+                                aria-label="Open profile menu"
+                                onClick={() => setShowMenu((current) => !current)}
                             >
                                 <UserAvatar
                                     username={user?.username}
@@ -73,7 +96,7 @@ const TopBar = () => {
                                 />
                             </button>
                             {showMenu && (
-                                <div className="dropdown-menu">
+                                <div className="dropdown-menu" role="menu">
                                     <button onClick={handleProfileClick}>Profile</button>
                                     <button onClick={handleLogoutClick}>Logout</button>
                                 </div>

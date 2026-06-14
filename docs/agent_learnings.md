@@ -45,6 +45,11 @@ Do not use this file for:
 - User role state lives on the `users` row and must stay consistent with JWT/session handling.
 - The live `users` table still requires legacy `first_name` and `last_name` columns, so create/update flows must populate them even though the UI is username-first.
 
+### Twilio Verify
+
+- The branding in Twilio Verify OTP text comes from the Verify service `friendlyName`, not from the app's OTP request payload.
+- Use the Verify service API directly for OTP delivery; do not wire the app to a separate Messaging Service sender pool for this flow.
+
 ## How To Update
 
 When you discover a reusable lesson during implementation, add it here and keep it short. Prefer a single sentence that captures the invariant or pitfall.
