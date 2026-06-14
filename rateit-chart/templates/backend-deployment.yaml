@@ -2,19 +2,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rateit-backend
+  name: critic-backend
   labels:
-    {{- include "rateit.selectorLabels" . | nindent 4 }}
+    {{- include "critic.selectorLabels" . | nindent 4 }}
     component: backend
 spec:
   selector:
     matchLabels:
-      {{- include "rateit.selectorLabels" . | nindent 6 }}
+      {{- include "critic.selectorLabels" . | nindent 6 }}
       component: backend
   template:
     metadata:
       labels:
-        {{- include "rateit.selectorLabels" . | nindent 8 }}
+        {{- include "critic.selectorLabels" . | nindent 8 }}
         component: backend
     spec:
       containers:
@@ -30,7 +30,7 @@ spec:
             - name: SPRING_CONFIG_IMPORT
               value: "configtree:/etc/secrets/"
             - name: POSTGRES_HOST
-              value: "rateit-postgresql"
+              value: "critic-postgresql"
             - name: POSTGRES_PORT
               value: "{{ .Values.postgresql.primary.service.ports.postgresql }}"
             - name: POSTGRES_ADMIN_USERNAME
@@ -40,11 +40,11 @@ spec:
             - name: POSTGRES_DB_NAME
               value: "{{ .Values.postgresql.auth.database }}"
             - name: MINIO_HOST
-              value: "rateit-minio"
+              value: "critic-minio"
             - name: MINIO_PORT
               value: "{{ .Values.minio.service.port }}"
             - name: MOCKER_HOST
-              value: "rateit-mocker"
+              value: "critic-mocker"
             - name: MOCKER_PORT
               value: "{{ .Values.mocker.service.port }}"
           volumeMounts:
@@ -56,13 +56,13 @@ spec:
           projected:
             sources:
               - secret:
-                  name: rateit-backend-secret
+                  name: critic-backend-secret
               - secret:
-                  name: rateit-postgres-secret
+                  name: critic-postgres-secret
               - secret:
-                  name: rateit-redis-secret
+                  name: critic-redis-secret
               - secret:
-                  name: rateit-minio-secret
+                  name: critic-minio-secret
                   items:
                     - key: rootUser
                       path: MINIO_ADMIN_USERNAME

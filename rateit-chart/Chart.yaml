@@ -1,6 +1,6 @@
 apiVersion: v2
-name: rateit-chart
-description: A Helm chart for deploying the rateit application
+name: critic-chart
+description: A Helm chart for deploying the Critic application
 
 type: application
 version: 0.1.0

@@ -33,8 +33,8 @@ const TopBar = () => {
         <div className="top-bar">
             <div className="top-bar-left">
                 <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-                    <div className="logo-icon">RI</div>
-                    <span className="company-name">RateIt</span>
+                    <div className="logo-icon">C</div>
+                    <span className="company-name">Critic</span>
                 </div>
             </div>
             <div className="top-bar-right">

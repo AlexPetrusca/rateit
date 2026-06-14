@@ -3,11 +3,11 @@ spring:
     activate:
       on-profile: prod
   datasource:
-    jdbc: postgresql://rateit-postgresql:5432/postgres
+    jdbc: postgresql://critic-postgresql:5432/postgres
   cloud:
     aws:
       s3:
-        endpoint: http://${MINIO_HOST:rateit-minio}:${MINIO_PORT:9000}
+        endpoint: http://${MINIO_HOST:critic-minio}:${MINIO_PORT:9000}
 
 security:
   auth:

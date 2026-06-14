@@ -4,7 +4,7 @@ This file is the entry point for a new agent joining the repo. Read it first, th
 
 ## Current Product State
 
-RateIt is a React + Spring Boot app with phone-number login, JWT cookie auth, a public feed of ratings, threaded comments, re-rating, user profiles, user search, followers/following, a post detail page, and an admin area for moderation plus synthetic-data automation.
+Critic is a React + Spring Boot app with phone-number login, JWT cookie auth, a public feed of ratings, threaded comments, re-rating, user profiles, user search, followers/following, a post detail page, and an admin area for moderation plus synthetic-data automation.
 
 ### What is implemented now
 

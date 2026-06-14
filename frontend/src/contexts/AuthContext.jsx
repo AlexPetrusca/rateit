@@ -2,7 +2,7 @@ import { createContext, useState, useEffect, useContext } from 'react';
 import BackendApiService from '../services/BackendApiService';
 
 const AuthContext = createContext(null);
-const AUTH_SESSION_STORAGE_KEY = 'rateit.hasAuthSession';
+const AUTH_SESSION_STORAGE_KEY = 'critic.hasAuthSession';
 
 const hasStoredAuthSession = () => localStorage.getItem(AUTH_SESSION_STORAGE_KEY) === 'true';
 

@@ -1,6 +1,6 @@
-# Default values for rateit-chart.
+# Default values for critic-chart.
 
-appName: "rateit"
+appName: "critic"
 
 global:
   security:
@@ -13,12 +13,12 @@ nginx:
   service:
     type: ClusterIP
     port: 80
-  upstreamService: "rateit"
+  upstreamService: "critic"
   upstreamPort: 80
 
 backend:
   enabled: true
-  image: "alexpetrusca/rateit-backend"
+  image: "alexpetrusca/critic-backend"
   imageTag: "latest"
   pullPolicy: Always
   replicaCount: 1
@@ -30,7 +30,7 @@ backend:
 mocker:
   enabled: true
   image:
-    repository: alexpetrusca/rateit-mocker
+    repository: alexpetrusca/critic-mocker
     tag: "latest"
     pullPolicy: Always
   service:
@@ -50,7 +50,7 @@ ingress:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/use-regex: "true"
   hosts:
-    - host: rateit.localhost
+    - host: critic.localhost
       paths:
         - path: /
           pathType: Prefix
@@ -76,7 +76,7 @@ ingress-nginx:
 minio:
   enabled: true
   mode: standalone
-  existingSecret: "rateit-minio-secret"
+  existingSecret: "critic-minio-secret"
   persistence:
     enabled: true
     size: 20Gi
@@ -109,9 +109,9 @@ minio:
 postgresql:
   enabled: true
   auth:
-    database: "rateit"
-    username: "rateit"
-    existingSecret: "rateit-postgres-secret"
+    database: "critic"
+    username: "critic"
+    existingSecret: "critic-postgres-secret"
     secretKeys:
       adminPasswordKey: "POSTGRES_ADMIN_PASSWORD"
       userPasswordKey: "POSTGRES_USER_PASSWORD"
@@ -131,7 +131,7 @@ redis:
   architecture: standalone
   auth:
     enabled: true
-    existingSecret: "rateit-redis-secret"
+    existingSecret: "critic-redis-secret"
     existingSecretPasswordKey: "REDIS_ADMIN_PASSWORD"
   metrics:
     enabled: true
@@ -158,7 +158,7 @@ kafka:
         repository: bitnamilegacy/jmx-exporter
         tag: 1.4.0-debian-12-r0
   overrideConfiguration:
-    advertised.listeners: "CLIENT://localhost:9092,INTERNAL://rateit-kafka-controller-0.rateit-kafka-controller-headless.rateit.svc.cluster.local:9094"
+    advertised.listeners: "CLIENT://localhost:9092,INTERNAL://critic-kafka-controller-0.critic-kafka-controller-headless.critic.svc.cluster.local:9094"
   listeners:
     client:
       protocol: PLAINTEXT
@@ -215,36 +215,36 @@ prometheus:
     - job_name: 'backend'
       metrics_path: '/actuator/prometheus'
       static_configs:
-        - targets: ["rateit-backend:80"]
+        - targets: ["critic-backend:80"]
     - job_name: 'mocker'
       metrics_path: '/actuator/prometheus'
       static_configs:
-        - targets: ["rateit-mocker:8099"]
+        - targets: ["critic-mocker:8099"]
     - job_name: 'nginx'
       static_configs:
-        - targets: ["rateit-nginx:9113"]
+        - targets: ["critic-nginx:9113"]
     - job_name: 'postgresql'
       static_configs:
-        - targets: ["rateit-postgresql-metrics:9187"]
+        - targets: ["critic-postgresql-metrics:9187"]
     - job_name: 'redis'
       static_configs:
-        - targets: ["rateit-redis-metrics:9121"]
+        - targets: ["critic-redis-metrics:9121"]
     - job_name: 'kafka'
       static_configs:
-        - targets: ["rateit-kafka-jmx-metrics:5556"]
+        - targets: ["critic-kafka-jmx-metrics:5556"]
     - job_name: 'minio'
       metrics_path: '/minio/v2/metrics/cluster'
       static_configs:
-        - targets: ["rateit-minio:9000"]
+        - targets: ["critic-minio:9000"]
     - job_name: 'ingress-nginx'
       static_configs:
-        - targets: ["rateit-ingress-nginx-controller-metrics:10254"]
+        - targets: ["critic-ingress-nginx-controller-metrics:10254"]
 
 grafana:
   enabled: true
 
   admin:
-    existingSecret: "rateit-grafana-secret"
+    existingSecret: "critic-grafana-secret"
     userKey: "GRAFANA_ADMIN_USER"
     passwordKey: "GRAFANA_ADMIN_PASSWORD"
 
@@ -262,6 +262,6 @@ grafana:
         - name: Prometheus
           type: prometheus
           access: proxy
-          url: http://rateit-prometheus-server:80
+          url: http://critic-prometheus-server:80
           isDefault: true
           editable: true

@@ -81,12 +81,12 @@ build_and_push() {
   echo "$service_name pushed successfully!"
 }
 
-build_and_push "Backend" "alexpetrusca/rateit-backend" "./backend"
+build_and_push "Backend" "alexpetrusca/critic-backend" "./backend"
 
 echo "----------------------------------------------------------------"
 echo "All components processed successfully!"
 echo "Environment: $ENVIRONMENT"
-echo "Backend Image: alexpetrusca/rateit-backend:$IMAGE_TAG"
+echo "Backend Image: alexpetrusca/critic-backend:$IMAGE_TAG"
 
 if [ "$ENVIRONMENT" == "prod" ]; then
   echo "Also tagged as: latest"

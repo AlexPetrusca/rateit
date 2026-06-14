@@ -1,6 +1,6 @@
-# RateIt
+# Critic
 
-RateIt is a social app for ratings and reviews with threaded comments, a feed, user profiles, post detail pages, and an admin automation console.
+Critic is a social app for ratings and reviews with threaded comments, a feed, user profiles, post detail pages, and an admin automation console.
 
 ## Current Features
 
@@ -32,7 +32,7 @@ Start here if you are continuing the codebase:
 ```bash
 # Clone the repository
 git clone <repo-url>
-cd rateit
+cd critic
 
 # Start with Docker Compose (recommended)
 docker-compose up -d

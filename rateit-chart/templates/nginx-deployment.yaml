@@ -2,19 +2,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rateit-nginx
+  name: critic-nginx
   labels:
-    {{- include "rateit.selectorLabels" . | nindent 4 }}
+    {{- include "critic.selectorLabels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.nginx.replicaCount }}
   selector:
     matchLabels:
-      {{- include "rateit.selectorLabels" . | nindent 6 }}
+      {{- include "critic.selectorLabels" . | nindent 6 }}
       component: nginx
   template:
     metadata:
       labels:
-        {{- include "rateit.selectorLabels" . | nindent 8 }}
+        {{- include "critic.selectorLabels" . | nindent 8 }}
         component: nginx
     spec:
       containers:
@@ -38,7 +38,7 @@ spec:
       volumes:
         - name: nginx-config
           configMap:
-            name: rateit-nginx-config
+            name: critic-nginx-config
         - name: empty-dir
           emptyDir: {}
 {{- end }}

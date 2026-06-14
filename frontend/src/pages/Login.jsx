@@ -5,7 +5,7 @@ import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
 import '../App.css';
 
-const LOGIN_PHONE_STORAGE_KEY = 'rateit.loginPhoneNumber';
+const LOGIN_PHONE_STORAGE_KEY = 'critic.loginPhoneNumber';
 
 const Login = () => {
     const [phoneNumber, setPhoneNumber] = useState(() => localStorage.getItem(LOGIN_PHONE_STORAGE_KEY) || '');

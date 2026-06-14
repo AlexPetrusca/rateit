@@ -513,7 +513,7 @@ const Home = () => {
             ) : (
                 <main className="guest-shell">
                     <div className="guest-card">
-                        <h2>Welcome to RateIt!</h2>
+                        <h2>Welcome to Critic!</h2>
                         <p>Please login to continue.</p>
                     </div>
                 </main>

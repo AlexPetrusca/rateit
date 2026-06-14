@@ -3,9 +3,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: "rateit"
+  name: "critic"
   labels:
-    {{- include "rateit.selectorLabels" . | nindent 4 }}
+    {{- include "critic.selectorLabels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -24,7 +24,7 @@ spec:
             pathType: {{ .pathType }}
             backend:
               service:
-                name: rateit-nginx
+                name: critic-nginx
                 port:
                   number: 80
           {{- end }}

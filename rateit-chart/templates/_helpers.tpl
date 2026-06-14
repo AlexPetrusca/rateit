@@ -1,7 +1,7 @@
 {{/*
 Labels that must match between deployment selector and pods
 */}}
-{{- define "rateit.selectorLabels" -}}
-app: rateit
+{{- define "critic.selectorLabels" -}}
+app: critic
 instance: {{ .Release.Name }}
 {{- end }}

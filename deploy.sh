@@ -8,8 +8,8 @@ set -e  # Exit immediately if a command exits with a non-zero status
 
 # Use provided IMAGE_TAG or default to "latest"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
-NAMESPACE="rateit"
-RELEASE_NAME="rateit"
+NAMESPACE="critic"
+RELEASE_NAME="critic"
 FORCE_RECREATE=false
 
 # Parse flags
@@ -41,8 +41,8 @@ helm dependency build rateit-chart
 # Wipe the namespace (if requested)
 if [ "$FORCE_RECREATE" = true ]; then
     echo "Uninstalling previous release..."
-    helm uninstall $RELEASE_NAME --namespace rateit --ignore-not-found
-    kubectl delete namespace rateit --wait
+    helm uninstall $RELEASE_NAME --namespace critic --ignore-not-found
+    kubectl delete namespace critic --wait
 fi
 
 # Deploy using Helm
@@ -51,15 +51,15 @@ helm upgrade --install "$RELEASE_NAME" ./rateit-chart \
   --namespace "$NAMESPACE" --create-namespace \
   --values ./rateit-chart/values.yaml \
   --values ./rateit-chart/values.secret.yaml \
-  --set backend.image=alexpetrusca/rateit-backend \
+  --set backend.image=alexpetrusca/critic-backend \
   --set backend.imageTag="$IMAGE_TAG" \
   --set backend.pullPolicy=Always
 
-kubectl rollout status statefulset -l app.kubernetes.io/instance=rateit -n rateit
+kubectl rollout status statefulset -l app.kubernetes.io/instance=critic -n critic
 
 echo "Restarting deployments to ensure latest images are pulled..."
-kubectl rollout restart deployment/rateit-backend -n "$NAMESPACE" 2>/dev/null || true
-kubectl rollout status deployment/rateit-backend -n "$NAMESPACE" --timeout=300s
+kubectl rollout restart deployment/critic-backend -n "$NAMESPACE" 2>/dev/null || true
+kubectl rollout status deployment/critic-backend -n "$NAMESPACE" --timeout=300s
 
 # Build and upload frontend to s3/minio
 echo "Building frontend..."
