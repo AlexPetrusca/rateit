@@ -56,11 +56,8 @@ public class UserController {
     }
 
     @GetMapping("/{userId:\\d+}")
-    public ResponseEntity<UserProfileDto> getProfile(
-        @PathVariable long userId,
-        JwtAuthenticationToken token
-    ) {
-        return ResponseEntity.ok(userService.getProfile(userId, token.getToken().getSubject()));
+    public ResponseEntity<UserProfileDto> getProfile(@PathVariable long userId) {
+        return ResponseEntity.ok(userService.getProfile(userId));
     }
 
     @GetMapping("/{userId:\\d+}/posts")

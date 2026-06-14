@@ -6,7 +6,6 @@ import com.rateit.backend.entity.dto.AdminDeleteUsersResultDto;
 import com.rateit.backend.entity.dto.UserProfileDto;
 import com.rateit.backend.entity.rest.UpdateAdminUserRequest;
 import com.rateit.backend.exception.BadRequestException;
-import com.rateit.backend.entity.types.Visibility;
 import com.rateit.backend.repository.ExternalReviewRepository;
 import com.rateit.backend.repository.FeedEventRepository;
 import com.rateit.backend.repository.FollowRepository;
@@ -121,7 +120,7 @@ class UserServiceTest {
     }
 
     @Test
-    void getProfileReturnsOwnPostCountWhenViewingSelf() {
+    void getProfileReturnsPublicSafeFieldsOnly() {
         User user = User.builder()
             .phoneNumber("+15550000001")
             .username("alpha")
@@ -131,40 +130,11 @@ class UserServiceTest {
         ReflectionTestUtils.setField(user, "id", 1L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.findByPhoneNumber("+15550000001")).thenReturn(Optional.of(user));
-        when(ratingRepository.countByAuthorUserForProfile(user)).thenReturn(3L);
 
-        UserProfileDto profile = userService.getProfile(1L, "+15550000001");
+        UserProfileDto profile = userService.getProfile(1L);
 
-        assertEquals(1L, profile.userId());
-        assertEquals(3L, profile.postCount());
         assertEquals("alpha", profile.username());
-    }
-
-    @Test
-    void getProfileReturnsVisiblePostCountWhenViewingAnotherUser() {
-        User currentUser = User.builder()
-            .phoneNumber("+15550000099")
-            .username("viewer")
-            .role("ROLE_USER")
-            .build();
-        ReflectionTestUtils.setField(currentUser, "id", 9L);
-        User user = User.builder()
-            .phoneNumber("+15550000001")
-            .username("alpha")
-            .profilePicUrl("alpha.png")
-            .role("ROLE_USER")
-            .build();
-        ReflectionTestUtils.setField(user, "id", 1L);
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.findByPhoneNumber("+15550000099")).thenReturn(Optional.of(currentUser));
-        when(ratingRepository.countByAuthorUserAndVisibilityForProfile(user, Visibility.PUBLIC)).thenReturn(2L);
-
-        UserProfileDto profile = userService.getProfile(1L, "+15550000099");
-
-        assertEquals(2L, profile.postCount());
-        assertEquals("ROLE_USER", profile.role());
+        assertEquals("alpha.png", profile.profilePicUrl());
     }
 
     @Test

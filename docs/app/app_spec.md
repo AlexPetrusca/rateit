@@ -58,6 +58,7 @@ Use the shared components below before creating new copies:
 
 - Clicking an avatar or username should navigate to the user profile.
 - Clicking a post opens the post detail page.
+- User profiles expose only public-safe profile information: avatar, username, handle, and visible posts.
 - Comments are threaded.
 - Comments remain ratings and include a score.
 

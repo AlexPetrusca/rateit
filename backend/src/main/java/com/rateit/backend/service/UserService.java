@@ -86,18 +86,13 @@ public class UserService {
             .orElseThrow(() -> ResourceNotFoundException.user(userId));
     }
 
-    public UserProfileDto getProfile(long userId, String currentPhoneNumber) {
+    public UserProfileDto getProfile(long userId) {
         User user = findById(userId);
         if (user.getDeletedAt() != null) {
             throw ResourceNotFoundException.user(userId);
         }
 
-        User currentUser = findByPhoneNumber(currentPhoneNumber);
-        long postCount = currentUser.getId().equals(user.getId())
-            ? ratingRepository.countByAuthorUserForProfile(user)
-            : ratingRepository.countByAuthorUserAndVisibilityForProfile(user, com.rateit.backend.entity.types.Visibility.PUBLIC);
-
-        return UserProfileDto.fromUser(user, postCount);
+        return UserProfileDto.fromUser(user);
     }
 
     public User findByPhoneNumber(String phoneNumber) {

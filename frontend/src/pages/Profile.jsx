@@ -13,20 +13,6 @@ import '../App.css';
 const PROFILE_POST_PAGE_SIZE = 5;
 const FIVE_STAR_SCALE = { max: 5, symbol: 'star' };
 
-const formatTimestamp = (value) => {
-    if (!value) {
-        return '—';
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        second: '2-digit'
-    }).format(new Date(value));
-};
-
 const Profile = () => {
     const navigate = useNavigate();
     const { userId: routeUserId } = useParams();
@@ -564,31 +550,8 @@ const Profile = () => {
                             <div className="profile-banner-copy">
                                 <div className="profile-name-row">
                                     <h2>{profile.username}</h2>
-                                    <span className="profile-role">{profile.role}</span>
                                 </div>
                                 <div className="profile-subtitle">{profileSubtitle}</div>
-                                <div className="profile-meta-grid">
-                                    <div>
-                                        <strong>User ID</strong>
-                                        <span>{profile.userId}</span>
-                                    </div>
-                                    <div>
-                                        <strong>Phone</strong>
-                                        <span>{profile.phoneNumber}</span>
-                                    </div>
-                                    <div>
-                                        <strong>Posts</strong>
-                                        <span>{postRowCount}</span>
-                                    </div>
-                                    <div>
-                                        <strong>Created</strong>
-                                        <span>{formatTimestamp(profile.createdAt)}</span>
-                                    </div>
-                                    <div>
-                                        <strong>Status</strong>
-                                        <span>{profile.deletedAt ? 'Deleted' : 'Active'}</span>
-                                    </div>
-                                </div>
                             </div>
                         </section>
 

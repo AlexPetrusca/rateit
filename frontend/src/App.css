@@ -381,40 +381,9 @@ button:disabled {
     line-height: 1.2;
 }
 
-.profile-role {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 8px;
-    border: 1px solid #cfd9de;
-    border-radius: 999px;
-    color: #536471;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0;
-    text-transform: uppercase;
-}
-
 .profile-subtitle {
     color: #536471;
     font-size: 0.95rem;
-}
-
-.profile-meta-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 16px;
-}
-
-.profile-meta-grid strong {
-    display: block;
-    margin-bottom: 4px;
-    color: #0f1419;
-    font-size: 0.78rem;
-    text-transform: uppercase;
-}
-
-.profile-meta-grid span {
-    color: #536471;
 }
 
 .profile-posts {
