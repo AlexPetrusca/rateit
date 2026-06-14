@@ -13,6 +13,7 @@ data:
     http {
         include       /etc/nginx/mime.types;
         default_type  application/octet-stream;
+        client_max_body_size 25m;
 
         upstream minio {
             server critic-minio:{{ .Values.minio.service.port }};
@@ -32,7 +33,7 @@ data:
         # localhost traffic uses the mocker-backed API so local OTP does not hit Twilio.
         server {
             listen 80;
-            server_name localhost 127.0.0.1;
+            server_name localhost 127.0.0.1 ~^localhost:\d+$ ~^127\.0\.0\.1:\d+$;
 
             location / {
                 rewrite ^/$ /index.html break;
