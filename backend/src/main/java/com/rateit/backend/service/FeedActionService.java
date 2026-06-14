@@ -17,7 +17,6 @@ import com.rateit.backend.entity.types.Resource;
 import com.rateit.backend.entity.types.RatingScaleType;
 import com.rateit.backend.entity.types.Visibility;
 import com.rateit.backend.exception.BadRequestException;
-import com.rateit.backend.exception.ConflictException;
 import com.rateit.backend.exception.ResourceNotFoundException;
 import com.rateit.backend.repository.MediaAssetRepository;
 import com.rateit.backend.repository.RatingCommentRepository;
@@ -164,16 +163,12 @@ public class FeedActionService {
         Rating sourceRating = findRating(sourceRatingId);
         User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
 
-        if (ratingRepository.existsByAuthorUserAndRateableItem(currentUser, sourceRating.getRateableItem())) {
-            throw ConflictException.ratingAlreadyExists(sourceRating.getRateableItem().getId());
-        }
-
         Rating newRating = Rating.builder()
             .authorUser(currentUser)
             .rateableItem(sourceRating.getRateableItem())
             .ratingScale(sourceRating.getRatingScale())
             .score(request.score())
-            .reviewText(request.reviewText())
+            .reviewText(normalize(request.reviewText()))
             .visibility(sourceRating.getVisibility())
             .build();
 

@@ -24,6 +24,7 @@ The feed, profile feed, and post page should all use the same underlying post an
 - `FeedTimeline` for list loading and pagination
 - `PostCard` for the post shell and action row
 - `CommentThread` for threaded comments
+- `PostActions` for like, re-rate, and comment action controls
 - `StarRating` for all star displays and pickers
 - `UserAvatar` for avatars and fallback initials
 
@@ -50,6 +51,12 @@ Clicking a post opens the dedicated post page. That page shows:
 - Comments are threaded.
 - Comments are also ratings, so they have a score and text.
 - The thread view should keep the same author/avatar treatment used in the feed.
+
+## Re-rate behavior
+
+- Re-rating creates a new rating row for the same rateable item instead of updating or blocking an existing rating.
+- A user can re-rate the same rateable item more than once.
+- Existing databases that still have `uk_ratings_author_rateable_item` must drop that constraint; see `backend/src/main/resources/db/manual/2026-05-27-drop-rating-author-item-unique.sql`.
 
 ## Rating display rules
 

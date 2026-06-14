@@ -7,6 +7,7 @@ import com.rateit.backend.entity.RatingScale;
 import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.dto.FeedItemDto;
 import com.rateit.backend.entity.rest.CreateRatingRequest;
+import com.rateit.backend.entity.rest.CreateRerateRequest;
 import com.rateit.backend.entity.types.RateableItemType;
 import com.rateit.backend.entity.types.RatingScaleType;
 import com.rateit.backend.entity.types.Visibility;
@@ -231,6 +232,42 @@ class FeedActionServiceTest {
         assertEquals("Text posts need body text or an image", ex.getMessage());
         verify(rateableItemRepository, never()).save(any());
         verify(ratingRepository, never()).save(any());
+    }
+
+    @Test
+    void rerate_alwaysCreatesNewRatingForSameRateableItem() {
+        User sourceAuthor = user(1L, "5551234567", "bob_bananas");
+        User currentUser = user(2L, "5559876543", "alice_apples");
+        RatingScale scale = ratingScale(2L, "5 stars", new BigDecimal("1"), new BigDecimal("5"), new BigDecimal("0.5"));
+        RateableItem item = rateableItem(11L, sourceAuthor, RateableItemType.TEXT_POST, "Original post", null);
+        Rating sourceRating = rating(21L, sourceAuthor, item, scale, new BigDecimal("3"), "Original take");
+
+        when(ratingRepository.findById(sourceRating.getId())).thenReturn(Optional.of(sourceRating));
+        when(userService.findByPhoneNumber(currentUser.getPhoneNumber())).thenReturn(currentUser);
+        when(ratingRepository.save(any(Rating.class))).thenAnswer(invocation -> {
+            Rating rating = invocation.getArgument(0);
+            ReflectionTestUtils.setField(rating, "id", 31L);
+            return rating;
+        });
+
+        FeedItemDto result = feedActionService.rerate(
+            sourceRating.getId(),
+            new CreateRerateRequest(new BigDecimal("4.5"), "  New take  "),
+            currentUser.getPhoneNumber()
+        );
+
+        ArgumentCaptor<Rating> ratingCaptor = ArgumentCaptor.forClass(Rating.class);
+        verify(ratingRepository).save(ratingCaptor.capture());
+
+        Rating persistedRating = ratingCaptor.getValue();
+        assertSame(currentUser, persistedRating.getAuthorUser());
+        assertSame(item, persistedRating.getRateableItem());
+        assertSame(scale, persistedRating.getRatingScale());
+        assertEquals(new BigDecimal("4.5"), persistedRating.getScore());
+        assertEquals("New take", persistedRating.getReviewText());
+        assertEquals(Visibility.PUBLIC, persistedRating.getVisibility());
+        assertEquals(31L, result.ratingId());
+        assertEquals("alice_apples", result.author().username());
     }
 
     private User user(Long id, String phoneNumber, String username) {

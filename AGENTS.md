@@ -18,6 +18,8 @@ This is the root index for agent work in this repo. Start here, then read the na
 
 - Update the docs when you make a significant change to routes, pages, APIs, schema, auth/roles, shared components, admin workflows, job behavior, or feed behavior.
 - Do not update docs for minor bug fixes, typo fixes, or styling noise unless behavior changed.
+- Keep the local `wiki/` notes up to date when work changes local setup, troubleshooting steps, workflow commands, product planning, MVP scope, or build status. `wiki/` is intentionally gitignored, so these notes are for local continuity rather than committed documentation.
+- Keep `wiki/build-status.md` current when a feature is started, completed, descoped, moved between MVP and post-MVP, or when new to-do items are discovered.
 - Prefer shared components over page-specific copies when the same UI appears in more than one place.
 - Prefer existing docs over re-explaining the same design in code comments.
 - Keep admin actions separate from user-facing actions.

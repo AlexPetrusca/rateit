@@ -953,8 +953,44 @@ button:disabled {
     background: #fce8f2;
 }
 
+.tweet-action-count {
+    min-width: 1ch;
+}
+
 .action-icon {
-    font-weight: 700;
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-icon svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tweet-action.is-liked .action-icon svg,
+.action-icon svg.is-filled {
+    fill: currentColor;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 .feed-composer {

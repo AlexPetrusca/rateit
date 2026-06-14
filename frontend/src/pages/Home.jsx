@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import CommentThread from '../components/CommentThread.jsx';
 import FeedTimeline from '../components/FeedTimeline.jsx';
+import PostActions from '../components/PostActions.jsx';
 import StarRating from '../components/StarRating.jsx';
 import BackendApiService from '../services/BackendApiService';
 import '../App.css';
@@ -471,33 +472,16 @@ const Home = () => {
                             renderFooter={(item) => {
                                 const rerateKey = getComposerKey(item.ratingId, 'rerate');
                                 return (
-                                    <div className="tweet-actions" aria-label="Rating actions">
-                                        <button
-                                            type="button"
-                                            className={item.likedByCurrentUser ? 'tweet-action is-liked' : 'tweet-action'}
-                                            onClick={() => toggleLike(item)}
-                                        >
-                                            <span className="action-icon">Like</span>
-                                            <span>{item.likeCount || 0}</span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="tweet-action"
-                                            onClick={() => setActiveComposer((current) => (
+                                    <PostActions
+                                        liked={item.likedByCurrentUser}
+                                        likeCount={item.likeCount}
+                                        commentCount={item.commentCount}
+                                        onLike={() => toggleLike(item)}
+                                        onRerate={() => setActiveComposer((current) => (
                                                 current === rerateKey ? null : rerateKey
-                                            ))}
-                                        >
-                                            <span className="action-icon">Re-rate</span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="tweet-action"
-                                            onClick={() => openComments(item.ratingId)}
-                                        >
-                                            <span className="action-icon">Comment</span>
-                                            <span>{item.commentCount || 0}</span>
-                                        </button>
-                                    </div>
+                                        ))}
+                                        onComment={() => openComments(item.ratingId)}
+                                    />
                                 );
                             }}
                             renderAfterItem={(item) => {

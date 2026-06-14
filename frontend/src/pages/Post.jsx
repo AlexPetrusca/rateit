@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import CommentThread from '../components/CommentThread.jsx';
+import PostActions from '../components/PostActions.jsx';
 import PostCard from '../components/PostCard.jsx';
 import StarRating from '../components/StarRating.jsx';
 import BackendApiService from '../services/BackendApiService';
@@ -403,31 +404,14 @@ const Post = () => {
                             post={post}
                             onAuthorClick={openProfile}
                             footer={(
-                                <div className="tweet-actions" aria-label="Rating actions">
-                                    <button
-                                        type="button"
-                                        className={post.likedByCurrentUser ? 'tweet-action is-liked' : 'tweet-action'}
-                                        onClick={toggleLike}
-                                    >
-                                        <span className="action-icon">Like</span>
-                                        <span>{post.likeCount || 0}</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="tweet-action"
-                                        onClick={() => openComposer('rerate')}
-                                    >
-                                        <span className="action-icon">Re-rate</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="tweet-action"
-                                        onClick={() => openComposer('root-comment')}
-                                    >
-                                        <span className="action-icon">Comment</span>
-                                        <span>{post.commentCount || 0}</span>
-                                    </button>
-                                </div>
+                                <PostActions
+                                    liked={post.likedByCurrentUser}
+                                    likeCount={post.likeCount}
+                                    commentCount={post.commentCount}
+                                    onLike={toggleLike}
+                                    onRerate={() => openComposer('rerate')}
+                                    onComment={() => openComposer('root-comment')}
+                                />
                             )}
                         />
 

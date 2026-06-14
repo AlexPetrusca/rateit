@@ -11,7 +11,7 @@ This document covers the main user-facing product surface outside the admin area
 - user profiles
 - post detail pages
 - likes
-- re-rates
+- re-rates that create additional ratings for the same item
 - threaded comments
 - notifications
 
@@ -31,6 +31,7 @@ Use the shared components below before creating new copies:
 
 - `FeedTimeline`
 - `PostCard`
+- `PostActions`
 - `CommentThread`
 - `StarRating`
 - `UserAvatar`
@@ -51,6 +52,7 @@ Use the shared components below before creating new copies:
 - Feed, comment, and profile surfaces use the smaller picker.
 - Image posts and text posts should share the same rating presentation.
 - Review text should keep the same indented treatment across post types.
+- Re-rating an item creates a new rating row and does not block users who have already rated that item.
 
 ## User Behavior Rules
 

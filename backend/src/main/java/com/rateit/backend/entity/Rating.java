@@ -18,9 +18,6 @@ import java.math.BigDecimal;
     indexes = {
         @Index(name = "idx_ratings_author_user_id", columnList = "author_user_id"),
         @Index(name = "idx_ratings_rateable_item_id", columnList = "rateable_item_id")
-    },
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_ratings_author_rateable_item", columnNames = {"author_user_id", "rateable_item_id"})
     }
 )
 public class Rating extends BaseEntity {
