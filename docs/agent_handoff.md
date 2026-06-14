@@ -79,6 +79,7 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 
 - `AuthController` handles OTP send/login/logout.
 - `AuthService` contains the login policy, including test-user bypass behavior.
+- `TwilioService` handles production OTP delivery, while `MockerService` handles local/dev OTP delivery under the `mocker` profile.
 - `UserController` exposes `/api/users/me`, user search, user profile lookup, user posts, followers, and following.
 - `UserService` owns user creation, updates, delete behavior, and test-user queries.
 - `FollowController` exposes follow and unfollow endpoints.

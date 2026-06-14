@@ -43,6 +43,7 @@ Do not use this file for:
 - `ROLE_ADMIN` is the backend authorization guard for admin APIs.
 - `ROLE_TEST_USER` is reserved for synthetic accounts and test-user OTP bypass behavior.
 - User role state lives on the `users` row and must stay consistent with JWT/session handling.
+- The live `users` table still requires legacy `first_name` and `last_name` columns, so create/update flows must populate them even though the UI is username-first.
 
 ## How To Update
 

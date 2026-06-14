@@ -54,6 +54,8 @@ Deploy to Kubernetes:
 ./deploy.sh
 ```
 
+`deploy.sh` publishes the current backend image first, then rolls the Kubernetes release and uploads the frontend bundle.
+
 # Create buildx builder
 
 docker buildx create --name multiarch --use --driver docker-container

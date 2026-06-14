@@ -2,6 +2,7 @@ const BackendApiService = {
     sendOtp: async (phoneNumber) => {
         const response = await fetch('/auth/send_otp', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ phoneNumber })
         });
@@ -14,6 +15,7 @@ const BackendApiService = {
     verifyOtp: async (phoneNumber, code) => {
         const response = await fetch('/auth/login', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ phoneNumber, code })
         });
@@ -24,7 +26,7 @@ const BackendApiService = {
     },
 
     getCurrentUser: async () => {
-        const response = await fetch('/api/users/me');
+        const response = await fetch('/api/users/me', { credentials: 'include' });
         if (response.status === 204 || response.status === 404) {
             return null; // Authenticated but no profile
         }
@@ -42,7 +44,7 @@ const BackendApiService = {
     },
 
     getUserProfile: async (userId) => {
-        const response = await fetch(`/api/users/${encodeURIComponent(userId)}`);
+        const response = await fetch(`/api/users/${encodeURIComponent(userId)}`, { credentials: 'include' });
         if (response.status === 401 || response.status === 403) {
             const error = new Error('Not authenticated');
             error.status = response.status;
@@ -57,7 +59,7 @@ const BackendApiService = {
     },
 
     getUserPosts: async ({ userId, page = 0, size = 5 } = {}) => {
-        const response = await fetch(`/api/users/${encodeURIComponent(userId)}/posts?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`);
+        const response = await fetch(`/api/users/${encodeURIComponent(userId)}/posts?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`, { credentials: 'include' });
         if (response.status === 401 || response.status === 403) {
             const error = new Error('Not authenticated');
             error.status = response.status;
@@ -72,7 +74,7 @@ const BackendApiService = {
     },
 
     searchUsers: async ({ query, limit = 10 } = {}) => {
-        const response = await fetch(`/api/users/search?query=${encodeURIComponent(query || '')}&limit=${encodeURIComponent(limit)}`);
+        const response = await fetch(`/api/users/search?query=${encodeURIComponent(query || '')}&limit=${encodeURIComponent(limit)}`, { credentials: 'include' });
         if (!response.ok) {
             throw new Error('Failed to search users');
         }
@@ -81,7 +83,8 @@ const BackendApiService = {
 
     followUser: async (userId) => {
         const response = await fetch(`/api/follows/${encodeURIComponent(userId)}`, {
-            method: 'POST'
+            method: 'POST',
+            credentials: 'include'
         });
         if (!response.ok) {
             const data = await response.json().catch(() => ({}));
@@ -92,7 +95,8 @@ const BackendApiService = {
 
     unfollowUser: async (userId) => {
         const response = await fetch(`/api/follows/${encodeURIComponent(userId)}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'
         });
         if (!response.ok) {
             const data = await response.json().catch(() => ({}));
@@ -102,7 +106,7 @@ const BackendApiService = {
     },
 
     getFollowers: async (userId) => {
-        const response = await fetch(`/api/users/${encodeURIComponent(userId)}/followers`);
+        const response = await fetch(`/api/users/${encodeURIComponent(userId)}/followers`, { credentials: 'include' });
         if (!response.ok) {
             throw new Error('Failed to fetch followers');
         }
@@ -110,7 +114,7 @@ const BackendApiService = {
     },
 
     getFollowing: async (userId) => {
-        const response = await fetch(`/api/users/${encodeURIComponent(userId)}/following`);
+        const response = await fetch(`/api/users/${encodeURIComponent(userId)}/following`, { credentials: 'include' });
         if (!response.ok) {
             throw new Error('Failed to fetch following');
         }
@@ -118,11 +122,11 @@ const BackendApiService = {
     },
 
     logout: async () => {
-        await fetch('/auth/logout', { method: 'POST' });
+        await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
     },
 
     getFeed: async ({ page = 0, size = 20 } = {}) => {
-        const response = await fetch(`/api/feed?page=${encodeURIComponent(page)}&limit=${encodeURIComponent(size)}`);
+        const response = await fetch(`/api/feed?page=${encodeURIComponent(page)}&limit=${encodeURIComponent(size)}`, { credentials: 'include' });
         if (!response.ok) {
             throw new Error('Failed to fetch feed');
         }
@@ -130,7 +134,7 @@ const BackendApiService = {
     },
 
     getRating: async (ratingId) => {
-        const response = await fetch(`/api/feed/ratings/${encodeURIComponent(ratingId)}`);
+        const response = await fetch(`/api/feed/ratings/${encodeURIComponent(ratingId)}`, { credentials: 'include' });
         if (!response.ok) {
             throw new Error('Failed to fetch post');
         }
@@ -139,7 +143,8 @@ const BackendApiService = {
 
     likeRating: async (ratingId) => {
         const response = await fetch(`/api/feed/ratings/${ratingId}/like`, {
-            method: 'POST'
+            method: 'POST',
+            credentials: 'include'
         });
         if (!response.ok) {
             throw new Error('Failed to like rating');
@@ -149,7 +154,8 @@ const BackendApiService = {
 
     unlikeRating: async (ratingId) => {
         const response = await fetch(`/api/feed/ratings/${ratingId}/like`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'
         });
         if (!response.ok) {
             throw new Error('Failed to unlike rating');
@@ -158,7 +164,7 @@ const BackendApiService = {
     },
 
     getRatingComments: async (ratingId) => {
-        const response = await fetch(`/api/feed/ratings/${ratingId}/comments`);
+        const response = await fetch(`/api/feed/ratings/${ratingId}/comments`, { credentials: 'include' });
         if (!response.ok) {
             throw new Error('Failed to fetch comments');
         }
@@ -168,6 +174,7 @@ const BackendApiService = {
     createRatingComment: async (ratingId, text, score, parentCommentId = null) => {
         const response = await fetch(`/api/feed/ratings/${ratingId}/comments`, {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text, score, parentCommentId })
         });
@@ -180,6 +187,7 @@ const BackendApiService = {
     rerate: async (ratingId, score, reviewText) => {
         const response = await fetch(`/api/feed/ratings/${ratingId}/rerate`, {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ score, reviewText })
         });
@@ -193,6 +201,7 @@ const BackendApiService = {
     createRating: async ({ body, reviewText, score, mediaObjectKey, mediaContentType }) => {
         const response = await fetch('/api/feed/ratings', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 body,
@@ -214,6 +223,7 @@ const BackendApiService = {
     getUploadUrl: async (filename, contentType) => {
         const response = await fetch('/api/s3/images', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ filename, contentType })
         });
@@ -226,6 +236,7 @@ const BackendApiService = {
     uploadFileToS3: async (uploadUrl, file) => {
         const response = await fetch(uploadUrl, {
             method: 'PUT',
+            credentials: 'include',
             body: file,
             headers: { 'Content-Type': file.type }
         });
@@ -237,17 +248,19 @@ const BackendApiService = {
     createOrUpdateUser: async (userData) => {
         const response = await fetch('/api/users/me', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(userData)
         });
         if (!response.ok) {
-            throw new Error('Failed to update profile');
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to update profile');
         }
         return await response.json();
     },
 
     getAdminUsers: async ({ page = 0, size = 20 } = {}) => {
-        const response = await fetch(`/api/admin/users?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`);
+        const response = await fetch(`/api/admin/users?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`, { credentials: 'include' });
         if (response.status === 401 || response.status === 403) {
             const error = new Error('Not authorized');
             error.status = response.status;
@@ -262,6 +275,7 @@ const BackendApiService = {
     updateAdminUser: async (userId, userData) => {
         const response = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
             method: 'PUT',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(userData)
         });
@@ -279,7 +293,8 @@ const BackendApiService = {
 
     deleteAdminUser: async (userId) => {
         const response = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'
         });
         if (response.status === 401 || response.status === 403) {
             const error = new Error('Not authorized');
@@ -295,7 +310,8 @@ const BackendApiService = {
 
     deleteAllTestUsers: async () => {
         const response = await fetch('/api/admin/users/test-users', {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'
         });
         if (response.status === 401 || response.status === 403) {
             const error = new Error('Not authorized');
@@ -312,6 +328,7 @@ const BackendApiService = {
     bulkDeleteAdminUsers: async (ids) => {
         const response = await fetch('/api/admin/users/bulk-delete', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ids })
         });
@@ -328,7 +345,7 @@ const BackendApiService = {
     },
 
     getAdminStatus: async () => {
-        const response = await fetch('/api/admin/status');
+        const response = await fetch('/api/admin/status', { credentials: 'include' });
         if (response.status === 401 || response.status === 403) {
             const error = new Error('Not authorized');
             error.status = response.status;
@@ -341,7 +358,7 @@ const BackendApiService = {
     },
 
     getAdminPosts: async ({ page = 0, size = 20 } = {}) => {
-        const response = await fetch(`/api/admin/posts?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`);
+        const response = await fetch(`/api/admin/posts?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`, { credentials: 'include' });
         if (response.status === 401 || response.status === 403) {
             const error = new Error('Not authorized');
             error.status = response.status;
@@ -354,7 +371,7 @@ const BackendApiService = {
     },
 
     getAdminComments: async ({ page = 0, size = 20 } = {}) => {
-        const response = await fetch(`/api/admin/comments?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`);
+        const response = await fetch(`/api/admin/comments?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`, { credentials: 'include' });
         if (response.status === 401 || response.status === 403) {
             const error = new Error('Not authorized');
             error.status = response.status;
@@ -369,6 +386,7 @@ const BackendApiService = {
     updateAdminPost: async (postId, postData) => {
         const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}`, {
             method: 'PUT',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(postData)
         });
@@ -386,7 +404,8 @@ const BackendApiService = {
 
     deleteAdminPost: async (postId) => {
         const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'
         });
         if (response.status === 401 || response.status === 403) {
             const error = new Error('Not authorized');
@@ -403,6 +422,7 @@ const BackendApiService = {
     updateAdminComment: async (commentId, commentData) => {
         const response = await fetch(`/api/admin/comments/${encodeURIComponent(commentId)}`, {
             method: 'PUT',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(commentData)
         });
@@ -420,7 +440,8 @@ const BackendApiService = {
 
     deleteAdminComment: async (commentId) => {
         const response = await fetch(`/api/admin/comments/${encodeURIComponent(commentId)}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'
         });
         if (response.status === 401 || response.status === 403) {
             const error = new Error('Not authorized');
@@ -437,6 +458,7 @@ const BackendApiService = {
     bulkDeleteAdminComments: async (ids) => {
         const response = await fetch('/api/admin/comments/bulk-delete', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ids })
         });
@@ -455,6 +477,7 @@ const BackendApiService = {
     bulkDeleteAdminPosts: async (ids) => {
         const response = await fetch('/api/admin/posts/bulk-delete', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ids })
         });
@@ -473,6 +496,7 @@ const BackendApiService = {
     createUsersJob: async ({ count, usernamePrefix, phonePrefix }) => {
         const response = await fetch('/api/admin/jobs/create-users', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ count, usernamePrefix, phonePrefix })
         });
@@ -491,6 +515,7 @@ const BackendApiService = {
     createPostsJob: async ({ count, bodyPrefix, reviewPrefix }) => {
         const response = await fetch('/api/admin/jobs/create-posts', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ count, bodyPrefix, reviewPrefix })
         });
@@ -509,6 +534,7 @@ const BackendApiService = {
     createCommentsJob: async ({ count, maxDepth, replyChance, commentPrefix, replyPrefix }) => {
         const response = await fetch('/api/admin/jobs/create-comments', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ count, maxDepth, replyChance, commentPrefix, replyPrefix })
         });
@@ -527,6 +553,7 @@ const BackendApiService = {
     createLikesJob: async ({ count }) => {
         const response = await fetch('/api/admin/jobs/create-likes', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ count })
         });
@@ -543,7 +570,7 @@ const BackendApiService = {
     },
 
     getAdminJobs: async (limit = 20) => {
-        const response = await fetch(`/api/admin/jobs?limit=${encodeURIComponent(limit)}`);
+        const response = await fetch(`/api/admin/jobs?limit=${encodeURIComponent(limit)}`, { credentials: 'include' });
         if (response.status === 401 || response.status === 403) {
             const error = new Error('Not authorized');
             error.status = response.status;
@@ -556,7 +583,7 @@ const BackendApiService = {
     },
 
     getAdminJob: async (jobId) => {
-        const response = await fetch(`/api/admin/jobs/${encodeURIComponent(jobId)}`);
+        const response = await fetch(`/api/admin/jobs/${encodeURIComponent(jobId)}`, { credentials: 'include' });
         if (response.status === 401 || response.status === 403) {
             const error = new Error('Not authorized');
             error.status = response.status;

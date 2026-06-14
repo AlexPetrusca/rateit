@@ -63,6 +63,8 @@ public class UserService {
         if (user.getRole() == null) {
             user = User.builder()
                 .phoneNumber(user.getPhoneNumber())
+                .firstName(user.getUsername())
+                .lastName(user.getUsername())
                 .username(user.getUsername())
                 .profilePicUrl(user.getProfilePicUrl())
                 .role(UserRoles.USER)
@@ -76,10 +78,26 @@ public class UserService {
     }
 
     public User create(String phoneNumber, String username, String profilePicUrl, String role) {
+        String normalizedPhoneNumber = normalizeRequired(phoneNumber, "phone number");
+        String normalizedUsername = normalizeRequired(username, "username");
+        String normalizedProfilePicUrl = normalizeOptional(profilePicUrl);
+
+        userRepository.findByPhoneNumber(normalizedPhoneNumber)
+            .ifPresent(existing -> {
+                throw ConflictException.conflict("Phone number " + normalizedPhoneNumber + " is already in use");
+            });
+
+        userRepository.findByUsername(normalizedUsername)
+            .ifPresent(existing -> {
+                throw ConflictException.conflict("Username " + normalizedUsername + " is already in use");
+            });
+
         User user = User.builder()
-            .phoneNumber(phoneNumber)
-            .username(username)
-            .profilePicUrl(profilePicUrl)
+            .phoneNumber(normalizedPhoneNumber)
+            .firstName(normalizedUsername)
+            .lastName(normalizedUsername)
+            .username(normalizedUsername)
+            .profilePicUrl(normalizedProfilePicUrl)
             .role(role == null || role.isBlank() ? UserRoles.USER : role)
             .build();
         return userRepository.save(user);
@@ -207,6 +225,8 @@ public class UserService {
             });
 
         user.setPhoneNumber(phoneNumber);
+        user.setFirstName(username);
+        user.setLastName(username);
         user.setUsername(username);
         user.setProfilePicUrl(profilePicUrl);
         user.setRole(role);

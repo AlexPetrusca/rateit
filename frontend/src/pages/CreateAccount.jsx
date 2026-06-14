@@ -44,7 +44,7 @@ const CreateAccount = () => {
             navigate('/');
         } catch (err) {
             console.error(err);
-            const message = 'Error creating account';
+            const message = err.message || 'Error creating account';
             notify({ message, type: 'error' });
         } finally {
             setIsLoading(false);

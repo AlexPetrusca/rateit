@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -48,7 +49,7 @@ public class UserController {
     }
 
     @PostMapping("/me")
-    public ResponseEntity<User> createMe(@RequestBody CreateUserRequest req, JwtAuthenticationToken token) {
+    public ResponseEntity<User> createMe(@RequestBody @Valid CreateUserRequest req, JwtAuthenticationToken token) {
         String phoneNumber = token.getToken().getSubject();
         User body = userService.create(
             phoneNumber,

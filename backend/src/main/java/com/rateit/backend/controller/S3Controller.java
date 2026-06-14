@@ -58,18 +58,28 @@ public class S3Controller {
     }
 
     private String getForwardedOrigin(HttpServletRequest request) {
-        String proto = firstHeader(request, "X-Forwarded-Proto");
         String host = firstHeader(request, "X-Forwarded-Host");
 
         if (host == null) {
             return null;
         }
 
-        if (proto == null) {
-            proto = request.getScheme();
+        if (isLocalhost(host)) {
+            String proto = firstHeader(request, "X-Forwarded-Proto");
+            if (proto == null) {
+                proto = request.getScheme();
+            }
+            return proto + "://" + host;
         }
 
-        return proto + "://" + host;
+        return "https://" + host;
+    }
+
+    private boolean isLocalhost(String host) {
+        return host.equalsIgnoreCase("localhost")
+            || host.startsWith("localhost:")
+            || host.startsWith("127.0.0.1")
+            || host.startsWith("[::1]");
     }
 
     private String firstHeader(HttpServletRequest request, String name) {

@@ -8,6 +8,7 @@ import com.rateit.backend.entity.dto.UserSearchResultDto;
 import com.rateit.backend.entity.rest.UpdateAdminUserRequest;
 import com.rateit.backend.entity.types.FollowRelation;
 import com.rateit.backend.exception.BadRequestException;
+import com.rateit.backend.exception.ConflictException;
 import com.rateit.backend.repository.ExternalReviewRepository;
 import com.rateit.backend.repository.FeedEventRepository;
 import com.rateit.backend.repository.FollowRepository;
@@ -119,6 +120,38 @@ class UserServiceTest {
 
         assertEquals(1, page.getTotalElements());
         assertEquals("alpha", page.getContent().get(0).getUsername());
+    }
+
+    @Test
+    void createRejectsBlankUsername() {
+        BadRequestException error = assertThrows(
+            BadRequestException.class,
+            () -> userService.create("+15550000001", "   ", null, "ROLE_USER")
+        );
+
+        assertTrue(error.getMessage().contains("username"));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void createRejectsDuplicateUsername() {
+        User existing = User.builder()
+            .phoneNumber("+15550000002")
+            .username("alpha")
+            .role("ROLE_USER")
+            .build();
+        ReflectionTestUtils.setField(existing, "id", 2L);
+
+        when(userRepository.findByPhoneNumber("+15550000001")).thenReturn(Optional.empty());
+        when(userRepository.findByUsername("alpha")).thenReturn(Optional.of(existing));
+
+        ConflictException error = assertThrows(
+            ConflictException.class,
+            () -> userService.create("+15550000001", "alpha", null, "ROLE_USER")
+        );
+
+        assertTrue(error.getMessage().contains("already in use"));
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test

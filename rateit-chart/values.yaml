@@ -21,6 +21,7 @@ backend:
   image: "alexpetrusca/rateit-backend"
   imageTag: "latest"
   pullPolicy: Always
+  springProfiles: "prod,twilio"
   replicaCount: 1
   service:
     type: ClusterIP

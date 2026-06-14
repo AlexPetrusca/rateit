@@ -68,6 +68,7 @@ Use the shared components below before creating new copies:
 - User search is public-safe and supports finding people by username so users can follow them.
 - Comments are threaded.
 - Comments remain ratings and include a score.
+- Production OTP delivery uses Twilio; local WSL development can keep using the mocker profile for verification codes.
 
 ## Backend Areas That Support the App
 

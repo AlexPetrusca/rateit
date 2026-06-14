@@ -38,6 +38,10 @@ fi
 echo "Updating Helm dependencies..."
 helm dependency build rateit-chart
 
+# Build and push the current backend image before deploying.
+echo "Building and pushing backend image..."
+./push.sh --dev
+
 # Wipe the namespace (if requested)
 if [ "$FORCE_RECREATE" = true ]; then
     echo "Uninstalling previous release..."

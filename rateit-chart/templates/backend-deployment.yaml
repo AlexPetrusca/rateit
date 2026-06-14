@@ -26,7 +26,7 @@ spec:
               containerPort: {{ .Values.backend.service.targetPort }}
           env:
             - name: SPRING_PROFILES_ACTIVE
-              value: "prod,mocker"
+              value: "{{ .Values.backend.springProfiles }}"
             - name: SPRING_CONFIG_IMPORT
               value: "configtree:/etc/secrets/"
             - name: POSTGRES_HOST
