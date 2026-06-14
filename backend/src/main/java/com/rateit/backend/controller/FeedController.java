@@ -27,9 +27,14 @@ public class FeedController {
     @GetMapping
     public ResponseEntity<List<FeedItemDto>> getFeed(
         @RequestParam(required = false) Integer limit,
+        @RequestParam(required = false) Integer page,
         JwtAuthenticationToken token
     ) {
-        return ResponseEntity.ok(feedService.getRecentRatings(limit, token.getToken().getSubject()));
+        if (page == null) {
+            return ResponseEntity.ok(feedService.getRecentRatings(limit, token.getToken().getSubject()));
+        }
+
+        return ResponseEntity.ok(feedService.getRecentRatings(limit, page, token.getToken().getSubject()));
     }
 
     @GetMapping("/ratings/{ratingId}")

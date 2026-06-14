@@ -19,7 +19,7 @@ const Home = () => {
     const [isFeedLoading, setIsFeedLoading] = useState(false);
     const [isFeedLoadingMore, setIsFeedLoadingMore] = useState(false);
     const [feedError, setFeedError] = useState(null);
-    const [feedLimit, setFeedLimit] = useState(FEED_PAGE_SIZE);
+    const [feedPage, setFeedPage] = useState(0);
     const [hasMoreFeed, setHasMoreFeed] = useState(true);
     const [activeComposer, setActiveComposer] = useState(null);
     const [commentsByRating, setCommentsByRating] = useState({});
@@ -38,7 +38,7 @@ const Home = () => {
         }
 
         setFeedItems([]);
-        setFeedLimit(FEED_PAGE_SIZE);
+        setFeedPage(0);
         setHasMoreFeed(true);
         setActiveComposer(null);
         setCommentsByRating({});
@@ -51,7 +51,7 @@ const Home = () => {
     useEffect(() => {
         if (!isFullyAuthenticated) {
             setFeedItems([]);
-            setFeedLimit(FEED_PAGE_SIZE);
+            setFeedPage(0);
             setHasMoreFeed(true);
             setIsFeedLoading(false);
             setIsFeedLoadingMore(false);
@@ -59,16 +59,16 @@ const Home = () => {
         }
 
         let isMounted = true;
-        const isInitialLoad = feedLimit === FEED_PAGE_SIZE;
+        const isInitialLoad = feedPage === 0;
         setIsFeedLoading(isInitialLoad);
         setIsFeedLoadingMore(!isInitialLoad);
         setFeedError(null);
 
-        BackendApiService.getFeed(feedLimit)
+        BackendApiService.getFeed({ page: feedPage, size: FEED_PAGE_SIZE })
             .then((items) => {
                 if (isMounted) {
-                    setFeedItems(items);
-                    setHasMoreFeed(items.length >= feedLimit);
+                    setFeedItems((current) => (feedPage === 0 ? items : [...current, ...items]));
+                    setHasMoreFeed(items.length === FEED_PAGE_SIZE);
                 }
             })
             .catch((error) => {
@@ -87,7 +87,7 @@ const Home = () => {
         return () => {
             isMounted = false;
         };
-    }, [isFullyAuthenticated, feedLimit]);
+    }, [isFullyAuthenticated, feedPage]);
 
     useEffect(() => {
         if (!isFullyAuthenticated || feedError || isFeedLoading || isFeedLoadingMore || !hasMoreFeed) {
@@ -102,7 +102,7 @@ const Home = () => {
 
         const observer = new IntersectionObserver((entries) => {
             if (entries[0]?.isIntersecting) {
-                setFeedLimit((current) => current + FEED_PAGE_SIZE);
+                setFeedPage((current) => current + 1);
             }
         }, {
             root: null,
@@ -352,7 +352,10 @@ const Home = () => {
                 [ratingId]: { score: '', reviewText: '' }
             }));
             setActiveComposer(null);
-            const items = await BackendApiService.getFeed();
+            const items = await BackendApiService.getFeed({
+                page: 0,
+                size: Math.max(feedItems.length, FEED_PAGE_SIZE)
+            });
             setFeedItems(items);
         } catch (error) {
             notify({ message: error.message, type: 'error' });

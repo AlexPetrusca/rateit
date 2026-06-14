@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -69,9 +70,9 @@ class FeedServiceTest {
         when(userService.findById(1L)).thenReturn(owner);
         when(ratingRepository.findProfilePageByAuthorUser(owner, PageRequest.of(0, 5)))
             .thenReturn(new PageImpl<>(List.of(rating), PageRequest.of(0, 5), 1));
-        when(ratingLikeRepository.countByRating(rating)).thenReturn(2L);
-        when(ratingCommentRepository.countByRating(rating)).thenReturn(1L);
-        when(ratingLikeRepository.existsByRatingAndUser(rating, owner)).thenReturn(true);
+        when(ratingLikeRepository.countLikesByRatingIds(List.of(4L))).thenReturn(List.<Object[]>of(new Object[]{4L, 2L}));
+        when(ratingCommentRepository.countCommentsByRatingIds(List.of(4L))).thenReturn(List.<Object[]>of(new Object[]{4L, 1L}));
+        when(ratingLikeRepository.findLikedRatingIdsByUserAndRatingIds(owner, List.of(4L))).thenReturn(List.of(4L));
 
         var page = feedService.getProfileRatings(1L, 5, 0, owner.getPhoneNumber());
 
@@ -95,9 +96,9 @@ class FeedServiceTest {
         when(userService.findById(1L)).thenReturn(owner);
         when(ratingRepository.findProfilePageByAuthorUserAndVisibility(owner, Visibility.PUBLIC, PageRequest.of(0, 5)))
             .thenReturn(new PageImpl<>(List.of(rating), PageRequest.of(0, 5), 1));
-        when(ratingLikeRepository.countByRating(rating)).thenReturn(0L);
-        when(ratingCommentRepository.countByRating(rating)).thenReturn(0L);
-        when(ratingLikeRepository.existsByRatingAndUser(rating, viewer)).thenReturn(false);
+        when(ratingLikeRepository.countLikesByRatingIds(List.of(4L))).thenReturn(List.<Object[]>of(new Object[]{4L, 0L}));
+        when(ratingCommentRepository.countCommentsByRatingIds(List.of(4L))).thenReturn(List.<Object[]>of(new Object[]{4L, 0L}));
+        when(ratingLikeRepository.findLikedRatingIdsByUserAndRatingIds(viewer, List.of(4L))).thenReturn(List.of());
 
         var page = feedService.getProfileRatings(1L, 5, 0, viewer.getPhoneNumber());
 
@@ -117,9 +118,9 @@ class FeedServiceTest {
 
         when(userService.findByPhoneNumber(viewer.getPhoneNumber())).thenReturn(viewer);
         when(ratingRepository.findById(4L)).thenReturn(Optional.of(rating));
-        when(ratingLikeRepository.countByRating(rating)).thenReturn(5L);
-        when(ratingCommentRepository.countByRating(rating)).thenReturn(2L);
-        when(ratingLikeRepository.existsByRatingAndUser(rating, viewer)).thenReturn(true);
+        when(ratingLikeRepository.countLikesByRatingIds(List.of(4L))).thenReturn(List.<Object[]>of(new Object[]{4L, 5L}));
+        when(ratingCommentRepository.countCommentsByRatingIds(List.of(4L))).thenReturn(List.<Object[]>of(new Object[]{4L, 2L}));
+        when(ratingLikeRepository.findLikedRatingIdsByUserAndRatingIds(viewer, List.of(4L))).thenReturn(List.of(4L));
 
         FeedItemDto result = feedService.getRating(4L, viewer.getPhoneNumber());
 

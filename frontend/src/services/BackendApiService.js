@@ -121,8 +121,8 @@ const BackendApiService = {
         await fetch('/auth/logout', { method: 'POST' });
     },
 
-    getFeed: async (limit = 20) => {
-        const response = await fetch(`/api/feed?limit=${encodeURIComponent(limit)}`);
+    getFeed: async ({ page = 0, size = 20 } = {}) => {
+        const response = await fetch(`/api/feed?page=${encodeURIComponent(page)}&limit=${encodeURIComponent(size)}`);
         if (!response.ok) {
             throw new Error('Failed to fetch feed');
         }

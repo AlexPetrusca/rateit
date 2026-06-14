@@ -88,6 +88,27 @@ test('getRating requests the single-post endpoint', async () => {
     }
 });
 
+test('getFeed requests the paged feed endpoint', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            json: async () => ([{ ratingId: 1 }])
+        };
+    };
+
+    try {
+        const result = await BackendApiService.getFeed({ page: 2, size: 15 });
+
+        assert.deepEqual(result, [{ ratingId: 1 }]);
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].url, '/api/feed?page=2&limit=15');
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
 test('searchUsers requests encoded user search endpoint', async () => {
     const calls = [];
     globalThis.fetch = async (url, options = {}) => {
