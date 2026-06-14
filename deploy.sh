@@ -51,7 +51,7 @@ helm upgrade --install "$RELEASE_NAME" ./rateit-chart \
   --namespace "$NAMESPACE" --create-namespace \
   --values ./rateit-chart/values.yaml \
   --values ./rateit-chart/values.secret.yaml \
-  --set backend.image=alexpetrusca/critic-backend \
+  --set backend.image=alexpetrusca/rateit-backend \
   --set backend.imageTag="$IMAGE_TAG" \
   --set backend.pullPolicy=Always
 

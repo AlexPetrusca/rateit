@@ -18,7 +18,7 @@ nginx:
 
 backend:
   enabled: true
-  image: "alexpetrusca/critic-backend"
+  image: "alexpetrusca/rateit-backend"
   imageTag: "latest"
   pullPolicy: Always
   replicaCount: 1
@@ -30,7 +30,7 @@ backend:
 mocker:
   enabled: true
   image:
-    repository: alexpetrusca/critic-mocker
+    repository: alexpetrusca/rateit-mocker
     tag: "latest"
     pullPolicy: Always
   service:
@@ -50,7 +50,7 @@ ingress:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/use-regex: "true"
   hosts:
-    - host: critic.localhost
+    - host: app.critic-app.com
       paths:
         - path: /
           pathType: Prefix
