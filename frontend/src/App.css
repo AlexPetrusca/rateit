@@ -598,6 +598,130 @@ button:disabled {
     padding-top: 0;
 }
 
+.profile-editor-shell {
+    width: min(720px, 100%);
+    margin: 0 auto;
+    padding: 24px 16px 40px;
+}
+
+.profile-editor-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    border: 1px solid #e2e5ea;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.profile-editor-header h1 {
+    margin: 0 0 6px;
+    color: #0f1419;
+    font-size: 1.6rem;
+    line-height: 1.2;
+}
+
+.profile-editor-header p {
+    margin: 0;
+    color: #536471;
+    line-height: 1.45;
+}
+
+.profile-editor-preview {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+}
+
+.profile-editor-cropper {
+    display: grid;
+    place-items: center;
+    width: 100%;
+}
+
+.profile-editor-crop-frame {
+    position: relative;
+    width: 260px;
+    height: 260px;
+    max-width: calc(100vw - 72px);
+    max-height: calc(100vw - 72px);
+    overflow: hidden;
+    border: 1px solid #cfd9de;
+    border-radius: 50%;
+    background: #eff3f4;
+}
+
+.profile-editor-crop-frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 999px solid rgba(15, 20, 25, 0.08);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.profile-editor-crop-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
+    max-width: none;
+    transform-origin: top left;
+    user-select: none;
+    pointer-events: none;
+}
+
+.profile-editor-adjustments {
+    display: grid;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid #eff3f4;
+    border-radius: 8px;
+    background: #f7f9f9;
+}
+
+.profile-editor-slider {
+    display: grid;
+    gap: 6px;
+}
+
+.profile-editor-slider label {
+    margin: 0;
+    color: #536471;
+    font-size: 0.9rem;
+}
+
+.profile-editor-slider input[type="range"] {
+    width: 100%;
+    margin: 0;
+    accent-color: #0f1419;
+}
+
+.profile-editor-controls {
+    display: grid;
+    gap: 8px;
+}
+
+.profile-editor-controls input[type="file"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #cfd9de;
+    border-radius: 8px;
+    background: #ffffff;
+    font: inherit;
+}
+
+.profile-editor-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.profile-editor-actions button {
+    margin: 0;
+}
+
 .profile-link {
     display: inline-flex;
     align-items: center;

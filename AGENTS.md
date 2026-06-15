@@ -20,6 +20,7 @@ This is the root index for agent work in this repo. Start here, then read the na
 - Do not update docs for minor bug fixes, typo fixes, or styling noise unless behavior changed.
 - Keep the local `wiki/` notes up to date when work changes local setup, troubleshooting steps, workflow commands, product planning, MVP scope, or build status. `wiki/` is intentionally gitignored, so these notes are for local continuity rather than committed documentation.
 - Keep `wiki/build-status.md` current when a feature is started, completed, descoped, moved between MVP and post-MVP, or when new to-do items are discovered.
+- Before finalizing or pushing feature work, re-open `wiki/build-status.md` and confirm completed items moved out of To Do and into Completed. Mention this check in the final response when build-status changed.
 - Create or update a local wiki page for every new feature area you build, including the main product decision behind it and any notable tradeoffs or reversals. Keep these pages in `wiki/` so the reasoning lives beside the other local notes.
 - After code changes, tell the user whether they need to refresh or restart the frontend terminal, backend terminal, phone simulator, or other local dev process for the change to take effect.
 - Prefer shared components over page-specific copies when the same UI appears in more than one place.

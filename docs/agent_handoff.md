@@ -15,6 +15,7 @@ Critic is a React + Spring Boot app with phone-number login, JWT cookie auth, a 
 - Infinite-scroll home feed with pagination in chunks of 5.
 - Shared feed/post/comment UI components used across home, profile, and post detail pages.
 - User profile pages with user info and that user’s posts.
+- Profile editor page at `/profile/edit` for updating the signed-in user's profile picture.
 - Public-safe user search by username for finding people to follow.
 - Profiles show follower/following counts, and those counts open list pages.
 - Post detail pages with the post and its threaded comments.
@@ -64,6 +65,7 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 - `/create-account`
 - `/create`
 - `/profile`
+- `/profile/edit`
 - `/users/:userId`
 - `/posts/:ratingId`
 - `/search`
@@ -125,7 +127,7 @@ Use these instead of recreating the same UI:
 ## Current Behavior Constraints
 
 - User deletion is a hard delete and also removes their authored posts and the comments on those posts.
-- Admin post deletion is a hard cleanup path and removes associated comments, likes, feed events, external reviews, the rating, the rateable item, and media asset rows.
+- Admin post removal is a tombstone path that marks the rating deleted, removes likes/feed/external references, and preserves comment threads.
 - The home feed and profile feed should stay visually aligned by using the same backing list/card components.
 - Any new admin table should use the shared admin grid wrapper so vertical alignment stays consistent.
 

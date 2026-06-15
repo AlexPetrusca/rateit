@@ -103,6 +103,26 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
+    public User updateCurrentUser(String phoneNumber, String username, String profilePicUrl) {
+        User user = findByPhoneNumber(phoneNumber);
+        String normalizedUsername = normalizeRequired(username, "username");
+        String normalizedProfilePicUrl = normalizeOptional(profilePicUrl);
+
+        userRepository.findByUsername(normalizedUsername)
+            .filter(existing -> !existing.getId().equals(user.getId()))
+            .ifPresent(existing -> {
+                throw ConflictException.conflict("Username " + normalizedUsername + " is already in use");
+            });
+
+        user.setFirstName(normalizedUsername);
+        user.setLastName(normalizedUsername);
+        user.setUsername(normalizedUsername);
+        user.setProfilePicUrl(normalizedProfilePicUrl);
+
+        return userRepository.save(user);
+    }
+
     public User findById(long userId) {
         return userRepository.findById(userId)
             .orElseThrow(() -> ResourceNotFoundException.user(userId));

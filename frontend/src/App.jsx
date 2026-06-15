@@ -11,6 +11,7 @@ import AdminPosts from './pages/AdminPosts';
 import AdminComments from './pages/AdminComments';
 import AdminUsers from './pages/AdminUsers';
 import Profile from './pages/Profile';
+import ProfileEditor from './pages/ProfileEditor';
 import Post from './pages/Post';
 import SearchUsers from './pages/SearchUsers';
 import FollowList from './pages/FollowList';
@@ -67,6 +68,14 @@ function App() {
                                 element={
                                     <GuardedRoute>
                                         <OwnProfileRedirect />
+                                    </GuardedRoute>
+                                }
+                            />
+                            <Route
+                                path="/profile/edit"
+                                element={
+                                    <GuardedRoute>
+                                        <ProfileEditor />
                                     </GuardedRoute>
                                 }
                             />

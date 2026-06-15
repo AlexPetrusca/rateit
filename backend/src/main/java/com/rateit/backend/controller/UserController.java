@@ -59,6 +59,17 @@ public class UserController {
         return ResponseEntity.ok(UserDto.fromUser(body));
     }
 
+    @PutMapping("/me")
+    public ResponseEntity<UserDto> updateMe(@RequestBody @Valid CreateUserRequest req, JwtAuthenticationToken token) {
+        String phoneNumber = token.getToken().getSubject();
+        User body = userService.updateCurrentUser(
+            phoneNumber,
+            req.username(),
+            req.profilePicUrl()
+        );
+        return ResponseEntity.ok(UserDto.fromUser(body));
+    }
+
     @GetMapping("/search")
     public ResponseEntity<List<UserSearchResultDto>> searchUsers(
         @RequestParam String query,

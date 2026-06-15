@@ -45,6 +45,11 @@ const TopBar = () => {
         setShowMenu(false);
     };
 
+    const handleEditProfileClick = () => {
+        navigate('/profile/edit');
+        setShowMenu(false);
+    };
+
     return (
         <div className="top-bar">
             <div className="top-bar-left">
@@ -98,6 +103,7 @@ const TopBar = () => {
                             {showMenu && (
                                 <div className="dropdown-menu" role="menu">
                                     <button onClick={handleProfileClick}>Profile</button>
+                                    <button onClick={handleEditProfileClick}>Edit Profile</button>
                                     <button onClick={handleLogoutClick}>Logout</button>
                                 </div>
                             )}

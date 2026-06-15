@@ -259,6 +259,20 @@ const BackendApiService = {
         return await response.json();
     },
 
+    updateCurrentUser: async (userData) => {
+        const response = await fetch('/api/users/me', {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to update profile');
+        }
+        return await response.json();
+    },
+
     getAdminUsers: async ({ page = 0, size = 20 } = {}) => {
         const response = await fetch(`/api/admin/users?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`, { credentials: 'include' });
         if (response.status === 401 || response.status === 403) {
