@@ -13,6 +13,50 @@ import '../App.css';
 const FIVE_STAR_SCALE = { max: 5, symbol: 'star' };
 const TOPIC_PAGE_SIZE = 5;
 
+const formatAverageRating = (value) => {
+    const score = Number(value);
+
+    if (!Number.isFinite(score)) {
+        return '0';
+    }
+
+    return score.toLocaleString(undefined, { maximumFractionDigits: 2 });
+};
+
+const AVERAGE_STAR_POINTS = '50 5 61 36 95 36 67 57 78 91 50 72 22 91 33 57 5 36 39 36';
+
+const AverageStarRating = ({ value, max = 5, label }) => {
+    const score = Number(value);
+    const starCount = Number.isFinite(max) && max > 0 ? Math.round(max) : 5;
+    const clampedScore = Number.isFinite(score) ? Math.max(0, Math.min(starCount, score)) : 0;
+
+    return (
+        <span className="topic-average-stars" aria-label={label}>
+            {Array.from({ length: starCount }, (_, index) => {
+                const fill = Math.max(0, Math.min(1, clampedScore - index));
+                const clipId = `topic-average-star-clip-${index}`;
+
+                return (
+                    <svg
+                        key={index + 1}
+                        className="topic-average-star-svg"
+                        viewBox="0 0 100 100"
+                        aria-hidden="true"
+                    >
+                        <defs>
+                            <clipPath id={clipId} clipPathUnits="objectBoundingBox">
+                                <rect x="0" y="0" width={fill} height="1" />
+                            </clipPath>
+                        </defs>
+                        <polygon points={AVERAGE_STAR_POINTS} fill="#cfd9de" />
+                        <polygon points={AVERAGE_STAR_POINTS} fill="#1d9bf0" clipPath={`url(#${clipId})`} />
+                    </svg>
+                );
+            })}
+        </span>
+    );
+};
+
 const formatScoreValue = (scoreValue, ratingScale) => {
     const score = Number(scoreValue);
     const max = Number(ratingScale?.max);
@@ -50,6 +94,7 @@ const Topic = () => {
     const [hoveredCommentScores, setHoveredCommentScores] = useState({});
     const [hoveredRerateScores, setHoveredRerateScores] = useState({});
     const [rerateDrafts, setRerateDrafts] = useState({});
+    const [expandedTopicImageUrl, setExpandedTopicImageUrl] = useState(null);
     const feedSentinelRef = useRef(null);
 
     const topicRateableItemId = useMemo(() => {
@@ -70,6 +115,11 @@ const Topic = () => {
 
         const total = feedItems.reduce((sum, item) => sum + (Number(item.score) || 0), 0);
         return total / feedItems.length;
+    }, [feedItems]);
+    const displayedFeedItems = useMemo(() => [...feedItems].reverse(), [feedItems]);
+    const topicMediaUrl = useMemo(() => {
+        const mediaObjectKey = feedItems[0]?.rateableItem?.mediaObjectKey;
+        return mediaObjectKey ? `/api/s3/images/${mediaObjectKey}` : null;
     }, [feedItems]);
 
     const isFullyAuthenticated = isAuthenticated && user != null;
@@ -493,18 +543,31 @@ const Topic = () => {
 
                         <Paper elevation={2} className="topic-summary-card">
                             <Stack spacing={1}>
+                                {topicMediaUrl && (
+                                    <button
+                                        type="button"
+                                        className="topic-summary-media-button"
+                                        onClick={() => setExpandedTopicImageUrl(topicMediaUrl)}
+                                        aria-label="Open topic photo"
+                                    >
+                                        <img
+                                            src={topicMediaUrl}
+                                            alt={topicLabel}
+                                            className="topic-summary-media"
+                                        />
+                                    </button>
+                                )}
                                 <Typography variant="h5" component="div" fontWeight={700}>
                                     {topicLabel}
                                 </Typography>
                                 <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <StarRating
-                                        value={topicAverageRating}
-                                        label={`Average rating: ${topicAverageRating.toFixed(1)} out of 5`}
-                                        size="md"
-                                    />
                                     <Typography variant="body2" color="text.secondary" fontWeight={700}>
                                         {topicRatingCount}
                                     </Typography>
+                                    <AverageStarRating
+                                        value={topicAverageRating}
+                                        label={`Average rating: ${formatAverageRating(topicAverageRating)} out of 5`}
+                                    />
                                 </Stack>
                             </Stack>
                         </Paper>
@@ -515,10 +578,11 @@ const Topic = () => {
                         )}
 
                         <FeedTimeline
-                            items={feedItems}
+                            items={displayedFeedItems}
                             onAuthorClick={openProfile}
                             onPostClick={openPost}
                             showTopicText={false}
+                            showMedia={false}
                             renderFooter={(item) => {
                                 const rerateKey = getComposerKey(item.ratingId, 'rerate');
                                 const canEdit = item.author?.userId != null
@@ -560,6 +624,33 @@ const Topic = () => {
 
                         {!isFeedLoading && feedError && (
                             <div className="inline-error">{feedError}</div>
+                        )}
+
+                        {expandedTopicImageUrl && (
+                            <div
+                                className="image-lightbox"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-label="Expanded topic photo"
+                                onClick={() => setExpandedTopicImageUrl(null)}
+                            >
+                                <button
+                                    type="button"
+                                    className="image-lightbox-close"
+                                    onClick={() => setExpandedTopicImageUrl(null)}
+                                    aria-label="Close photo"
+                                >
+                                    x
+                                </button>
+                                <div className="image-lightbox-frame">
+                                    <img
+                                        src={expandedTopicImageUrl}
+                                        alt="Expanded topic"
+                                        className="image-lightbox-image"
+                                        onClick={(event) => event.stopPropagation()}
+                                    />
+                                </div>
+                            </div>
                         )}
                     </>
                 </main>

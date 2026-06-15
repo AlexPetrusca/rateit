@@ -31,6 +31,7 @@ const PostCard = ({
     onPostClick,
     onTopicClick,
     showTopicText = true,
+    showMedia = true,
     footer,
     actions,
     className = '',
@@ -187,7 +188,7 @@ const PostCard = ({
                         </time>
                     </header>
 
-                    {typeof onPostClick === 'function' && mediaContent}
+                    {typeof onPostClick === 'function' && showMedia && mediaContent}
 
                     {typeof onPostClick === 'function' ? (
                         <div
@@ -206,7 +207,7 @@ const PostCard = ({
                         </div>
                     ) : (
                         <div className="post-click-target post-click-target-static">
-                            {mediaContent}
+                            {showMedia && mediaContent}
                             {clickableContent}
                         </div>
                     )}

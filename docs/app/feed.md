@@ -63,8 +63,13 @@ Clicking the topic text on a post opens a topic page for that shared rateable it
 - the same post card shell and actions used by the main feed
 - the same comments and rerate interactions as the home feed
 - a raised topic summary card showing the topic name, average stars, and rating count
+- ratings on the topic page are shown oldest-to-newest so the newest rating appears at the bottom
 
 The topic page is the linked-post view for re-rates, so the same shared item can be explored across all of its ratings.
+
+When the shared topic has an attached photo, the image is shown in the raised topic summary card and the individual ratings underneath suppress the repeated photo so the list stays focused on the reviews.
+
+The topic summary star row uses the raw average score, so partial averages are shown precisely instead of being rounded to the nearest half star in the display.
 
 ## Comment behavior
 
@@ -83,6 +88,7 @@ The topic page is the linked-post view for re-rates, so the same shared item can
 - Feed posts and post detail pages should use the same rating block.
 - Image posts and text posts should not diverge in rating presentation.
 - The current convention is to keep the review text indented beneath the star row for both post types.
+- Read-only star displays should reflect the exact stored average or score, while the interactive picker can still snap to the supported step size.
 
 ## Backend endpoints
 

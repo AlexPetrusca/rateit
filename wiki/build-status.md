@@ -76,4 +76,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 - The shared star control is now a little larger, uses blue selected stars, and supports sliding across the control on mobile to set a rating.
 - Clicking the topic text on a post now opens a linked topic page at `/topics/:rateableItemId` that shows every rating on the same shared topic.
 - The topic page now uses a raised summary card for the topic itself, and the summary shows the average star rating plus the raw count of ratings while individual ratings no longer repeat the topic text above each review.
+- When a topic has a photo, the image now lives in the raised topic summary card instead of repeating inside each rating row.
+- The topic summary stars now render the true average score exactly, rather than snapping the display to a half-star feel.
+- The topic page now renders ratings oldest-to-newest so the newest rating sits at the bottom.
 - Improve the star controls on mobile so they are easier to slide across and feel better to use.

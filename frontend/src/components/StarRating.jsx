@@ -1,6 +1,7 @@
-import { useMemo, useRef } from 'react';
+import { useId, useMemo, useRef } from 'react';
 
 const STAR_FILLED = String.fromCharCode(9733);
+const STAR_POINTS = '50 5 61 36 95 36 67 57 78 91 50 72 22 91 33 57 5 36 39 36';
 const SIZE_STYLES = {
     sm: '1.05rem',
     md: '1.65rem',
@@ -21,6 +22,7 @@ const StarRating = ({
         isPointerDown: false,
         pointerId: null
     });
+    const clipPrefix = useId().replace(/:/g, '');
     const score = Number(value);
     const starCount = Number.isFinite(max) && max > 0 ? Math.round(max) : 5;
     const clampedScore = Number.isFinite(score) ? Math.max(0, Math.min(starCount, score)) : 0;
@@ -72,22 +74,46 @@ const StarRating = ({
                 gridTemplateColumns
             }}
         >
-            {Array.from({ length: starCount }, (_, index) => {
-                const starValue = index + 1;
-                const fill = Math.max(0, Math.min(1, clampedScore - index));
+            {interactive ? (
+                Array.from({ length: starCount }, (_, index) => {
+                    const starValue = index + 1;
+                    const fill = Math.max(0, Math.min(1, clampedScore - index));
 
-                return (
-                    <span
-                        key={starValue}
-                        className="star-rating-star"
-                        style={{
-                            backgroundImage: `linear-gradient(90deg, #1d9bf0 ${fill * 100}%, #cfd9de ${fill * 100}%)`
-                        }}
-                    >
-                        {STAR_FILLED}
-                    </span>
-                );
-            })}
+                    return (
+                        <span
+                            key={starValue}
+                            className="star-rating-star"
+                            style={{
+                                backgroundImage: `linear-gradient(90deg, #1d9bf0 ${fill * 100}%, #cfd9de ${fill * 100}%)`
+                            }}
+                        >
+                            {STAR_FILLED}
+                        </span>
+                    );
+                })
+            ) : (
+                Array.from({ length: starCount }, (_, index) => {
+                    const fill = Math.max(0, Math.min(1, clampedScore - index));
+                    const clipId = `${clipPrefix}-star-${index}`;
+
+                    return (
+                        <svg
+                            key={index + 1}
+                            className="star-rating-svg"
+                            viewBox="0 0 100 100"
+                            aria-hidden="true"
+                        >
+                            <defs>
+                                <clipPath id={clipId} clipPathUnits="objectBoundingBox">
+                                    <rect x="0" y="0" width={fill} height="1" />
+                                </clipPath>
+                            </defs>
+                            <polygon points={STAR_POINTS} fill="#cfd9de" />
+                            <polygon points={STAR_POINTS} fill="#1d9bf0" clipPath={`url(#${clipId})`} />
+                        </svg>
+                    );
+                })
+            )}
             {interactive && typeof onChange === 'function' && (
                 <div
                     ref={gridRef}
