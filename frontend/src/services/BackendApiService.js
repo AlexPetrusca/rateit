@@ -198,6 +198,32 @@ const BackendApiService = {
         return await response.json();
     },
 
+    updateRating: async (ratingId, ratingData) => {
+        const response = await fetch(`/api/feed/ratings/${encodeURIComponent(ratingId)}`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(ratingData)
+        });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to update post');
+        }
+        return await response.json();
+    },
+
+    deleteRating: async (ratingId) => {
+        const response = await fetch(`/api/feed/ratings/${encodeURIComponent(ratingId)}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to delete post');
+        }
+        return response.status === 204 ? null : await response.json();
+    },
+
     createRating: async ({ body, reviewText, score, mediaObjectKey, mediaContentType }) => {
         const response = await fetch('/api/feed/ratings', {
             method: 'POST',

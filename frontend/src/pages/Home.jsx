@@ -15,6 +15,7 @@ const FEED_PAGE_SIZE = 5;
 const Home = () => {
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
+    const currentUserId = user?.userId ?? user?.id ?? null;
     const [feedItems, setFeedItems] = useState([]);
     const [isFeedLoading, setIsFeedLoading] = useState(false);
     const [isFeedLoadingMore, setIsFeedLoadingMore] = useState(false);
@@ -474,6 +475,10 @@ const Home = () => {
                             onPostClick={openPost}
                             renderFooter={(item) => {
                                 const rerateKey = getComposerKey(item.ratingId, 'rerate');
+                                const canEdit = item.author?.userId != null
+                                    && item.author.userId === currentUserId
+                                    && !item.deleted
+                                    && !item.deletedAt;
                                 return (
                                     <PostActions
                                         liked={item.likedByCurrentUser}
@@ -484,6 +489,7 @@ const Home = () => {
                                                 current === rerateKey ? null : rerateKey
                                         ))}
                                         onComment={() => openComments(item.ratingId)}
+                                        onEdit={canEdit ? () => navigate(`/posts/${item.ratingId}/edit`) : undefined}
                                     />
                                 );
                             }}

@@ -370,6 +370,51 @@ test('updateAdminComment posts editable fields', async () => {
     }
 });
 
+test('updateRating posts editable fields', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({ ratingId: 22, score: 4.5, reviewText: 'Updated' })
+        };
+    };
+
+    try {
+        const result = await BackendApiService.updateRating(22, { body: 'Updated topic', reviewText: 'Updated', score: 4.5 });
+
+        assert.deepEqual(result, { ratingId: 22, score: 4.5, reviewText: 'Updated' });
+        assert.equal(calls[0].url, '/api/feed/ratings/22');
+        assert.equal(calls[0].options.method, 'PUT');
+        assert.equal(JSON.parse(calls[0].options.body).body, 'Updated topic');
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
+test('deleteRating calls the delete endpoint', async () => {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url, options });
+        return {
+            ok: true,
+            status: 204,
+            json: async () => ({})
+        };
+    };
+
+    try {
+        const result = await BackendApiService.deleteRating(33);
+
+        assert.equal(result, null);
+        assert.equal(calls[0].url, '/api/feed/ratings/33');
+        assert.equal(calls[0].options.method, 'DELETE');
+    } finally {
+        delete globalThis.fetch;
+    }
+});
+
 test('bulkDeleteAdminComments posts selected ids', async () => {
     const calls = [];
     globalThis.fetch = async (url, options = {}) => {

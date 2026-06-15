@@ -37,6 +37,7 @@ This is the current rule for frontend work: reuse the shared components instead 
 - Home feed at `/`
 - User profile feed at `/users/:userId`
 - Post detail page at `/posts/:ratingId`
+- Post editor at `/posts/:ratingId/edit`
 
 The home feed and profile feed should look the same. The only difference is the data source and which actions are wired to the page.
 
@@ -48,6 +49,8 @@ Clicking a post opens the dedicated post page. That page shows:
 - the comment tree for that rating
 - threaded replies
 - a deleted-post placeholder when the rating was removed by moderation
+
+Signed-in authors can open a dedicated editor to change the topic text, review text, and score or delete the post. Deletes keep the comment thread readable by tombstoning the rating.
 
 Post photos open in an in-place lightbox when clicked. This is handled by the shared `PostCard`, so feed, profile, and post detail images share the same larger-view behavior.
 
@@ -73,6 +76,8 @@ Post photos open in an in-place lightbox when clicked. This is handled by the sh
 
 - `GET /api/feed?limit=N`
 - `GET /api/feed/ratings/{ratingId}`
+- `PUT /api/feed/ratings/{ratingId}`
+- `DELETE /api/feed/ratings/{ratingId}`
 - `GET /api/feed/ratings/{ratingId}/like`
 - `DELETE /api/feed/ratings/{ratingId}/like`
 - `GET /api/feed/ratings/{ratingId}/comments`
@@ -83,6 +88,7 @@ Post photos open in an in-place lightbox when clicked. This is handled by the sh
 
 - The feed only includes public ratings and public rated items.
 - The feed and profile lists exclude ratings with `deleted_at`, while post detail can still load them as tombstones.
+- Own posts can surface an edit action that routes to the dedicated post editor page.
 - The home feed currently does not do social ranking.
 - The profile feed is backed by the same timeline component as the home feed.
 - New feed UI should fit the existing shared component model instead of introducing a second rendering path.

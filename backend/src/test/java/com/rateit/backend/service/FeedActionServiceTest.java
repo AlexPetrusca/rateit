@@ -4,6 +4,7 @@ import com.rateit.backend.entity.MediaAsset;
 import com.rateit.backend.entity.RateableItem;
 import com.rateit.backend.entity.Rating;
 import com.rateit.backend.entity.RatingScale;
+import com.rateit.backend.entity.RatingLike;
 import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.dto.FeedItemDto;
 import com.rateit.backend.entity.rest.CreateRatingRequest;
@@ -13,6 +14,8 @@ import com.rateit.backend.entity.types.RatingScaleType;
 import com.rateit.backend.entity.types.Visibility;
 import com.rateit.backend.exception.BadRequestException;
 import com.rateit.backend.repository.MediaAssetRepository;
+import com.rateit.backend.repository.ExternalReviewRepository;
+import com.rateit.backend.repository.FeedEventRepository;
 import com.rateit.backend.repository.RateableItemRepository;
 import com.rateit.backend.repository.RatingCommentRepository;
 import com.rateit.backend.repository.RatingLikeRepository;
@@ -58,6 +61,12 @@ class FeedActionServiceTest {
     private MediaAssetRepository mediaAssetRepository;
 
     @Mock
+    private FeedEventRepository feedEventRepository;
+
+    @Mock
+    private ExternalReviewRepository externalReviewRepository;
+
+    @Mock
     private UserService userService;
 
     private FeedActionService feedActionService;
@@ -71,6 +80,8 @@ class FeedActionServiceTest {
             ratingScaleRepository,
             rateableItemRepository,
             mediaAssetRepository,
+            feedEventRepository,
+            externalReviewRepository,
             userService
         );
     }
@@ -268,6 +279,53 @@ class FeedActionServiceTest {
         assertEquals(Visibility.PUBLIC, persistedRating.getVisibility());
         assertEquals(31L, result.ratingId());
         assertEquals("alice_apples", result.author().username());
+    }
+
+    @Test
+    void updateRating_changesOwnPostAndReturnsUpdatedFeedItem() {
+        User author = user(1L, "5551234567", "bob_bananas");
+        RatingScale scale = ratingScale(2L, "5 stars", new BigDecimal("1"), new BigDecimal("5"), new BigDecimal("0.5"));
+        RateableItem item = rateableItem(11L, author, RateableItemType.TEXT_POST, "Old topic", null);
+        Rating rating = rating(21L, author, item, scale, new BigDecimal("3"), "Old review");
+
+        when(userService.findByPhoneNumber(author.getPhoneNumber())).thenReturn(author);
+        when(ratingRepository.findById(rating.getId())).thenReturn(Optional.of(rating));
+        when(ratingLikeRepository.countByRating(rating)).thenReturn(4L);
+        when(ratingCommentRepository.countByRating(rating)).thenReturn(2L);
+        when(ratingLikeRepository.findByRatingAndUser(rating, author)).thenReturn(Optional.of(RatingLike.builder().build()));
+        when(ratingRepository.save(any(Rating.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(rateableItemRepository.save(any(RateableItem.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        FeedItemDto result = feedActionService.updateRating(
+            rating.getId(),
+            new com.rateit.backend.entity.rest.UpdateRatingRequest("New topic", "New review", new BigDecimal("4.5")),
+            author.getPhoneNumber()
+        );
+
+        assertEquals("New topic", item.getBody());
+        assertEquals("New review", rating.getReviewText());
+        assertEquals(new BigDecimal("4.5"), rating.getScore());
+        assertEquals(4L, result.likeCount());
+        assertEquals(2L, result.commentCount());
+        assertTrue(result.likedByCurrentUser());
+    }
+
+    @Test
+    void deleteRating_softDeletesOwnPost() {
+        User author = user(1L, "5551234567", "bob_bananas");
+        RatingScale scale = ratingScale(2L, "5 stars", new BigDecimal("1"), new BigDecimal("5"), new BigDecimal("0.5"));
+        RateableItem item = rateableItem(11L, author, RateableItemType.TEXT_POST, "Old topic", null);
+        Rating rating = rating(21L, author, item, scale, new BigDecimal("3"), "Old review");
+
+        when(userService.findByPhoneNumber(author.getPhoneNumber())).thenReturn(author);
+        when(ratingRepository.findById(rating.getId())).thenReturn(Optional.of(rating));
+
+        feedActionService.deleteRating(rating.getId(), author.getPhoneNumber());
+
+        assertNotNull(rating.getDeletedAt());
+        verify(feedEventRepository).deleteByRatingOrRateableItem(rating, item);
+        verify(externalReviewRepository).deleteByRatingOrRateableItem(rating, item);
+        verify(ratingLikeRepository).deleteByRating(rating);
     }
 
     private User user(Long id, String phoneNumber, String username) {

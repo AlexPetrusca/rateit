@@ -1011,6 +1011,45 @@ button:disabled {
 
 .create-actions {
     justify-content: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.post-editor-preview {
+    display: flex;
+    justify-content: center;
+}
+
+.post-editor-preview-card {
+    width: 100%;
+}
+
+.destructive-link-button {
+    color: #b42318;
+}
+
+.destructive-link-button:hover {
+    color: #7a271a;
+}
+
+.destructive-button {
+    margin: 0;
+    padding: 8px 16px;
+    border: 1px solid #b42318;
+    background: #b42318;
+    color: #fff;
+    border-radius: 999px;
+    font-weight: 700;
+}
+
+.destructive-button:hover {
+    background: #912018;
+    border-color: #912018;
+}
+
+.editor-delete-modal {
+    display: grid;
+    gap: 16px;
 }
 
 .link-button {

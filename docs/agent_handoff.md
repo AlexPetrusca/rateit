@@ -16,6 +16,7 @@ Critic is a React + Spring Boot app with phone-number login, JWT cookie auth, a 
 - Shared feed/post/comment UI components used across home, profile, and post detail pages.
 - User profile pages with user info and that user’s posts.
 - Profile editor page at `/profile/edit` for updating the signed-in user's profile picture.
+- Post editor page at `/posts/:ratingId/edit` for updating the author's topic text, review text, and score, plus soft-deleting the post.
 - Public-safe user search by username for finding people to follow.
 - Profiles show follower/following counts, and those counts open list pages.
 - Post detail pages with the post and its threaded comments.
@@ -90,8 +91,9 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 ### Feed and post actions
 
 - `FeedController` exposes feed, rating detail, likes, comments, and re-rate.
+- `FeedController` also exposes signed-in author post update/delete.
 - `FeedService` returns the feed read model.
-- `FeedActionService` handles create rating, like/unlike, comment, and rerate.
+- `FeedActionService` handles create rating, like/unlike, comment, rerate, update, and delete.
 
 ### Admin
 
@@ -128,6 +130,7 @@ Use these instead of recreating the same UI:
 
 - User deletion is a hard delete and also removes their authored posts and the comments on those posts.
 - Admin post removal is a tombstone path that marks the rating deleted, removes likes/feed/external references, and preserves comment threads.
+- Signed-in authors use the same tombstone delete path for their own post deletions so comment threads remain readable.
 - The home feed and profile feed should stay visually aligned by using the same backing list/card components.
 - Any new admin table should use the shared admin grid wrapper so vertical alignment stays consistent.
 

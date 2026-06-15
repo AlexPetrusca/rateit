@@ -33,7 +33,7 @@ const formatScoreValue = (scoreValue, ratingScale) => {
 const Post = () => {
     const navigate = useNavigate();
     const { ratingId: routeRatingId } = useParams();
-    const { isLoading: isAuthLoading } = useAuth();
+    const { user: currentUser, isLoading: isAuthLoading } = useAuth();
     const { notify } = useNotifications();
     const [post, setPost] = useState(null);
     const [comments, setComments] = useState([]);
@@ -51,6 +51,11 @@ const Post = () => {
         const parsed = Number(routeRatingId);
         return Number.isFinite(parsed) ? parsed : null;
     }, [routeRatingId]);
+    const currentUserId = currentUser?.userId ?? currentUser?.id ?? null;
+    const canEditPost = post?.author?.userId != null
+        && post.author.userId === currentUserId
+        && !post.deleted
+        && !post.deletedAt;
 
     const getCommentDraftKey = (parentCommentId = null) => (
         parentCommentId == null ? 'root' : `reply:${parentCommentId}`
@@ -411,6 +416,7 @@ const Post = () => {
                                     onLike={toggleLike}
                                     onRerate={() => openComposer('rerate')}
                                     onComment={() => openComposer('root-comment')}
+                                    onEdit={canEditPost ? () => navigate(`/posts/${ratingId}/edit`) : undefined}
                                 />
                             )}
                         />

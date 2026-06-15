@@ -12,13 +12,17 @@ import com.rateit.backend.entity.dto.RatingCommentDto;
 import com.rateit.backend.entity.rest.CreateRatingRequest;
 import com.rateit.backend.entity.rest.CreateRatingCommentRequest;
 import com.rateit.backend.entity.rest.CreateRerateRequest;
+import com.rateit.backend.entity.rest.UpdateRatingRequest;
 import com.rateit.backend.entity.types.RateableItemType;
 import com.rateit.backend.entity.types.Resource;
 import com.rateit.backend.entity.types.RatingScaleType;
 import com.rateit.backend.entity.types.Visibility;
 import com.rateit.backend.exception.BadRequestException;
+import com.rateit.backend.exception.AuthorizationException;
 import com.rateit.backend.exception.ResourceNotFoundException;
 import com.rateit.backend.repository.MediaAssetRepository;
+import com.rateit.backend.repository.ExternalReviewRepository;
+import com.rateit.backend.repository.FeedEventRepository;
 import com.rateit.backend.repository.RatingCommentRepository;
 import com.rateit.backend.repository.RatingLikeRepository;
 import com.rateit.backend.repository.RatingScaleRepository;
@@ -43,6 +47,8 @@ public class FeedActionService {
     private final RatingScaleRepository ratingScaleRepository;
     private final RateableItemRepository rateableItemRepository;
     private final MediaAssetRepository mediaAssetRepository;
+    private final FeedEventRepository feedEventRepository;
+    private final ExternalReviewRepository externalReviewRepository;
     private final UserService userService;
 
     @Transactional
@@ -91,6 +97,39 @@ public class FeedActionService {
     }
 
     @Transactional
+    public FeedItemDto updateRating(Long ratingId, UpdateRatingRequest request, String currentUserPhoneNumber) {
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+        Rating rating = findEditableRating(ratingId, currentUser);
+        RateableItem item = rating.getRateableItem();
+
+        String body = normalize(request.body());
+        String reviewText = normalize(request.reviewText());
+        boolean hasMedia = item.getMediaAsset() != null;
+
+        if (!hasMedia && body == null) {
+            throw BadRequestException.invalidRating("Text posts need body text or an image");
+        }
+
+        validateScore(request.score(), rating);
+
+        item.setBody(body);
+        rating.setReviewText(reviewText);
+        rating.setScore(request.score());
+
+        rateableItemRepository.save(item);
+        Rating savedRating = ratingRepository.save(rating);
+
+        long likeCount = ratingLikeRepository.countByRating(savedRating);
+        long commentCount = ratingCommentRepository.countByRating(savedRating);
+        boolean likedByCurrentUser = ratingLikeRepository.findByRatingAndUser(
+            savedRating,
+            currentUser
+        ).isPresent();
+
+        return FeedItemDto.fromRating(savedRating, likeCount, commentCount, likedByCurrentUser);
+    }
+
+    @Transactional
     public void likeRating(Long ratingId, String currentUserPhoneNumber) {
         Rating rating = findRating(ratingId);
         User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
@@ -113,6 +152,21 @@ public class FeedActionService {
 
         ratingLikeRepository.findByRatingAndUser(rating, currentUser)
             .ifPresent(ratingLikeRepository::delete);
+    }
+
+    @Transactional
+    public void deleteRating(Long ratingId, String currentUserPhoneNumber) {
+        Rating rating = findEditableRating(ratingId, userService.findByPhoneNumber(currentUserPhoneNumber));
+        RateableItem item = rating.getRateableItem();
+
+        feedEventRepository.deleteByRatingOrRateableItem(rating, item);
+        externalReviewRepository.deleteByRatingOrRateableItem(rating, item);
+        ratingLikeRepository.deleteByRating(rating);
+
+        if (rating.getDeletedAt() == null) {
+            rating.setDeletedAt(java.time.Instant.now());
+            ratingRepository.save(rating);
+        }
     }
 
     @Transactional
@@ -202,6 +256,36 @@ public class FeedActionService {
     private Rating findRating(Long ratingId) {
         return ratingRepository.findById(ratingId)
             .orElseThrow(() -> ResourceNotFoundException.resource(Resource.RATING, ratingId));
+    }
+
+    private Rating findEditableRating(Long ratingId, User currentUser) {
+        Rating rating = findRating(ratingId);
+
+        if (!rating.getAuthorUser().getId().equals(currentUser.getId())) {
+            throw AuthorizationException.forbidden("You can only edit your own posts");
+        }
+
+        if (rating.getDeletedAt() != null) {
+            throw BadRequestException.invalidRequest("Deleted posts cannot be edited");
+        }
+
+        return rating;
+    }
+
+    private void validateScore(java.math.BigDecimal score, Rating rating) {
+        if (score == null) {
+            throw BadRequestException.invalidRating("Score is required");
+        }
+
+        if (score.compareTo(rating.getRatingScale().getMinValue()) < 0 || score.compareTo(rating.getRatingScale().getMaxValue()) > 0) {
+            throw BadRequestException.invalidRating(
+                String.format(
+                    "Score must be between %s and %s",
+                    rating.getRatingScale().getMinValue(),
+                    rating.getRatingScale().getMaxValue()
+                )
+            );
+        }
     }
 
     private RatingComment findParentComment(Rating rating, Long parentCommentId) {

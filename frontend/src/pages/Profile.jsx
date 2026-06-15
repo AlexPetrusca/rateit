@@ -639,22 +639,30 @@ const Profile = () => {
                             ) : posts.length === 0 ? (
                                 <div className="profile-empty-state">No posts to show.</div>
                             ) : (
-                                <FeedTimeline
-                                    items={posts}
-                                    onAuthorClick={(userId) => navigate(`/users/${userId}`)}
-                                    onPostClick={openPost}
-                                    renderFooter={(item) => (
-                                        <PostActions
-                                            liked={item.likedByCurrentUser}
-                                            likeCount={item.likeCount}
-                                            commentCount={item.commentCount}
-                                            onLike={() => toggleLike(item)}
-                                            onRerate={() => setActiveComposer((current) => (
-                                                    current === `${item.ratingId}:rerate` ? null : `${item.ratingId}:rerate`
-                                            ))}
-                                            onComment={() => openComments(item.ratingId)}
-                                        />
-                                    )}
+                                    <FeedTimeline
+                                        items={posts}
+                                        onAuthorClick={(userId) => navigate(`/users/${userId}`)}
+                                        onPostClick={openPost}
+                                        renderFooter={(item) => {
+                                            const canEdit = item.author?.userId != null
+                                                && item.author.userId === currentUser?.userId
+                                                && !item.deleted
+                                                && !item.deletedAt;
+
+                                            return (
+                                                <PostActions
+                                                    liked={item.likedByCurrentUser}
+                                                    likeCount={item.likeCount}
+                                                    commentCount={item.commentCount}
+                                                    onLike={() => toggleLike(item)}
+                                                    onRerate={() => setActiveComposer((current) => (
+                                                            current === `${item.ratingId}:rerate` ? null : `${item.ratingId}:rerate`
+                                                    ))}
+                                                    onComment={() => openComments(item.ratingId)}
+                                                    onEdit={canEdit ? () => navigate(`/posts/${item.ratingId}/edit`) : undefined}
+                                                />
+                                            );
+                                        }}
                                     renderAfterItem={(item) => {
                                         const rerateKey = `${item.ratingId}:rerate`;
                                         const isCommentThreadActive = activeComposer?.startsWith(`${item.ratingId}:comment`);

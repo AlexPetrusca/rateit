@@ -19,13 +19,21 @@ const CommentIcon = () => (
     </svg>
 );
 
+const PencilIcon = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 20h4l10-10-4-4L4 16v4Z" />
+        <path d="m13 7 4 4" />
+    </svg>
+);
+
 const PostActions = ({
     liked = false,
     likeCount = 0,
     commentCount = 0,
     onLike,
     onRerate,
-    onComment
+    onComment,
+    onEdit
 }) => (
     <div className="tweet-actions" aria-label="Rating actions">
         {onLike && (
@@ -70,6 +78,20 @@ const PostActions = ({
                 </span>
                 <span className="sr-only">Comment</span>
                 <span className="tweet-action-count">{commentCount || 0}</span>
+            </button>
+        )}
+        {onEdit && (
+            <button
+                type="button"
+                className="tweet-action"
+                onClick={onEdit}
+                aria-label="Edit post"
+                title="Edit"
+            >
+                <span className="action-icon">
+                    <PencilIcon />
+                </span>
+                <span className="sr-only">Edit</span>
             </button>
         )}
     </div>

@@ -12,6 +12,7 @@ import AdminComments from './pages/AdminComments';
 import AdminUsers from './pages/AdminUsers';
 import Profile from './pages/Profile';
 import ProfileEditor from './pages/ProfileEditor';
+import PostEditor from './pages/PostEditor';
 import Post from './pages/Post';
 import SearchUsers from './pages/SearchUsers';
 import FollowList from './pages/FollowList';
@@ -92,6 +93,14 @@ function App() {
                                 element={
                                     <GuardedRoute>
                                         <Post />
+                                    </GuardedRoute>
+                                }
+                            />
+                            <Route
+                                path="/posts/:ratingId/edit"
+                                element={
+                                    <GuardedRoute>
+                                        <PostEditor />
                                     </GuardedRoute>
                                 }
                             />

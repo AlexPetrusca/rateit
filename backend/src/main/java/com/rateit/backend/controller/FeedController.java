@@ -5,6 +5,7 @@ import com.rateit.backend.entity.dto.RatingCommentDto;
 import com.rateit.backend.entity.rest.CreateRatingRequest;
 import com.rateit.backend.entity.rest.CreateRatingCommentRequest;
 import com.rateit.backend.entity.rest.CreateRerateRequest;
+import com.rateit.backend.entity.rest.UpdateRatingRequest;
 import com.rateit.backend.service.FeedActionService;
 import com.rateit.backend.service.FeedService;
 import jakarta.validation.Valid;
@@ -54,6 +55,15 @@ public class FeedController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    @PutMapping("/ratings/{ratingId}")
+    public ResponseEntity<FeedItemDto> updateRating(
+        @PathVariable Long ratingId,
+        @RequestBody UpdateRatingRequest request,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.ok(feedActionService.updateRating(ratingId, request, token.getToken().getSubject()));
+    }
+
     @PostMapping("/ratings/{ratingId}/like")
     public ResponseEntity<Void> likeRating(@PathVariable Long ratingId, JwtAuthenticationToken token) {
         feedActionService.likeRating(ratingId, token.getToken().getSubject());
@@ -63,6 +73,12 @@ public class FeedController {
     @DeleteMapping("/ratings/{ratingId}/like")
     public ResponseEntity<Void> unlikeRating(@PathVariable Long ratingId, JwtAuthenticationToken token) {
         feedActionService.unlikeRating(ratingId, token.getToken().getSubject());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/ratings/{ratingId}")
+    public ResponseEntity<Void> deleteRating(@PathVariable Long ratingId, JwtAuthenticationToken token) {
+        feedActionService.deleteRating(ratingId, token.getToken().getSubject());
         return ResponseEntity.noContent().build();
     }
 

@@ -26,6 +26,7 @@ This document covers the main user-facing product surface outside the admin area
 - `/profile/edit`
 - `/users/:userId`
 - `/posts/:ratingId`
+- `/posts/:ratingId/edit`
 - `/search`
 - `/users/:userId/followers`
 - `/users/:userId/following`
@@ -71,6 +72,7 @@ Use the shared components below before creating new copies:
 - Clicking a post opens the post detail page.
 - User profiles expose only public-safe profile information: avatar, username, handle, and visible posts.
 - The profile editor starts as a focused page for updating the signed-in user's profile picture, including square crop/size controls before upload.
+- The post editor lets the signed-in author update the topic text, review text, and rating score, or soft-delete the post so comment threads stay intact.
 - User profiles expose the current viewer's follow relation to that profile user, plus follower/following counts.
 - Follower and following counts are clickable and open public-safe list pages.
 - User search is public-safe and supports finding people by username so users can follow them.
@@ -116,6 +118,8 @@ If you are changing the main app surface, these are the first files to inspect:
 
 - `GET /api/feed?limit=N`
 - `GET /api/feed/ratings/{ratingId}`
+- `PUT /api/feed/ratings/{ratingId}`
+- `DELETE /api/feed/ratings/{ratingId}`
 - `GET /api/feed/ratings/{ratingId}/comments`
 - `POST /api/feed/ratings/{ratingId}/comments`
 - `POST /api/feed/ratings/{ratingId}/like`
