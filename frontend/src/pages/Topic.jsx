@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Paper, Stack, Typography } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import CommentThread from '../components/CommentThread.jsx';
@@ -60,6 +61,8 @@ const Topic = () => {
         const firstItem = feedItems[0]?.rateableItem;
         return firstItem?.body || firstItem?.title || 'Topic';
     }, [feedItems]);
+
+    const topicRatingCount = feedItems.length;
 
     const isFullyAuthenticated = isAuthenticated && user != null;
 
@@ -479,9 +482,20 @@ const Topic = () => {
                         <div className="timeline-header">
                             <h1>Topic</h1>
                         </div>
-                        <div className="topic-header-copy">
-                            <p>{topicLabel}</p>
-                        </div>
+
+                        <Paper elevation={2} className="topic-summary-card">
+                            <Stack spacing={0.5}>
+                                <Typography variant="overline" color="text.secondary">
+                                    Topic
+                                </Typography>
+                                <Typography variant="h5" component="div" fontWeight={700}>
+                                    {topicLabel}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {topicRatingCount} rating{topicRatingCount === 1 ? '' : 's'} on this topic
+                                </Typography>
+                            </Stack>
+                        </Paper>
 
                         {isFeedLoading && <p className="feed-status">Loading ratings...</p>}
                         {!isFeedLoading && !feedError && feedItems.length === 0 && (
@@ -492,6 +506,7 @@ const Topic = () => {
                             items={feedItems}
                             onAuthorClick={openProfile}
                             onPostClick={openPost}
+                            showTopicText={false}
                             renderFooter={(item) => {
                                 const rerateKey = getComposerKey(item.ratingId, 'rerate');
                                 const canEdit = item.author?.userId != null

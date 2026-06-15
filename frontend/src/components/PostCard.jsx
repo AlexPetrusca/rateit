@@ -30,6 +30,7 @@ const PostCard = ({
     onAuthorClick,
     onPostClick,
     onTopicClick,
+    showTopicText = true,
     footer,
     actions,
     className = '',
@@ -71,7 +72,7 @@ const PostCard = ({
 
     const ratingTextContent = !isDeleted && (
         <div className="text-rating">
-            {topicLabel && (
+            {topicLabel && showTopicText && (
                 onTopicClick ? (
                     <button
                         type="button"

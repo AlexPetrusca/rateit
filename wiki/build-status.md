@@ -14,6 +14,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 
 ## To Do
 ### P1
+- Get rid of bar under top bar that says "Home" or "Create"
 - Pulling down on mobile doesnt always refresh the page. only if finger is in the top bar labeled "home". if the screen is being dragged and grey at the top is exposed, the screen should refresh.
 - Clean up the `users` table so `first_name` and `last_name` are no longer required, and make `username` the required profile field instead. Ensure usernames have to be unique.
 - Add a basic censor that stops you from posting slurs
@@ -74,4 +75,5 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Backlog suggestions now have a submit page, a suggestions table below the backlog board, and an admin moderation page for deleting suggestions.
 - The shared star control is now a little larger, uses blue selected stars, and supports sliding across the control on mobile to set a rating.
 - Clicking the topic text on a post now opens a linked topic page at `/topics/:rateableItemId` that shows every rating on the same shared topic.
+- The topic page now uses a raised summary card for the topic itself, and individual ratings on that page no longer repeat the topic text above each review.
 - Improve the star controls on mobile so they are easier to slide across and feel better to use.
