@@ -34,6 +34,21 @@ const formatTimestamp = (value) => {
     }).format(new Date(value));
 };
 
+const truncateText = (value, maxLength = 140) => {
+    if (typeof value !== 'string') {
+        return '—';
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+        return '—';
+    }
+
+    return trimmed.length > maxLength
+        ? `${trimmed.slice(0, maxLength - 1)}…`
+        : trimmed;
+};
+
 const getCommentId = (comment) => comment.commentId ?? comment.id;
 
 const getSelectedRowIds = (selectionModel, rows) => {
@@ -229,10 +244,26 @@ const AdminComments = () => {
             valueGetter: (_value, row) => row.authorUsername ?? row.author?.username ?? '-'
         },
         {
-            field: 'text',
-            headerName: 'Comment',
+            field: 'content',
+            headerName: 'Content',
             minWidth: 260,
-            flex: 1.4
+            flex: 1.4,
+            renderCell: (params) => (
+                <Box sx={{ width: '100%', py: 1 }}>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            lineHeight: 1.35,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                        }}
+                    >
+                        {truncateText(params.row.text, 180)}
+                    </Typography>
+                </Box>
+            )
         },
         {
             field: 'score',
@@ -415,16 +446,19 @@ const AdminComments = () => {
             >
                 {deleteTarget && (
                     <Stack spacing={2}>
-                        <Alert severity="warning">
-                            This will delete the selected comment.
-                        </Alert>
-                        <Typography variant="body1">
-                            Delete comment #{getCommentId(deleteTarget)}?
-                        </Typography>
+                    <Alert severity="warning">
+                        This will delete the selected comment.
+                    </Alert>
+                    <Typography variant="body1">
+                        Delete comment #{getCommentId(deleteTarget)}?
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Content: <strong>{truncateText(deleteTarget.text, 180)}</strong>
+                    </Typography>
 
-                        <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
-                            <Button variant="outlined" onClick={() => setDeleteTarget(null)}>
-                                Cancel
+                    <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
+                        <Button variant="outlined" onClick={() => setDeleteTarget(null)}>
+                            Cancel
                             </Button>
                             <Button
                                 color="error"

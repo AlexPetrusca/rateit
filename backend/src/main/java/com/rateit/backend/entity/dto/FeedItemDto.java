@@ -18,6 +18,7 @@ public record FeedItemDto(
     long likeCount,
     long commentCount,
     boolean likedByCurrentUser,
+    boolean deleted,
     Author author,
     Item rateableItem,
     Scale ratingScale
@@ -37,25 +38,27 @@ public record FeedItemDto(
         RatingScale scale = rating.getRatingScale();
         MediaAsset mediaAsset = item.getMediaAsset();
         boolean authorDeleted = author.getDeletedAt() != null;
+        boolean ratingDeleted = rating.getDeletedAt() != null;
 
         return new FeedItemDto(
             rating.getId(),
-            rating.getScore(),
-            rating.getReviewText(),
+            ratingDeleted ? null : rating.getScore(),
+            ratingDeleted ? null : rating.getReviewText(),
             rating.getCreatedAt(),
             likeCount,
             commentCount,
-            likedByCurrentUser,
+            !ratingDeleted && likedByCurrentUser,
+            ratingDeleted,
             new Author(
-                authorDeleted ? null : author.getId(),
-                authorDeleted ? "[deleted]" : author.getUsername(),
-                authorDeleted ? null : author.getProfilePicUrl()
+                authorDeleted || ratingDeleted ? null : author.getId(),
+                authorDeleted || ratingDeleted ? "[deleted]" : author.getUsername(),
+                authorDeleted || ratingDeleted ? null : author.getProfilePicUrl()
             ),
             new Item(
                 item.getId(),
                 item.getItemType(),
-                item.getBody(),
-                mediaAsset == null ? null : mediaAsset.getObjectKey()
+                ratingDeleted ? "This post has been deleted." : item.getBody(),
+                ratingDeleted || mediaAsset == null ? null : mediaAsset.getObjectKey()
             ),
             new Scale(
                 scale.getName(),

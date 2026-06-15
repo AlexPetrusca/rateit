@@ -32,6 +32,7 @@ Do not use this file for:
 - Any new admin table should use the shared admin grid wrapper so alignment and selection stay consistent.
 - Any new admin job type must update the enum, schema constraint, service dispatch, controller, UI, and docs together.
 - Comment moderation needs subtree-aware deletion; deleting a parent comment should delete all nested replies before removing the parent row.
+- Admin post removal is a rating tombstone, not a hard post/comment delete; preserve comment threads and render deleted posts as placeholders on direct post detail routes.
 
 ### Backend JSON and time types
 
@@ -44,6 +45,7 @@ Do not use this file for:
 - `ROLE_TEST_USER` is reserved for synthetic accounts and test-user OTP bypass behavior.
 - User role state lives on the `users` row and must stay consistent with JWT/session handling.
 - The live `users` table still requires legacy `first_name` and `last_name` columns, so create/update flows must populate them even though the UI is username-first.
+- If the source backend fails with Postgres `28P01` after a rename or secret change, check ignored `backend/.env` against `rateit-chart/values.secret.yaml`; stale local passwords keep Spring from staying up on `8080`.
 
 ### Twilio Verify
 

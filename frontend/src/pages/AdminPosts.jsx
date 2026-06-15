@@ -58,6 +58,21 @@ const normalizeOptional = (value) => {
     return trimmed.length === 0 ? null : trimmed;
 };
 
+const truncateText = (value, maxLength = 120) => {
+    if (typeof value !== 'string') {
+        return '—';
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+        return '—';
+    }
+
+    return trimmed.length > maxLength
+        ? `${trimmed.slice(0, maxLength - 1)}…`
+        : trimmed;
+};
+
 const emptySelectionModel = {
     type: 'include',
     ids: new Set()
@@ -232,7 +247,7 @@ const AdminPosts = () => {
         setIsDeleting(true);
         try {
             await BackendApiService.deleteAdminPost(deleteTarget.ratingId);
-            notify({ message: `Deleted post #${deleteTarget.ratingId}`, type: 'info' });
+            notify({ message: `Removed post #${deleteTarget.ratingId}`, type: 'info' });
             setDeleteTarget(null);
             if (editingPost?.ratingId === deleteTarget.ratingId) {
                 closeEdit();
@@ -263,8 +278,8 @@ const AdminPosts = () => {
             const result = await BackendApiService.bulkDeleteAdminPosts(selectedPosts.map((post) => post.ratingId));
             notify({
                 message: result.deletedCount > 0
-                    ? `Deleted ${result.deletedCount} posts`
-                    : 'No posts were deleted',
+                    ? `Removed ${result.deletedCount} posts`
+                    : 'No posts were removed',
                 type: 'info'
             });
             setIsBulkDeletePostsOpen(false);
@@ -309,18 +324,37 @@ const AdminPosts = () => {
             )
         },
         {
-            field: 'itemType',
-            headerName: 'Type',
-            width: 140,
-            align: 'center',
-            headerAlign: 'center'
-        },
-        {
-            field: 'score',
-            headerName: 'Score',
-            width: 110,
-            align: 'center',
-            headerAlign: 'center'
+            field: 'content',
+            headerName: 'Content',
+            minWidth: 280,
+            flex: 1.3,
+            renderCell: (params) => {
+                const body = params.row.body || params.row.rateableItem?.body || '';
+                const reviewText = params.row.reviewText || '';
+
+                return (
+                    <Box sx={{ width: '100%', py: 1, display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                        <Typography variant="body2" fontWeight={700} sx={{ lineHeight: 1.35 }}>
+                            {truncateText(body, 110)}
+                        </Typography>
+                        {reviewText.trim() && (
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                    lineHeight: 1.35,
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden'
+                                }}
+                            >
+                                {truncateText(reviewText, 160)}
+                            </Typography>
+                        )}
+                    </Box>
+                );
+            }
         },
         {
             field: 'visibility',
@@ -338,9 +372,31 @@ const AdminPosts = () => {
             )
         },
         {
+            field: 'deletedAt',
+            headerName: 'Status',
+            width: 130,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params) => (
+                <Chip
+                    label={params.value ? 'Deleted' : 'Active'}
+                    color={params.value ? 'error' : 'success'}
+                    size="small"
+                    variant={params.value ? 'filled' : 'outlined'}
+                />
+            )
+        },
+        {
             field: 'likeCount',
             headerName: 'Likes',
             width: 100,
+            align: 'center',
+            headerAlign: 'center'
+        },
+        {
+            field: 'score',
+            headerName: 'Score',
+            width: 110,
             align: 'center',
             headerAlign: 'center'
         },
@@ -390,7 +446,7 @@ const AdminPosts = () => {
                                 setDeleteTarget(params.row);
                             }}
                         >
-                            Delete
+                            Remove
                         </Button>
                     </Stack>
                 </Box>
@@ -407,7 +463,7 @@ const AdminPosts = () => {
                             Posts
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            Manage feed posts, their content, visibility, and deletion.
+                            Manage feed posts, their content, visibility, and moderation status.
                         </Typography>
                     </Box>
 
@@ -429,7 +485,7 @@ const AdminPosts = () => {
                                         color="error"
                                         onClick={() => setIsBulkDeletePostsOpen(true)}
                                     >
-                                        Delete selected
+                                        Remove selected
                                     </Button>
                                     <Button variant="text" onClick={() => setSelectedPostIds([])}>
                                         Clear selection
@@ -481,15 +537,15 @@ const AdminPosts = () => {
 
             <Modal
                 isOpen={isBulkDeletePostsOpen}
-                title={`Delete ${selectedPosts.length} selected post${selectedPosts.length === 1 ? '' : 's'}`}
+                title={`Remove ${selectedPosts.length} selected post${selectedPosts.length === 1 ? '' : 's'}`}
                 onClose={() => setIsBulkDeletePostsOpen(false)}
             >
                 <Stack spacing={2}>
                     <Alert severity="warning">
-                        This will delete the selected posts and their dependent rows.
+                        This will replace selected posts with a deleted-post placeholder, remove likes/feed references, and preserve comments.
                     </Alert>
                     <Typography variant="body1">
-                        Delete {selectedPosts.length} selected post{selectedPosts.length === 1 ? '' : 's'}?
+                        Remove {selectedPosts.length} selected post{selectedPosts.length === 1 ? '' : 's'}?
                     </Typography>
 
                     <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
@@ -502,7 +558,7 @@ const AdminPosts = () => {
                             onClick={handleBulkDeleteSelectedPosts}
                             disabled={isDeletingSelectedPosts}
                         >
-                            {isDeletingSelectedPosts ? 'Deleting...' : 'Delete selected'}
+                            {isDeletingSelectedPosts ? 'Removing...' : 'Remove selected'}
                         </Button>
                     </Stack>
                 </Stack>
@@ -641,20 +697,23 @@ const AdminPosts = () => {
 
             <Modal
                 isOpen={deleteTarget != null}
-                title={deleteTarget ? `Delete post #${deleteTarget.ratingId}` : 'Delete post'}
+                title={deleteTarget ? `Remove post #${deleteTarget.ratingId}` : 'Remove post'}
                 onClose={() => setDeleteTarget(null)}
             >
                 {deleteTarget && (
                     <Stack spacing={2}>
                         <Alert severity="warning">
-                            This will delete the post, its comments, its likes, and related audit rows.
+                            This will replace the post with a deleted-post placeholder, remove likes/feed references, and preserve comments.
                         </Alert>
                         <Typography variant="body1">
-                            Delete <strong>post #{deleteTarget.ratingId}</strong> by{' '}
+                            Remove <strong>post #{deleteTarget.ratingId}</strong> by{' '}
                             <strong>{deleteTarget.authorUsername}</strong>?
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                             This post has {deleteTarget.likeCount} likes and {deleteTarget.commentCount} comments.
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Content: <strong>{truncateText(deleteTarget.body || deleteTarget.rateableItem?.body || '')}</strong>
                         </Typography>
 
                         <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
@@ -667,7 +726,7 @@ const AdminPosts = () => {
                                 onClick={handleDelete}
                                 disabled={isDeleting}
                             >
-                                {isDeleting ? 'Deleting...' : 'Delete post'}
+                                {isDeleting ? 'Removing...' : 'Remove post'}
                             </Button>
                         </Stack>
                     </Stack>

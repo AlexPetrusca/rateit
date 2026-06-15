@@ -1,9 +1,7 @@
 package com.rateit.backend.service;
 
-import com.rateit.backend.entity.MediaAsset;
 import com.rateit.backend.entity.RateableItem;
 import com.rateit.backend.entity.Rating;
-import com.rateit.backend.entity.RatingComment;
 import com.rateit.backend.entity.dto.AdminPostDto;
 import com.rateit.backend.entity.dto.AdminDeletePostsResultDto;
 import com.rateit.backend.entity.rest.UpdateAdminPostRequest;
@@ -13,7 +11,6 @@ import com.rateit.backend.exception.BadRequestException;
 import com.rateit.backend.exception.ResourceNotFoundException;
 import com.rateit.backend.repository.ExternalReviewRepository;
 import com.rateit.backend.repository.FeedEventRepository;
-import com.rateit.backend.repository.MediaAssetRepository;
 import com.rateit.backend.repository.RateableItemRepository;
 import com.rateit.backend.repository.RatingCommentRepository;
 import com.rateit.backend.repository.RatingLikeRepository;
@@ -26,8 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -38,7 +34,6 @@ public class AdminPostService {
     private final RatingLikeRepository ratingLikeRepository;
     private final RatingCommentRepository ratingCommentRepository;
     private final RateableItemRepository rateableItemRepository;
-    private final MediaAssetRepository mediaAssetRepository;
     private final FeedEventRepository feedEventRepository;
     private final ExternalReviewRepository externalReviewRepository;
 
@@ -83,23 +78,15 @@ public class AdminPostService {
     @Transactional
     public void deleteAdminPost(long postId) {
         Rating rating = findRating(postId);
-
         RateableItem item = rating.getRateableItem();
-        MediaAsset mediaAsset = item.getMediaAsset();
 
         feedEventRepository.deleteByRatingOrRateableItem(rating, item);
         externalReviewRepository.deleteByRatingOrRateableItem(rating, item);
         ratingLikeRepository.deleteByRating(rating);
-        deleteCommentsInReverseOrder(rating);
 
-        ratingRepository.delete(rating);
-        ratingRepository.flush();
-        rateableItemRepository.delete(item);
-        rateableItemRepository.flush();
-
-        if (mediaAsset != null) {
-            mediaAssetRepository.delete(mediaAsset);
-            mediaAssetRepository.flush();
+        if (rating.getDeletedAt() == null) {
+            rating.setDeletedAt(Instant.now());
+            ratingRepository.save(rating);
         }
     }
 
@@ -113,12 +100,6 @@ public class AdminPostService {
         }
 
         return new AdminDeletePostsResultDto(deletedCount);
-    }
-
-    private void deleteCommentsInReverseOrder(Rating rating) {
-        List<RatingComment> comments = new ArrayList<>(ratingCommentRepository.findByRatingOrderByCreatedAtAsc(rating));
-        Collections.reverse(comments);
-        comments.forEach(ratingCommentRepository::delete);
     }
 
     private void validateScore(BigDecimal score, Rating rating) {

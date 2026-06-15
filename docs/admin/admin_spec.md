@@ -37,10 +37,10 @@ The posts page supports:
 
 - paginated post listing
 - edit post fields
-- delete posts
+- remove posts
 - bulk actions on selected posts
 
-Admin post delete is a hard cleanup path and removes the post plus dependent records.
+Admin post removal is a soft-delete/tombstone path. It marks the rating as deleted, removes likes/feed/external references, and preserves comments so existing threads can still render below a deleted-post placeholder.
 
 ## Backend Surface
 

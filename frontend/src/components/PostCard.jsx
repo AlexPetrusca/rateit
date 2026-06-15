@@ -39,16 +39,22 @@ const PostCard = ({
         return null;
     }
 
-    const hasMedia = Boolean(post.rateableItem?.mediaObjectKey);
+    const isDeleted = Boolean(post.deleted || post.deletedAt);
+    const hasMedia = !isDeleted && Boolean(post.rateableItem?.mediaObjectKey);
     const cardClassName = [
         'tweet-card',
+        isDeleted ? 'tweet-card-deleted' : '',
         hasMedia ? 'tweet-card-media' : 'tweet-card-text',
         className
     ].filter(Boolean).join(' ');
 
     const postContent = (
         <>
-            {hasMedia && (
+            {isDeleted ? (
+                <div className="deleted-post-placeholder">
+                    This post has been deleted.
+                </div>
+            ) : hasMedia && (
                 <div className="rating-object">
                     <img
                         src={`/api/s3/images/${post.rateableItem.mediaObjectKey}`}
@@ -58,25 +64,27 @@ const PostCard = ({
                 </div>
             )}
 
-            <div className="text-rating">
-                {post.rateableItem?.body && (
-                    <p className={['text-post-body', bodyClassName].filter(Boolean).join(' ')}>
-                        {post.rateableItem.body}
-                    </p>
-                )}
-                <div className="text-rating-score">
-                    <strong className="op-rating-stars">
-                        <StarRating
-                            value={post.score}
-                            label={formatScoreValue(post.score, post.ratingScale)}
-                            max={post.ratingScale?.max}
-                            size="sm"
-                        />
-                    </strong>
+            {!isDeleted && (
+                <div className="text-rating">
+                    {post.rateableItem?.body && (
+                        <p className={['text-post-body', bodyClassName].filter(Boolean).join(' ')}>
+                            {post.rateableItem.body}
+                        </p>
+                    )}
+                    <div className="text-rating-score">
+                        <strong className="op-rating-stars">
+                            <StarRating
+                                value={post.score}
+                                label={formatScoreValue(post.score, post.ratingScale)}
+                                max={post.ratingScale?.max}
+                                size="sm"
+                            />
+                        </strong>
+                    </div>
                 </div>
-            </div>
+            )}
 
-            {post.reviewText && (
+            {!isDeleted && post.reviewText && (
                 <p className={['tweet-review', postBodyClassName].filter(Boolean).join(' ')}>
                     {post.reviewText}
                 </p>

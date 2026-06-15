@@ -22,7 +22,8 @@ public record AdminPostDto(
     String mediaObjectKey,
     long likeCount,
     long commentCount,
-    Instant createdAt
+    Instant createdAt,
+    Instant deletedAt
 ) {
     public static AdminPostDto fromRating(Rating rating, long likeCount, long commentCount) {
         User author = rating.getAuthorUser();
@@ -42,7 +43,8 @@ public record AdminPostDto(
             rating.getRateableItem().getMediaAsset() == null ? null : rating.getRateableItem().getMediaAsset().getObjectKey(),
             likeCount,
             commentCount,
-            rating.getCreatedAt()
+            rating.getCreatedAt(),
+            rating.getDeletedAt()
         );
     }
 }

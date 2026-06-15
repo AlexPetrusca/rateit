@@ -26,6 +26,7 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         join fetch r.ratingScale
         left join fetch item.mediaAsset
         where r.authorUser = :authorUser
+          and r.deletedAt is null
         order by r.createdAt desc
         """)
     Page<Rating> findProfilePageByAuthorUser(@Param("authorUser") User authorUser, Pageable pageable);
@@ -35,6 +36,7 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         from Rating r
         join r.rateableItem item
         where r.authorUser = :authorUser
+          and r.deletedAt is null
         """)
     long countByAuthorUserForProfile(@Param("authorUser") User authorUser);
 
@@ -48,6 +50,7 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         where r.authorUser = :authorUser
           and r.visibility = :visibility
           and item.visibility = :visibility
+          and r.deletedAt is null
         order by r.createdAt desc
         """)
     Page<Rating> findProfilePageByAuthorUserAndVisibility(
@@ -63,6 +66,7 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         where r.authorUser = :authorUser
           and r.visibility = :visibility
           and item.visibility = :visibility
+          and r.deletedAt is null
         """)
     long countByAuthorUserAndVisibilityForProfile(
         @Param("authorUser") User authorUser,
@@ -78,6 +82,7 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         left join fetch item.mediaAsset
         where r.visibility = :visibility
           and item.visibility = :visibility
+          and r.deletedAt is null
         order by r.createdAt desc
         """)
     List<Rating> findRecentByVisibility(@Param("visibility") Visibility visibility, Pageable pageable);

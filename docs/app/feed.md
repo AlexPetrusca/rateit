@@ -17,6 +17,8 @@ The authenticated home feed shows a reverse-chronological list of public ratings
 
 The feed is paginated in batches of 5 and loads more when the user scrolls to the bottom. When the backend has no more content, the UI shows an end-of-feed message.
 
+Deleted posts are excluded from feed and profile timelines. Direct post detail links can still render deleted posts as `This post has been deleted.` so their existing comment threads remain readable.
+
 ## Shared UI structure
 
 The feed, profile feed, and post page should all use the same underlying post and comment components:
@@ -45,6 +47,7 @@ Clicking a post opens the dedicated post page. That page shows:
 - the selected post
 - the comment tree for that rating
 - threaded replies
+- a deleted-post placeholder when the rating was removed by moderation
 
 ## Comment behavior
 
@@ -77,6 +80,7 @@ Clicking a post opens the dedicated post page. That page shows:
 ## Current feed notes
 
 - The feed only includes public ratings and public rated items.
+- The feed and profile lists exclude ratings with `deleted_at`, while post detail can still load them as tombstones.
 - The home feed currently does not do social ranking.
 - The profile feed is backed by the same timeline component as the home feed.
 - New feed UI should fit the existing shared component model instead of introducing a second rendering path.

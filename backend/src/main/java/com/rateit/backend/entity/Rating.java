@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -47,4 +48,7 @@ public class Rating extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "visibility", nullable = false)
     private Visibility visibility;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 }
