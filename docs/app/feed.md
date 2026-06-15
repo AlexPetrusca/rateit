@@ -62,6 +62,7 @@ Clicking the topic text on a post opens a topic page for that shared rateable it
 - every public rating on the same topic
 - the same post card shell and actions used by the main feed
 - the same comments and rerate interactions as the home feed
+- a raised topic summary card showing the topic name, average stars, and rating count
 
 The topic page is the linked-post view for re-rates, so the same shared item can be explored across all of its ratings.
 

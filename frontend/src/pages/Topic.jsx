@@ -63,6 +63,14 @@ const Topic = () => {
     }, [feedItems]);
 
     const topicRatingCount = feedItems.length;
+    const topicAverageRating = useMemo(() => {
+        if (feedItems.length === 0) {
+            return 0;
+        }
+
+        const total = feedItems.reduce((sum, item) => sum + (Number(item.score) || 0), 0);
+        return total / feedItems.length;
+    }, [feedItems]);
 
     const isFullyAuthenticated = isAuthenticated && user != null;
 
@@ -484,16 +492,20 @@ const Topic = () => {
                         </div>
 
                         <Paper elevation={2} className="topic-summary-card">
-                            <Stack spacing={0.5}>
-                                <Typography variant="overline" color="text.secondary">
-                                    Topic
-                                </Typography>
+                            <Stack spacing={1}>
                                 <Typography variant="h5" component="div" fontWeight={700}>
                                     {topicLabel}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    {topicRatingCount} rating{topicRatingCount === 1 ? '' : 's'} on this topic
-                                </Typography>
+                                <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <StarRating
+                                        value={topicAverageRating}
+                                        label={`Average rating: ${topicAverageRating.toFixed(1)} out of 5`}
+                                        size="md"
+                                    />
+                                    <Typography variant="body2" color="text.secondary" fontWeight={700}>
+                                        {topicRatingCount}
+                                    </Typography>
+                                </Stack>
                             </Stack>
                         </Paper>
 

@@ -1420,6 +1420,10 @@ button:disabled {
     line-height: 1.2;
 }
 
+.topic-summary-card .star-rating-display {
+    font-size: 1.15rem;
+}
+
 .text-rating-score {
     display: inline-flex;
     align-items: baseline;
