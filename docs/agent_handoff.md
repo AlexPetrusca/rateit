@@ -18,6 +18,7 @@ Critic is a React + Spring Boot app with phone-number login, JWT cookie auth, a 
 - Profile editor page at `/profile/edit` for updating the signed-in user's profile picture.
 - Post editor page at `/posts/:ratingId/edit` for updating the author's topic text, review text, and score, plus soft-deleting the post.
 - Backlog page at `/backlog` for rendering the `To Do` section of `wiki/build-status.md` as an in-app project board.
+- Suggestion submit page at `/backlog/suggest`, plus a suggestions table on the backlog page and admin suggestion deletion.
 - Public-safe user search by username for finding people to follow.
 - Profiles show follower/following counts, and those counts open list pages.
 - Post detail pages with the post and its threaded comments.
@@ -71,6 +72,7 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 - `/users/:userId`
 - `/posts/:ratingId`
 - `/backlog`
+- `/backlog/suggest`
 - `/search`
 - `/users/:userId/followers`
 - `/users/:userId/following`
@@ -102,6 +104,7 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 - `AdminUserController` manages users.
 - `AdminPostController` manages posts.
 - `AdminJobController` manages automation jobs.
+- `AdminSuggestionController` manages suggestion moderation.
 - `AdminJobService` owns queueing, execution, persistence of job payload/results, and job detail rendering.
 - `AdminJobProcessor` drains pending jobs.
 - `AdminJobSchemaUpdater` keeps the job-type check constraint aligned with code.

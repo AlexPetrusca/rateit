@@ -1,6 +1,6 @@
 # Critic Build Status
 
-This is a local-only planning note for tracking MVP and post-MVP work. The `wiki/` directory is ignored by git.
+This is the planning note for tracking MVP and post-MVP work. Most of `wiki/` stays local-only, but `build-status.md` is tracked in git.
 
 Maintenance rule: keep this page current when features are started, completed, descoped, moved between MVP and post-MVP, or when new to-do items are discovered.
 
@@ -31,12 +31,12 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Add the ability to tag your own ratings.
 - Add videos.
 - Fix the re-rate logo/icon. The current cycle icon looks bad.
-### P4
+### P3
 - Find a way to categorize ratings.
 - Make topics show an overall average rating and a way to view all ratings tied to a topic.
 - Add a daily random thing generator to rate.
 - Add people-tagging in reviews, including highlighted `@username` mentions and standardized self-references. Example: if OP writes "my waiter" and someone re-rates it, render that context as `OP_username's waiter`; words like `I` and `my` should be highlighted in the same blue style as tagged people.
-### P5
+### P4
 - Get the app into the App Store once the sideloadable build path is stable.
 - Make the app sideloadable so it can be installed outside the dev workflow.
 - Improve the phone-number entry flow for OTP: the current input now uses a country selector plus one autofill-friendly phone field with caret mapping for the formatted phone string, but it still needs the broader international pattern and more complete E.164 handling for non-US numbers.
@@ -73,3 +73,4 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Posted photos are clickable and open in a larger full-screen lightbox from the shared post card.
 - Profile editor page added at `/profile/edit`; users can update their profile picture from the top-right profile menu.
 - Profile picture uploads can be cropped and resized before saving; the editor uploads a 512x512 cropped image.
+- Backlog suggestions now have a submit page, a suggestions table below the backlog board, and an admin moderation page for deleting suggestions.

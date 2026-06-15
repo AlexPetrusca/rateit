@@ -10,10 +10,12 @@ import AdminJobs from './pages/AdminJobs';
 import AdminPosts from './pages/AdminPosts';
 import AdminComments from './pages/AdminComments';
 import AdminUsers from './pages/AdminUsers';
+import AdminSuggestions from './pages/AdminSuggestions';
 import Profile from './pages/Profile';
 import ProfileEditor from './pages/ProfileEditor';
 import PostEditor from './pages/PostEditor';
 import Backlog from './pages/Backlog';
+import SuggestionSubmit from './pages/SuggestionSubmit';
 import Post from './pages/Post';
 import SearchUsers from './pages/SearchUsers';
 import FollowList from './pages/FollowList';
@@ -122,6 +124,14 @@ function App() {
                                 }
                             />
                             <Route
+                                path="/backlog/suggest"
+                                element={
+                                    <GuardedRoute>
+                                        <SuggestionSubmit />
+                                    </GuardedRoute>
+                                }
+                            />
+                            <Route
                                 path="/users/:userId/followers"
                                 element={
                                     <GuardedRoute>
@@ -150,6 +160,7 @@ function App() {
                                     <Route index element={<Navigate to="users" replace />} />
                                     <Route path="posts" element={<AdminPosts />} />
                                     <Route path="comments" element={<AdminComments />} />
+                                    <Route path="suggestions" element={<AdminSuggestions />} />
                                     <Route path="users" element={<AdminUsers />} />
                                     <Route path="jobs" element={<AdminJobs />} />
                                 </Route>

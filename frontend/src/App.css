@@ -1112,6 +1112,33 @@ button:disabled {
     gap: 16px;
 }
 
+.backlog-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.backlog-suggest-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.backlog-suggest-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.backlog-suggest-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
 .backlog-header p {
     margin: 6px 0 0;
     color: #536471;
@@ -1153,6 +1180,67 @@ button:disabled {
     background: #eef3f8;
     color: #0b5cad;
     font-size: 0.95em;
+}
+
+.backlog-suggestions {
+    display: grid;
+    gap: 12px;
+    padding: 0 16px 16px;
+}
+
+.backlog-suggestions-header h2 {
+    margin: 0;
+    color: #0f1419;
+    font-size: 1.05rem;
+}
+
+.backlog-suggestions-header p {
+    margin: 4px 0 0;
+    color: #536471;
+    font-size: 0.95rem;
+}
+
+.backlog-suggestions-table {
+    overflow-x: auto;
+}
+
+.backlog-suggestions-table .MuiTableCell-head {
+    font-weight: 700;
+}
+
+.backlog-suggestion-title,
+.backlog-suggestion-body {
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.backlog-suggestion-title {
+    width: 22%;
+    font-weight: 700;
+}
+
+.backlog-suggestion-body {
+    width: 48%;
+}
+
+@media (max-width: 720px) {
+    .backlog-header {
+        flex-direction: column;
+    }
+
+    .backlog-header-actions {
+        justify-content: flex-start;
+    }
+
+    .backlog-suggestions {
+        padding-inline: 16px;
+    }
+
+    .backlog-suggestion-title,
+    .backlog-suggestion-body {
+        max-width: 220px;
+    }
 }
 
 .timeline {

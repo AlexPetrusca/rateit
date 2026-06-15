@@ -7,6 +7,7 @@ This document covers the manual admin surfaces.
 - `/admin/users`
 - `/admin/posts`
 - `/admin/comments`
+- `/admin/suggestions`
 - `/admin/jobs`
 
 The main admin entry point should land on the user management page, with a top-level admin nav that clearly indicates the admin context.
@@ -42,11 +43,19 @@ The posts page supports:
 
 Admin post removal is a soft-delete/tombstone path. It marks the rating as deleted, removes likes/feed/external references, and preserves comments so existing threads can still render below a deleted-post placeholder.
 
+## Suggestion Management
+
+The suggestions page supports:
+
+- paginated suggestion listing
+- deleting suggestions
+
 ## Backend Surface
 
 - `AdminUserController`
 - `AdminPostController`
 - `AdminCommentController`
+- `AdminSuggestionController`
 
 ## Implementation Map
 
@@ -81,6 +90,8 @@ If you are changing the manual admin pages, these are the first files to inspect
 - `PUT /api/admin/comments/{id}`
 - `DELETE /api/admin/comments/{id}`
 - `POST /api/admin/comments/bulk-delete`
+- `GET /api/admin/suggestions`
+- `DELETE /api/admin/suggestions/{id}`
 
 ## Current Invariants
 

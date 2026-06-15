@@ -633,6 +633,68 @@ const BackendApiService = {
             throw new Error('Failed to load job');
         }
         return await response.json();
+    },
+
+    getSuggestions: async ({ page = 0, size = 20 } = {}) => {
+        const response = await fetch(`/api/suggestions?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`, { credentials: 'include' });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authenticated');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            throw new Error('Failed to load suggestions');
+        }
+        return await response.json();
+    },
+
+    createSuggestion: async ({ title, body }) => {
+        const response = await fetch('/api/suggestions', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, body })
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authenticated');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to create suggestion');
+        }
+        return await response.json();
+    },
+
+    getAdminSuggestions: async ({ page = 0, size = 20 } = {}) => {
+        const response = await fetch(`/api/admin/suggestions?page=${encodeURIComponent(page)}&size=${encodeURIComponent(size)}`, { credentials: 'include' });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            throw new Error('Failed to load suggestions');
+        }
+        return await response.json();
+    },
+
+    deleteAdminSuggestion: async (suggestionId) => {
+        const response = await fetch(`/api/admin/suggestions/${encodeURIComponent(suggestionId)}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (response.status === 401 || response.status === 403) {
+            const error = new Error('Not authorized');
+            error.status = response.status;
+            throw error;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to delete suggestion');
+        }
+        return response.status === 204 ? null : await response.json();
     }
 };
 

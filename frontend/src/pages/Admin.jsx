@@ -41,6 +41,10 @@ const Admin = () => {
             return '/admin/comments';
         }
 
+        if (location.pathname.startsWith('/admin/suggestions')) {
+            return '/admin/suggestions';
+        }
+
         if (location.pathname.startsWith('/admin/jobs')) {
             return '/admin/jobs';
         }
@@ -87,6 +91,7 @@ const Admin = () => {
                                 <Tab label="Users" value="/admin/users" component={NavLink} to="users" />
                                 <Tab label="Posts" value="/admin/posts" component={NavLink} to="posts" />
                                 <Tab label="Comments" value="/admin/comments" component={NavLink} to="comments" />
+                                <Tab label="Suggestions" value="/admin/suggestions" component={NavLink} to="suggestions" />
                                 <Tab label="Automation" value="/admin/jobs" component={NavLink} to="jobs" />
                             </Tabs>
                         </Stack>
