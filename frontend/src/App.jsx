@@ -15,6 +15,7 @@ import Profile from './pages/Profile';
 import ProfileEditor from './pages/ProfileEditor';
 import PostEditor from './pages/PostEditor';
 import Backlog from './pages/Backlog';
+import Topic from './pages/Topic';
 import SuggestionSubmit from './pages/SuggestionSubmit';
 import Post from './pages/Post';
 import SearchUsers from './pages/SearchUsers';
@@ -96,6 +97,14 @@ function App() {
                                 element={
                                     <GuardedRoute>
                                         <Post />
+                                    </GuardedRoute>
+                                }
+                            />
+                            <Route
+                                path="/topics/:rateableItemId"
+                                element={
+                                    <GuardedRoute>
+                                        <Topic />
                                     </GuardedRoute>
                                 }
                             />

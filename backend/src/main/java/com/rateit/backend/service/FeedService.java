@@ -98,6 +98,25 @@ public class FeedService {
         return new PageImpl<>(feedItems, ratingsPage.getPageable(), ratingsPage.getTotalElements());
     }
 
+    @Transactional(readOnly = true)
+    public List<FeedItemDto> getTopicRatings(
+        long rateableItemId,
+        Integer requestedLimit,
+        Integer requestedPage,
+        String currentUserPhoneNumber
+    ) {
+        int limit = normalizeLimit(requestedLimit);
+        int page = requestedPage == null || requestedPage < 0 ? 0 : requestedPage;
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+        List<Rating> ratings = ratingRepository.findRecentByRateableItemIdAndVisibility(
+            rateableItemId,
+            Visibility.PUBLIC,
+            PageRequest.of(page, limit)
+        );
+
+        return toFeedItems(ratings, currentUser);
+    }
+
     private List<FeedItemDto> toFeedItems(List<Rating> ratings, User currentUser) {
         if (ratings.isEmpty()) {
             return List.of();

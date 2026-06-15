@@ -136,6 +136,14 @@ const Post = () => {
         navigate(`/users/${userId}`);
     };
 
+    const openTopic = (rateableItemId) => {
+        if (rateableItemId == null) {
+            return;
+        }
+
+        navigate(`/topics/${rateableItemId}`);
+    };
+
     const reloadComments = async () => {
         if (ratingId == null) {
             return;
@@ -408,6 +416,7 @@ const Post = () => {
                         <PostCard
                             post={post}
                             onAuthorClick={openProfile}
+                            onTopicClick={openTopic}
                             footer={(
                                 <PostActions
                                     liked={post.likedByCurrentUser}

@@ -1389,6 +1389,36 @@ button:disabled {
     white-space: pre-wrap;
 }
 
+.text-post-topic-link {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #0f1419;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+}
+
+.text-post-topic-link:hover,
+.text-post-topic-link:focus-visible {
+    color: #1d9bf0;
+    text-decoration: underline;
+}
+
+.topic-header-copy {
+    padding: 0 16px 8px;
+}
+
+.topic-header-copy p {
+    margin: 0;
+    color: #536471;
+    font-size: 0.98rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
 .text-rating-score {
     display: inline-flex;
     align-items: baseline;
@@ -1431,6 +1461,10 @@ button:disabled {
     font: inherit;
     appearance: none;
     -webkit-appearance: none;
+}
+
+.post-click-target[role="button"] {
+    outline: none;
 }
 
 .post-click-target:hover,

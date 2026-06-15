@@ -4,6 +4,7 @@ const FeedTimeline = ({
     items = [],
     onAuthorClick,
     onPostClick,
+    onTopicClick,
     renderFooter,
     renderAfterItem,
     getItemKey = (item) => item.ratingId,
@@ -27,6 +28,7 @@ const FeedTimeline = ({
                             post={item}
                             onAuthorClick={onAuthorClick}
                             onPostClick={onPostClick}
+                            onTopicClick={onTopicClick}
                             footer={typeof renderFooter === 'function' ? renderFooter(item) : null}
                         />
                         {typeof renderAfterItem === 'function' ? renderAfterItem(item) : null}

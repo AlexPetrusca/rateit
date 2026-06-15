@@ -155,6 +155,14 @@ const Profile = () => {
         navigate(`/posts/${ratingId}`);
     };
 
+    const openTopic = (rateableItemId) => {
+        if (rateableItemId == null) {
+            return;
+        }
+
+        navigate(`/topics/${rateableItemId}`);
+    };
+
     const updatePostItem = (ratingId, updater) => {
         setPosts((items) => items.map((item) => (
             item.ratingId === ratingId ? updater(item) : item
@@ -643,6 +651,7 @@ const Profile = () => {
                                         items={posts}
                                         onAuthorClick={(userId) => navigate(`/users/${userId}`)}
                                         onPostClick={openPost}
+                                        onTopicClick={openTopic}
                                         renderFooter={(item) => {
                                             const canEdit = item.author?.userId != null
                                                 && item.author.userId === currentUser?.userId

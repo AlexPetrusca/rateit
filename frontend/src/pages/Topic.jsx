@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import CommentThread from '../components/CommentThread.jsx';
@@ -10,12 +10,33 @@ import BackendApiService from '../services/BackendApiService';
 import '../App.css';
 
 const FIVE_STAR_SCALE = { max: 5, symbol: 'star' };
-const FEED_PAGE_SIZE = 5;
+const TOPIC_PAGE_SIZE = 5;
 
-const Home = () => {
+const formatScoreValue = (scoreValue, ratingScale) => {
+    const score = Number(scoreValue);
+    const max = Number(ratingScale?.max);
+    const symbol = ratingScale?.symbol === 'star'
+        ? 'stars'
+        : ratingScale?.symbol;
+
+    if (!Number.isFinite(score)) {
+        return '';
+    }
+
+    const displayScore = Number.isInteger(score) ? score.toString() : score.toFixed(1);
+    const displayMax = Number.isFinite(max)
+        ? (Number.isInteger(max) ? max.toString() : max.toFixed(1))
+        : '';
+
+    return `${displayScore}${Number.isFinite(max) ? ` / ${displayMax}` : ''}${symbol ? ` ${symbol}` : ''}`;
+};
+
+const Topic = () => {
     const navigate = useNavigate();
+    const { rateableItemId: routeRateableItemId } = useParams();
     const { user, isAuthenticated } = useAuth();
     const currentUserId = user?.userId ?? user?.id ?? null;
+    const { notify } = useNotifications();
     const [feedItems, setFeedItems] = useState([]);
     const [isFeedLoading, setIsFeedLoading] = useState(false);
     const [isFeedLoadingMore, setIsFeedLoadingMore] = useState(false);
@@ -29,7 +50,16 @@ const Home = () => {
     const [hoveredRerateScores, setHoveredRerateScores] = useState({});
     const [rerateDrafts, setRerateDrafts] = useState({});
     const feedSentinelRef = useRef(null);
-    const { notify } = useNotifications();
+
+    const topicRateableItemId = useMemo(() => {
+        const parsed = Number(routeRateableItemId);
+        return Number.isFinite(parsed) ? parsed : null;
+    }, [routeRateableItemId]);
+
+    const topicLabel = useMemo(() => {
+        const firstItem = feedItems[0]?.rateableItem;
+        return firstItem?.body || firstItem?.title || 'Topic';
+    }, [feedItems]);
 
     const isFullyAuthenticated = isAuthenticated && user != null;
 
@@ -47,7 +77,7 @@ const Home = () => {
         setHoveredCommentScores({});
         setHoveredRerateScores({});
         setRerateDrafts({});
-    }, [isFullyAuthenticated]);
+    }, [isFullyAuthenticated, topicRateableItemId]);
 
     useEffect(() => {
         if (!isFullyAuthenticated) {
@@ -59,17 +89,23 @@ const Home = () => {
             return;
         }
 
+        if (topicRateableItemId == null) {
+            setFeedError('Topic not found.');
+            setIsFeedLoading(false);
+            return;
+        }
+
         let isMounted = true;
         const isInitialLoad = feedPage === 0;
         setIsFeedLoading(isInitialLoad);
         setIsFeedLoadingMore(!isInitialLoad);
         setFeedError(null);
 
-        BackendApiService.getFeed({ page: feedPage, size: FEED_PAGE_SIZE })
+        BackendApiService.getTopicRatings({ rateableItemId: topicRateableItemId, page: feedPage, size: TOPIC_PAGE_SIZE })
             .then((items) => {
                 if (isMounted) {
                     setFeedItems((current) => (feedPage === 0 ? items : [...current, ...items]));
-                    setHasMoreFeed(items.length === FEED_PAGE_SIZE);
+                    setHasMoreFeed(items.length === TOPIC_PAGE_SIZE);
                 }
             })
             .catch((error) => {
@@ -88,7 +124,7 @@ const Home = () => {
         return () => {
             isMounted = false;
         };
-    }, [isFullyAuthenticated, feedPage]);
+    }, [isFullyAuthenticated, feedPage, topicRateableItemId]);
 
     useEffect(() => {
         if (!isFullyAuthenticated || feedError || isFeedLoading || isFeedLoadingMore || !hasMoreFeed) {
@@ -96,7 +132,6 @@ const Home = () => {
         }
 
         const sentinel = feedSentinelRef.current;
-
         if (!sentinel) {
             return undefined;
         }
@@ -112,7 +147,6 @@ const Home = () => {
         });
 
         observer.observe(sentinel);
-
         return () => observer.disconnect();
     }, [isFullyAuthenticated, feedError, isFeedLoading, isFeedLoadingMore, hasMoreFeed]);
 
@@ -122,28 +156,9 @@ const Home = () => {
         )));
     };
 
-    const formatScoreValue = (scoreValue, ratingScale) => {
-        const score = Number(scoreValue);
-        const max = Number(ratingScale?.max);
-        const symbol = ratingScale?.symbol === 'star'
-            ? 'stars'
-            : ratingScale?.symbol;
-
-        if (!Number.isFinite(score)) {
-            return '';
-        }
-
-        const displayScore = Number.isInteger(score) ? score.toString() : score.toFixed(1);
-        const displayMax = Number.isFinite(max)
-            ? (Number.isInteger(max) ? max.toString() : max.toFixed(1))
-            : '';
-
-        return `${displayScore}${Number.isFinite(max) ? ` / ${displayMax}` : ''}${symbol ? ` ${symbol}` : ''}`;
-    };
-
-    const getCommentDraftKey = (ratingId, parentCommentId = null) => {
-        return parentCommentId == null ? `${ratingId}:root` : `${ratingId}:${parentCommentId}`;
-    };
+    const getCommentDraftKey = (ratingId, parentCommentId = null) => (
+        parentCommentId == null ? `${ratingId}:root` : `${ratingId}:${parentCommentId}`
+    );
 
     const getCommentDraft = (ratingId, parentCommentId = null) => {
         const draft = commentDrafts[getCommentDraftKey(ratingId, parentCommentId)];
@@ -169,15 +184,12 @@ const Home = () => {
         }));
     };
 
-    const getDefaultCommentScore = (item) => {
-        return 2.5;
-    };
-
-    const isScoreInRange = (score, item) => {
-        return Number.isFinite(score)
-            && score >= 0.5
-            && score <= 5;
-    };
+    const getDefaultCommentScore = () => 2.5;
+    const isScoreInRange = (score) => Number.isFinite(score) && score >= 0.5 && score <= 5;
+    const getComposerKey = (ratingId, type) => `${ratingId}:${type}`;
+    const getCommentReplyKey = (ratingId, parentCommentId = null) => (
+        parentCommentId == null ? getComposerKey(ratingId, 'comment') : `${ratingId}:comment:${parentCommentId}`
+    );
 
     const openProfile = (userId) => {
         if (userId == null) {
@@ -202,11 +214,6 @@ const Home = () => {
 
         navigate(`/topics/${rateableItemId}`);
     };
-
-    const getComposerKey = (ratingId, type) => `${ratingId}:${type}`;
-    const getCommentReplyKey = (ratingId, parentCommentId = null) => (
-        parentCommentId == null ? getComposerKey(ratingId, 'comment') : `${ratingId}:comment:${parentCommentId}`
-    );
 
     const toggleLike = async (item) => {
         const wasLiked = Boolean(item.likedByCurrentUser);
@@ -235,7 +242,7 @@ const Home = () => {
                 likedByCurrentUser: wasLiked,
                 likeCount: Math.max(0, (current.likeCount || 0) + (wasLiked ? 1 : -1))
             }));
-            setActionError(error.message);
+            notify({ message: error.message || 'Failed to like rating', type: 'error' });
         }
     };
 
@@ -254,7 +261,7 @@ const Home = () => {
                 [ratingId]: comments
             }));
         } catch (error) {
-            setActionError(error.message);
+            notify({ message: error.message || 'Failed to load comments', type: 'error' });
         }
     };
 
@@ -270,7 +277,7 @@ const Home = () => {
             return;
         }
 
-        if (!isScoreInRange(score, item)) {
+        if (!isScoreInRange(score)) {
             notify({ message: 'Add a rating before replying.', type: 'warning' });
             return;
         }
@@ -292,7 +299,7 @@ const Home = () => {
                 commentCount: (item.commentCount || 0) + 1
             }));
         } catch (error) {
-            notify({ message: error.message, type: 'error' });
+            notify({ message: error.message || 'Failed to comment', type: 'error' });
         }
     };
 
@@ -345,32 +352,6 @@ const Home = () => {
         );
     };
 
-    const submitRerate = async (ratingId) => {
-        const draft = rerateDrafts[ratingId] || {};
-        const score = Number(draft.score);
-
-        if (!score) {
-            notify({ message: 'Add a score before re-rating.', type: 'warning' });
-            return;
-        }
-
-        try {
-            await BackendApiService.rerate(ratingId, score, draft.reviewText || '');
-            setRerateDrafts((current) => ({
-                ...current,
-                [ratingId]: { score: '', reviewText: '' }
-            }));
-            setActiveComposer(null);
-            const items = await BackendApiService.getFeed({
-                page: 0,
-                size: Math.max(feedItems.length, FEED_PAGE_SIZE)
-            });
-            setFeedItems(items);
-        } catch (error) {
-            notify({ message: error.message, type: 'error' });
-        }
-    };
-
     const renderComments = (item) => {
         const ratingId = item.ratingId;
         const comments = commentsByRating[ratingId] || [];
@@ -401,6 +382,33 @@ const Home = () => {
                 {activeComposer === getComposerKey(ratingId, 'comment') && renderCommentComposer(item)}
             </div>
         );
+    };
+
+    const submitRerate = async (ratingId) => {
+        const draft = rerateDrafts[ratingId] || {};
+        const score = Number(draft.score);
+
+        if (!score) {
+            notify({ message: 'Add a score before re-rating.', type: 'warning' });
+            return;
+        }
+
+        try {
+            await BackendApiService.rerate(ratingId, score, draft.reviewText || '');
+            setRerateDrafts((current) => ({
+                ...current,
+                [ratingId]: { score: '', reviewText: '' }
+            }));
+            setActiveComposer(null);
+            const items = await BackendApiService.getTopicRatings({
+                rateableItemId: topicRateableItemId,
+                page: 0,
+                size: Math.max(feedItems.length, TOPIC_PAGE_SIZE)
+            });
+            setFeedItems(items);
+        } catch (error) {
+            notify({ message: error.message, type: 'error' });
+        }
     };
 
     const renderRerate = (item) => {
@@ -469,7 +477,10 @@ const Home = () => {
                 <main className="twitter-shell">
                     <>
                         <div className="timeline-header">
-                            <h1>Home</h1>
+                            <h1>Topic</h1>
+                        </div>
+                        <div className="topic-header-copy">
+                            <p>{topicLabel}</p>
                         </div>
 
                         {isFeedLoading && <p className="feed-status">Loading ratings...</p>}
@@ -481,7 +492,6 @@ const Home = () => {
                             items={feedItems}
                             onAuthorClick={openProfile}
                             onPostClick={openPost}
-                            onTopicClick={openTopic}
                             renderFooter={(item) => {
                                 const rerateKey = getComposerKey(item.ratingId, 'rerate');
                                 const canEdit = item.author?.userId != null
@@ -495,7 +505,7 @@ const Home = () => {
                                         commentCount={item.commentCount}
                                         onLike={() => toggleLike(item)}
                                         onRerate={() => setActiveComposer((current) => (
-                                                current === rerateKey ? null : rerateKey
+                                            current === rerateKey ? null : rerateKey
                                         ))}
                                         onComment={() => openComments(item.ratingId)}
                                         onEdit={canEdit ? () => navigate(`/posts/${item.ratingId}/edit`) : undefined}
@@ -517,7 +527,8 @@ const Home = () => {
                             hasMore={hasMoreFeed}
                             isLoadingMore={isFeedLoadingMore}
                             loadingMoreMessage="Loading more ratings..."
-                            endMessage="You’ve reached the end of the feed."
+                            endMessage="You’ve reached the end of the topic."
+                            onTopicClick={openTopic}
                         />
 
                         {!isFeedLoading && feedError && (
@@ -537,4 +548,4 @@ const Home = () => {
     );
 };
 
-export default Home;
+export default Topic;

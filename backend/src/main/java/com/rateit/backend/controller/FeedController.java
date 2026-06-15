@@ -46,6 +46,20 @@ public class FeedController {
         return ResponseEntity.ok(feedService.getRating(ratingId, token.getToken().getSubject()));
     }
 
+    @GetMapping("/topics/{rateableItemId}")
+    public ResponseEntity<List<FeedItemDto>> getTopicRatings(
+        @PathVariable Long rateableItemId,
+        @RequestParam(required = false) Integer limit,
+        @RequestParam(required = false) Integer page,
+        JwtAuthenticationToken token
+    ) {
+        if (page == null) {
+            return ResponseEntity.ok(feedService.getTopicRatings(rateableItemId, limit, 0, token.getToken().getSubject()));
+        }
+
+        return ResponseEntity.ok(feedService.getTopicRatings(rateableItemId, limit, page, token.getToken().getSubject()));
+    }
+
     @PostMapping("/ratings")
     public ResponseEntity<FeedItemDto> createRating(
         @RequestBody @Valid CreateRatingRequest request,

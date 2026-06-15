@@ -29,6 +29,7 @@ const PostCard = ({
     post,
     onAuthorClick,
     onPostClick,
+    onTopicClick,
     footer,
     actions,
     className = '',
@@ -44,6 +45,7 @@ const PostCard = ({
 
     const isDeleted = Boolean(post.deleted || post.deletedAt);
     const hasMedia = !isDeleted && Boolean(post.rateableItem?.mediaObjectKey);
+    const topicLabel = post.rateableItem?.title || post.rateableItem?.body || '';
     const mediaUrl = hasMedia ? `/api/s3/images/${post.rateableItem.mediaObjectKey}` : null;
     const cardClassName = [
         'tweet-card',
@@ -69,10 +71,23 @@ const PostCard = ({
 
     const ratingTextContent = !isDeleted && (
         <div className="text-rating">
-            {post.rateableItem?.body && (
-                <p className={['text-post-body', bodyClassName].filter(Boolean).join(' ')}>
-                    {post.rateableItem.body}
-                </p>
+            {topicLabel && (
+                onTopicClick ? (
+                    <button
+                        type="button"
+                        className={['text-post-body', 'text-post-topic-link', bodyClassName].filter(Boolean).join(' ')}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            onTopicClick(post.rateableItem.id);
+                        }}
+                    >
+                        {topicLabel}
+                    </button>
+                ) : (
+                    <p className={['text-post-body', bodyClassName].filter(Boolean).join(' ')}>
+                        {topicLabel}
+                    </p>
+                )
             )}
             <div className="text-rating-score">
                 <strong className="op-rating-stars">
@@ -174,13 +189,20 @@ const PostCard = ({
                     {typeof onPostClick === 'function' && mediaContent}
 
                     {typeof onPostClick === 'function' ? (
-                        <button
-                            type="button"
+                        <div
                             className="post-click-target"
+                            role="button"
+                            tabIndex={0}
                             onClick={() => onPostClick(post.ratingId)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    onPostClick(post.ratingId);
+                                }
+                            }}
                         >
                             {clickableContent}
-                        </button>
+                        </div>
                     ) : (
                         <div className="post-click-target post-click-target-static">
                             {mediaContent}

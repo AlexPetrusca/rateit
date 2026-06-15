@@ -133,6 +133,14 @@ const BackendApiService = {
         return await response.json();
     },
 
+    getTopicRatings: async ({ rateableItemId, page = 0, size = 20 } = {}) => {
+        const response = await fetch(`/api/feed/topics/${encodeURIComponent(rateableItemId)}?page=${encodeURIComponent(page)}&limit=${encodeURIComponent(size)}`, { credentials: 'include' });
+        if (!response.ok) {
+            throw new Error('Failed to fetch topic');
+        }
+        return await response.json();
+    },
+
     getRating: async (ratingId) => {
         const response = await fetch(`/api/feed/ratings/${encodeURIComponent(ratingId)}`, { credentials: 'include' });
         if (!response.ok) {

@@ -37,6 +37,7 @@ This is the current rule for frontend work: reuse the shared components instead 
 - Home feed at `/`
 - User profile feed at `/users/:userId`
 - Post detail page at `/posts/:ratingId`
+- Topic page at `/topics/:rateableItemId`
 - Post editor at `/posts/:ratingId/edit`
 
 The home feed and profile feed should look the same. The only difference is the data source and which actions are wired to the page.
@@ -53,6 +54,16 @@ Clicking a post opens the dedicated post page. That page shows:
 Signed-in authors can open a dedicated editor to change the topic text, review text, and score or delete the post. Deletes keep the comment thread readable by tombstoning the rating.
 
 Post photos open in an in-place lightbox when clicked. This is handled by the shared `PostCard`, so feed, profile, and post detail images share the same larger-view behavior.
+
+## Topic page
+
+Clicking the topic text on a post opens a topic page for that shared rateable item. That page shows:
+
+- every public rating on the same topic
+- the same post card shell and actions used by the main feed
+- the same comments and rerate interactions as the home feed
+
+The topic page is the linked-post view for re-rates, so the same shared item can be explored across all of its ratings.
 
 ## Comment behavior
 
@@ -76,6 +87,7 @@ Post photos open in an in-place lightbox when clicked. This is handled by the sh
 
 - `GET /api/feed?limit=N`
 - `GET /api/feed/ratings/{ratingId}`
+- `GET /api/feed/topics/{rateableItemId}`
 - `PUT /api/feed/ratings/{ratingId}`
 - `DELETE /api/feed/ratings/{ratingId}`
 - `GET /api/feed/ratings/{ratingId}/like`

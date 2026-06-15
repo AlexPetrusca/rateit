@@ -19,6 +19,7 @@ Critic is a React + Spring Boot app with phone-number login, JWT cookie auth, a 
 - Post editor page at `/posts/:ratingId/edit` for updating the author's topic text, review text, and score, plus soft-deleting the post.
 - Backlog page at `/backlog` for rendering the `To Do` section of `wiki/build-status.md` as an in-app project board.
 - Suggestion submit page at `/backlog/suggest`, plus a suggestions table on the backlog page and admin suggestion deletion.
+- Topic page at `/topics/:rateableItemId` for viewing every rating on a shared topic.
 - Public-safe user search by username for finding people to follow.
 - Profiles show follower/following counts, and those counts open list pages.
 - Post detail pages with the post and its threaded comments.
@@ -71,6 +72,7 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 - `/profile/edit`
 - `/users/:userId`
 - `/posts/:ratingId`
+- `/topics/:rateableItemId`
 - `/backlog`
 - `/backlog/suggest`
 - `/search`
@@ -94,7 +96,7 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 
 ### Feed and post actions
 
-- `FeedController` exposes feed, rating detail, likes, comments, and re-rate.
+- `FeedController` exposes feed, rating detail, topic-linked ratings, likes, comments, and re-rate.
 - `FeedController` also exposes signed-in author post update/delete.
 - `FeedService` returns the feed read model.
 - `FeedActionService` handles create rating, like/unlike, comment, rerate, update, and delete.

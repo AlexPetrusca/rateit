@@ -73,4 +73,5 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Profile picture uploads can be cropped and resized before saving; the editor uploads a 512x512 cropped image.
 - Backlog suggestions now have a submit page, a suggestions table below the backlog board, and an admin moderation page for deleting suggestions.
 - The shared star control is now a little larger, uses blue selected stars, and supports sliding across the control on mobile to set a rating.
+- Clicking the topic text on a post now opens a linked topic page at `/topics/:rateableItemId` that shows every rating on the same shared topic.
 - Improve the star controls on mobile so they are easier to slide across and feel better to use.

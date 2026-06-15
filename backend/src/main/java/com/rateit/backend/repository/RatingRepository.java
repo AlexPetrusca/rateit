@@ -87,6 +87,24 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         """)
     List<Rating> findRecentByVisibility(@Param("visibility") Visibility visibility, Pageable pageable);
 
+    @Query("""
+        select r
+        from Rating r
+        join fetch r.authorUser
+        join fetch r.rateableItem item
+        join fetch r.ratingScale
+        left join fetch item.mediaAsset
+        where item.id = :rateableItemId
+          and r.visibility = :visibility
+          and item.visibility = :visibility
+        order by r.createdAt desc
+        """)
+    List<Rating> findRecentByRateableItemIdAndVisibility(
+        @Param("rateableItemId") Long rateableItemId,
+        @Param("visibility") Visibility visibility,
+        Pageable pageable
+    );
+
     @Query(
         value = """
             select distinct r

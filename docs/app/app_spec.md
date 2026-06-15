@@ -26,6 +26,7 @@ This document covers the main user-facing product surface outside the admin area
 - `/profile/edit`
 - `/users/:userId`
 - `/posts/:ratingId`
+- `/topics/:rateableItemId`
 - `/posts/:ratingId/edit`
 - `/backlog`
 - `/backlog/suggest`
@@ -80,6 +81,7 @@ Use the shared components below before creating new copies:
 - The backlog page renders the `To Do` section from `wiki/build-status.md` as a readable in-app project board.
 - The backlog page includes a suggestion entry point and a suggestions table below the backlog sections.
 - The suggestion submit page lets signed-in users send new ideas into the shared suggestions list.
+- Clicking the topic text on a post opens a topic page that shows every rating on that shared topic.
 - User profiles expose the current viewer's follow relation to that profile user, plus follower/following counts.
 - Follower and following counts are clickable and open public-safe list pages.
 - User search is public-safe and supports finding people by username so users can follow them.
