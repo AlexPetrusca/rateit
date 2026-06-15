@@ -24,7 +24,8 @@ node_modules/
 .runlogs/
 
 # Local notes
-wiki/
+wiki/*
+!wiki/build-status.md
 
 # Legacy
 frontend-old/
