@@ -15,13 +15,11 @@ Maintenance rule: keep this page current when features are started, completed, d
 ## To Do
 ### P1
 - Pulling down on mobile doesnt always refresh the page. only if finger is in the top bar labeled "home". if the screen is being dragged and grey at the top is exposed, the screen should refresh.
-- Clean up the `users` table so `first_name` and `last_name` are no longer required, and make `username` the required profile field instead.
+- Clean up the `users` table so `first_name` and `last_name` are no longer required, and make `username` the required profile field instead. Ensure usernames have to be unique.
 - Add a basic censor that stops you from posting slurs
 - Add the ability to make your account private so only approved followers can see your posts.
 - Update ui to add photos, it should be first and have symbols for upload vs use camera
-- Improve the star controls on mobile so they are easier to slide across and feel better to use.
 - Make the stars bigger, nicer, and flashier when rating.
-- Ensure usernames have to be unique.
 - Add a suggestion box in the bottom-right corner and route it into a suggestion tab where suggestions are rated and sorted by rating.
 - Split the feed into two views, one public and one following-only.
 - Add a notifications pane for likes, comments, follows, and other activity.
@@ -74,3 +72,5 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Profile editor page added at `/profile/edit`; users can update their profile picture from the top-right profile menu.
 - Profile picture uploads can be cropped and resized before saving; the editor uploads a 512x512 cropped image.
 - Backlog suggestions now have a submit page, a suggestions table below the backlog board, and an admin moderation page for deleting suggestions.
+- The shared star control is now a little larger, uses blue selected stars, and supports sliding across the control on mobile to set a rating.
+- Improve the star controls on mobile so they are easier to slide across and feel better to use.

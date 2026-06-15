@@ -65,6 +65,7 @@ Use the shared components below before creating new copies:
 - The create page uses the larger picker.
 - New ratings accept half-star steps from `0.5` to `5`.
 - Feed, comment, and profile surfaces use the smaller picker.
+- On mobile, the interactive star picker supports sliding your finger across the control to set the score.
 - Image posts and text posts should share the same rating presentation.
 - Review text should keep the same indented treatment across post types.
 - Re-rating an item creates a new rating row and does not block users who have already rated that item.

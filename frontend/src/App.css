@@ -1648,6 +1648,8 @@ button:disabled {
     position: absolute;
     inset: 0;
     display: grid;
+    touch-action: none;
+    cursor: pointer;
 }
 
 .star-rating-hit {
@@ -1664,6 +1666,10 @@ button:disabled {
 .star-rating-hit:focus-visible {
     background: transparent;
     outline: none;
+}
+
+.star-rating-picker .star-rating-hit {
+    touch-action: none;
 }
 
 .comment-score .star-rating-display {
