@@ -21,6 +21,7 @@ Critic is a React + Spring Boot app with phone-number login, JWT cookie auth, a 
 - Suggestion submit page at `/backlog/suggest`, plus a suggestions table on the backlog page and admin suggestion deletion.
 - Topic page at `/topics/:rateableItemId` for viewing every rating on a shared topic, with a bottom composer for adding another rating to that topic and a stable topic lookup separate from individual ratings.
 - Public install help page at `/install` for adding Critic to an iPhone home screen.
+- The top bar is intentionally minimal: the hamburger menu exposes Home, Backlog, Install, and Login for signed-out users, and Home, Backlog, Install, and Admin for signed-in admins, while the signed-in right side keeps only Create and the profile avatar.
 - Public-safe user search by username for finding people to follow.
 - Profiles show follower/following counts, and those counts open list pages.
 - Post clicks now route directly to the shared topic page instead of a standalone post-detail page.

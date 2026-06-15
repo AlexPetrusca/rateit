@@ -4,6 +4,8 @@ This document covers the main user-facing product surface outside the admin area
 
 ## Product Surface
 
+The top bar is intentionally minimal: a hamburger menu opens Home, Backlog, Install, and Login for signed-out users, and Home, Backlog, Install, and Admin for signed-in admins, while the signed-in right side keeps only Create and the profile avatar.
+
 - login via phone OTP
 - create account
 - create a post
@@ -55,7 +57,7 @@ Use the shared components below before creating new copies:
 
 ## Mobile Layout
 
-- At phone widths, the top navigation uses compact labels and keeps every action within the viewport.
+- At phone widths, the top navigation stays compact by moving secondary destinations into the hamburger menu and keeping only the core actions visible.
 - Feed cards reduce avatar and gutter sizes, use short post dates, and allow action controls to wrap without creating horizontal page overflow.
 - Search forms, profile headers, and composer actions stack vertically when their desktop layout no longer fits.
 

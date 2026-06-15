@@ -85,5 +85,6 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Improve the star controls on mobile so they are easier to slide across and feel better to use.
 - The extra page header bar under the top nav on Home and Create is gone, so those pages now start directly at the content.
 - Added a public iPhone install page at `/install` with directions for adding Critic to the home screen.
+- The top bar now uses a hamburger menu for Home, Backlog, Install, and Login for signed-out users, and Home, Backlog, Install, and Admin for signed-in admins, leaving only Create and the profile avatar visible on the right when signed in.
 - Desktop post cards no longer flash bright blue on hover or click.
 - Desktop topic labels no longer change color, underline, or flash a blue background on hover.
