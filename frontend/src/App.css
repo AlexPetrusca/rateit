@@ -1268,10 +1268,6 @@ button:disabled {
     background: #ffffff;
 }
 
-.tweet-card:hover {
-    background: #f7f9f9;
-}
-
 .tweet-card-text {
     padding-bottom: 14px;
 }
@@ -1413,9 +1409,12 @@ button:disabled {
 }
 
 .text-post-topic-link:hover,
-.text-post-topic-link:focus-visible {
-    color: #1d9bf0;
-    text-decoration: underline;
+.text-post-topic-link:focus,
+.text-post-topic-link:active {
+    background: transparent;
+    background-color: transparent;
+    color: inherit;
+    text-decoration: none;
 }
 
 .topic-summary-card {
@@ -1526,13 +1525,6 @@ button:disabled {
 
 .post-click-target[role="button"] {
     outline: none;
-}
-
-.post-click-target:hover,
-.post-click-target:focus,
-.post-click-target:active {
-    background: transparent;
-    background-color: transparent;
 }
 
 .image-lightbox {

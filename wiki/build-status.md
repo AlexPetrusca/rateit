@@ -14,7 +14,6 @@ Maintenance rule: keep this page current when features are started, completed, d
 
 ## To Do
 ### P1
-- change hover and click of post on desktop to not be bright blue
 - Pulling down on mobile doesnt always refresh the page. only if finger is in the top bar labeled "home". if the screen is being dragged and grey at the top is exposed, the screen should refresh.
 - Clean up the `users` table so `first_name` and `last_name` are no longer required, and make `username` the required profile field instead. Ensure usernames have to be unique.
 - Add a basic censor that stops you from posting slurs
@@ -85,3 +84,5 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Improve the star controls on mobile so they are easier to slide across and feel better to use.
 - The extra page header bar under the top nav on Home and Create is gone, so those pages now start directly at the content.
 - Added a public iPhone install page at `/install` with directions for adding Critic to the home screen.
+- Desktop post cards no longer flash bright blue on hover or click.
+- Desktop topic labels no longer change color, underline, or flash a blue background on hover.
