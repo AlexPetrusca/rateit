@@ -17,7 +17,7 @@ test('normalizeText trims values and collapses blanks to null', () => {
 test('validateCreateRatingDraft rejects invalid and empty submissions', () => {
     assert.equal(
         validateCreateRatingDraft({ body: '', selectedFile: null, score: '0' }),
-        'Pick a score between 1 and 5.'
+        'Pick a score between 0.5 and 5.'
     );
 
     assert.equal(
@@ -57,6 +57,6 @@ test('buildCreateRatingRequest normalizes payload fields', () => {
 });
 
 test('create rating score bounds stay aligned with the form', () => {
-    assert.equal(MIN_RATING_SCORE, 1);
+    assert.equal(MIN_RATING_SCORE, 0.5);
     assert.equal(MAX_RATING_SCORE, 5);
 });

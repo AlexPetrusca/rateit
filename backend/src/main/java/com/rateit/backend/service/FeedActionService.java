@@ -245,7 +245,7 @@ public class FeedActionService {
             .orElseGet(() -> ratingScaleRepository.save(RatingScale.builder()
                 .name("5 stars")
                 .scaleType(RatingScaleType.STARS)
-                .minValue(java.math.BigDecimal.ONE)
+                .minValue(new java.math.BigDecimal("0.5"))
                 .maxValue(new java.math.BigDecimal("5"))
                 .step(new java.math.BigDecimal("0.5"))
                 .symbol("star")

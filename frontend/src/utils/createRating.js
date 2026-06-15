@@ -1,4 +1,4 @@
-export const MIN_RATING_SCORE = 1;
+export const MIN_RATING_SCORE = 0.5;
 export const MAX_RATING_SCORE = 5;
 export const RATING_SCORE_STEP = 0.5;
 
@@ -15,7 +15,7 @@ export const validateCreateRatingDraft = ({ body, selectedFile, score }) => {
     const numericScore = Number(score);
 
     if (!Number.isFinite(numericScore) || numericScore < MIN_RATING_SCORE || numericScore > MAX_RATING_SCORE) {
-        return 'Pick a score between 1 and 5.';
+        return 'Pick a score between 0.5 and 5.';
     }
 
     if (!selectedFile && !normalizeText(body)) {

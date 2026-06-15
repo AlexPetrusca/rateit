@@ -311,7 +311,7 @@ public class AdminJobService {
 
         Random random = new Random(jobId);
         List<BigDecimal> scores = List.of(
-            new BigDecimal("1"),
+            new BigDecimal("0.5"),
             new BigDecimal("1.5"),
             new BigDecimal("2"),
             new BigDecimal("2.5"),
@@ -353,7 +353,7 @@ public class AdminJobService {
 
         Random random = new Random(jobId);
         List<BigDecimal> scores = List.of(
-            new BigDecimal("1"),
+            new BigDecimal("0.5"),
             new BigDecimal("1.5"),
             new BigDecimal("2"),
             new BigDecimal("2.5"),

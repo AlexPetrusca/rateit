@@ -61,6 +61,7 @@ Use the shared components below before creating new copies:
 
 - Posts use the shared star component.
 - The create page uses the larger picker.
+- New ratings accept half-star steps from `0.5` to `5`.
 - Feed, comment, and profile surfaces use the smaller picker.
 - Image posts and text posts should share the same rating presentation.
 - Review text should keep the same indented treatment across post types.
