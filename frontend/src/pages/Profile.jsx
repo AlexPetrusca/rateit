@@ -341,7 +341,7 @@ const Profile = () => {
                 <textarea
                     value={draft.text}
                     onChange={(event) => updateCommentDraft(ratingId, parentCommentId, 'text', event.target.value)}
-                    placeholder={parentCommentId == null ? 'Add your comment' : 'Reply in thread'}
+                    placeholder={parentCommentId == null ? 'Add your take on this take' : 'Reply in thread'}
                     rows="3"
                 />
                 <div className="composer-actions">
@@ -460,7 +460,7 @@ const Profile = () => {
                             reviewText: event.target.value
                         }
                     }))}
-                    placeholder="Add your take"
+                    placeholder="Add your take on this topic"
                     rows="3"
                 />
                 <div className="composer-actions">

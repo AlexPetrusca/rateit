@@ -96,7 +96,26 @@ const Create = () => {
                     <div className="create-layout">
                         <div className="create-fields">
                             <div className="form-group">
-                                <label htmlFor="create-body">Post</label>
+                                <label htmlFor="create-image">Photo</label>
+                                <input
+                                    id="create-image"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                />
+                                {selectedFile && (
+                                    <button
+                                        type="button"
+                                        className="link-button"
+                                        onClick={() => setSelectedFile(null)}
+                                    >
+                                        Remove photo
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="create-body">{selectedFile ? 'Title' : 'Topic'}</label>
                                 <textarea
                                     id="create-body"
                                     value={body}
@@ -130,25 +149,6 @@ const Create = () => {
                                         onHoverChange={setHoveredScore}
                                     />
                                 </div>
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="create-image">Photo</label>
-                                <input
-                                    id="create-image"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleFileChange}
-                                />
-                                {selectedFile && (
-                                    <button
-                                        type="button"
-                                        className="link-button"
-                                        onClick={() => setSelectedFile(null)}
-                                    >
-                                        Remove photo
-                                    </button>
-                                )}
                             </div>
 
                             <div className="composer-actions create-actions">
