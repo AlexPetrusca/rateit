@@ -88,10 +88,6 @@ const Create = () => {
     return (
         <div className="feed-page">
             <main className="twitter-shell create-shell">
-                <div className="timeline-header">
-                    <h1>Create</h1>
-                </div>
-
                 <section className="create-form">
                     <div className="create-layout">
                         <div className="create-fields">

@@ -468,10 +468,6 @@ const Home = () => {
             {isFullyAuthenticated ? (
                 <main className="twitter-shell">
                     <>
-                        <div className="timeline-header">
-                            <h1>Home</h1>
-                        </div>
-
                         {isFeedLoading && <p className="feed-status">Loading ratings...</p>}
                         {!isFeedLoading && !feedError && feedItems.length === 0 && (
                             <p className="feed-status">No ratings yet.</p>

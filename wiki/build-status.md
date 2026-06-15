@@ -14,8 +14,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 
 ## To Do
 ### P1
-- Get rid of bar under top bar that says "Home" or "Create"
-- change hover and click of post to not be bright blue
+- change hover and click of post on desktop to not be bright blue
 - add page with directions on how to add site to homepage on iphone.
 - Pulling down on mobile doesnt always refresh the page. only if finger is in the top bar labeled "home". if the screen is being dragged and grey at the top is exposed, the screen should refresh.
 - Clean up the `users` table so `first_name` and `last_name` are no longer required, and make `username` the required profile field instead. Ensure usernames have to be unique.
@@ -85,3 +84,4 @@ Maintenance rule: keep this page current when features are started, completed, d
 - The topic page now renders ratings oldest-to-newest so the newest rating sits at the bottom.
 - Clicking a post now goes straight to the shared topic page, and the old `/posts/:ratingId` detail page has been removed.
 - Improve the star controls on mobile so they are easier to slide across and feel better to use.
+- The extra page header bar under the top nav on Home and Create is gone, so those pages now start directly at the content.
