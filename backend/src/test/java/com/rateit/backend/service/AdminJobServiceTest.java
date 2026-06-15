@@ -237,6 +237,7 @@ class AdminJobServiceTest {
                 0L,
                 0L,
                 false,
+                false,
                 new FeedItemDto.Author(author.getId(), author.getUsername(), null),
                 new FeedItemDto.Item(99L, com.rateit.backend.entity.types.RateableItemType.TEXT_POST, "A body", null),
                 new FeedItemDto.Scale("5 stars", "star", BigDecimal.ONE, new BigDecimal("5"))

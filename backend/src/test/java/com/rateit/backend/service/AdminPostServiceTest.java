@@ -3,7 +3,6 @@ package com.rateit.backend.service;
 import com.rateit.backend.entity.MediaAsset;
 import com.rateit.backend.entity.RateableItem;
 import com.rateit.backend.entity.Rating;
-import com.rateit.backend.entity.RatingComment;
 import com.rateit.backend.entity.RatingScale;
 import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.dto.AdminPostDto;
@@ -13,7 +12,6 @@ import com.rateit.backend.entity.types.RatingScaleType;
 import com.rateit.backend.entity.types.Visibility;
 import com.rateit.backend.repository.ExternalReviewRepository;
 import com.rateit.backend.repository.FeedEventRepository;
-import com.rateit.backend.repository.MediaAssetRepository;
 import com.rateit.backend.repository.RateableItemRepository;
 import com.rateit.backend.repository.RatingCommentRepository;
 import com.rateit.backend.repository.RatingLikeRepository;
@@ -22,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -35,9 +32,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -57,9 +54,6 @@ class AdminPostServiceTest {
     private RateableItemRepository rateableItemRepository;
 
     @Mock
-    private MediaAssetRepository mediaAssetRepository;
-
-    @Mock
     private FeedEventRepository feedEventRepository;
 
     @Mock
@@ -74,7 +68,6 @@ class AdminPostServiceTest {
             ratingLikeRepository,
             ratingCommentRepository,
             rateableItemRepository,
-            mediaAssetRepository,
             feedEventRepository,
             externalReviewRepository
         );
@@ -139,37 +132,26 @@ class AdminPostServiceTest {
     }
 
     @Test
-    void deleteAdminPostDeletesDependentRowsBeforePostEntities() {
+    void deleteAdminPostTombstonesRatingAndPreservesComments() {
         User author = user(1L, "+15550000001", "alpha");
         MediaAsset mediaAsset = mediaAsset(6L, author);
         RateableItem item = rateableItem(3L, author, "Body", mediaAsset);
         RatingScale scale = ratingScale(2L);
         Rating rating = rating(4L, author, item, scale, new BigDecimal("4.5"), "Review", Visibility.PUBLIC);
-        RatingComment parent = comment(10L, rating, author, null, "parent");
-        RatingComment reply = comment(11L, rating, author, parent, "reply");
 
         when(ratingRepository.findById(4L)).thenReturn(Optional.of(rating));
-        when(ratingCommentRepository.findByRatingOrderByCreatedAtAsc(rating)).thenReturn(List.of(parent, reply));
+        when(ratingRepository.save(any(Rating.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         adminPostService.deleteAdminPost(4L);
 
-        InOrder inOrder = inOrder(
-            feedEventRepository,
-            externalReviewRepository,
-            ratingLikeRepository,
-            ratingCommentRepository,
-            ratingRepository,
-            rateableItemRepository,
-            mediaAssetRepository
-        );
-        inOrder.verify(feedEventRepository).deleteByRatingOrRateableItem(rating, item);
-        inOrder.verify(externalReviewRepository).deleteByRatingOrRateableItem(rating, item);
-        inOrder.verify(ratingLikeRepository).deleteByRating(rating);
-        inOrder.verify(ratingCommentRepository).delete(reply);
-        inOrder.verify(ratingCommentRepository).delete(parent);
-        inOrder.verify(ratingRepository).delete(rating);
-        inOrder.verify(rateableItemRepository).delete(item);
-        inOrder.verify(mediaAssetRepository).delete(mediaAsset);
+        verify(feedEventRepository).deleteByRatingOrRateableItem(rating, item);
+        verify(externalReviewRepository).deleteByRatingOrRateableItem(rating, item);
+        verify(ratingLikeRepository).deleteByRating(rating);
+        verify(ratingRepository).save(rating);
+        assertNotNull(rating.getDeletedAt());
+        verify(ratingCommentRepository, never()).delete(any());
+        verify(ratingRepository, never()).delete(any());
+        verify(rateableItemRepository, never()).delete(any());
     }
 
     @Test
@@ -183,13 +165,13 @@ class AdminPostServiceTest {
 
         when(ratingRepository.findById(10L)).thenReturn(Optional.of(firstRating));
         when(ratingRepository.findById(11L)).thenReturn(Optional.of(secondRating));
-        when(ratingCommentRepository.findByRatingOrderByCreatedAtAsc(firstRating)).thenReturn(List.of());
-        when(ratingCommentRepository.findByRatingOrderByCreatedAtAsc(secondRating)).thenReturn(List.of());
+        when(ratingRepository.save(any(Rating.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         var result = adminPostService.deleteAdminPosts(List.of(10L, 11L));
 
-        verify(ratingRepository).delete(firstRating);
-        verify(ratingRepository).delete(secondRating);
+        assertNotNull(firstRating.getDeletedAt());
+        assertNotNull(secondRating.getDeletedAt());
+        verify(ratingRepository, never()).delete(any());
         assertEquals(2, result.deletedCount());
     }
 
@@ -243,19 +225,6 @@ class AdminPostServiceTest {
         ReflectionTestUtils.setField(rating, "id", id);
         ReflectionTestUtils.setField(rating, "createdAt", Instant.parse("2026-01-01T00:00:00Z"));
         return rating;
-    }
-
-    private RatingComment comment(Long id, Rating rating, User author, RatingComment parent, String text) {
-        RatingComment comment = RatingComment.builder()
-            .rating(rating)
-            .authorUser(author)
-            .parentComment(parent)
-            .text(text)
-            .score(new BigDecimal("4"))
-            .build();
-        ReflectionTestUtils.setField(comment, "id", id);
-        ReflectionTestUtils.setField(comment, "createdAt", Instant.parse("2026-01-01T00:00:00Z"));
-        return comment;
     }
 
     private MediaAsset mediaAsset(Long id, User author) {
