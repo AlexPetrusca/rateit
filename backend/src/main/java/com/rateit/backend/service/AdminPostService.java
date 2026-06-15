@@ -79,12 +79,15 @@ public class AdminPostService {
     public void deleteAdminPost(long postId) {
         Rating rating = findRating(postId);
         RateableItem item = rating.getRateableItem();
+        long commentCount = ratingCommentRepository.countByRating(rating);
 
         feedEventRepository.deleteByRatingOrRateableItem(rating, item);
         externalReviewRepository.deleteByRatingOrRateableItem(rating, item);
         ratingLikeRepository.deleteByRating(rating);
 
-        if (rating.getDeletedAt() == null) {
+        if (commentCount == 0) {
+            ratingRepository.delete(rating);
+        } else if (rating.getDeletedAt() == null) {
             rating.setDeletedAt(Instant.now());
             ratingRepository.save(rating);
         }

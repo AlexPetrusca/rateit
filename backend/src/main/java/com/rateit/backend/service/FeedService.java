@@ -1,8 +1,11 @@
 package com.rateit.backend.service;
 
 import com.rateit.backend.entity.dto.FeedItemDto;
+import com.rateit.backend.entity.dto.TopicDto;
 import com.rateit.backend.entity.types.Visibility;
+import com.rateit.backend.entity.RateableItem;
 import com.rateit.backend.entity.Rating;
+import com.rateit.backend.repository.RateableItemRepository;
 import com.rateit.backend.repository.RatingRepository;
 import com.rateit.backend.repository.RatingCommentRepository;
 import com.rateit.backend.repository.RatingLikeRepository;
@@ -30,6 +33,7 @@ public class FeedService {
     private final RatingLikeRepository ratingLikeRepository;
     private final RatingCommentRepository ratingCommentRepository;
     private final UserService userService;
+    private final RateableItemRepository rateableItemRepository;
 
     @Transactional(readOnly = true)
     public List<FeedItemDto> getRecentRatings(Integer requestedLimit) {
@@ -115,6 +119,28 @@ public class FeedService {
         );
 
         return toFeedItems(ratings, currentUser);
+    }
+
+    @Transactional(readOnly = true)
+    public TopicDto getTopic(long rateableItemId, String currentUserPhoneNumber) {
+        userService.findByPhoneNumber(currentUserPhoneNumber);
+        RateableItem item = rateableItemRepository.findById(rateableItemId)
+            .orElseThrow(() -> com.rateit.backend.exception.ResourceNotFoundException.resource(
+                com.rateit.backend.entity.types.Resource.RATEABLE_ITEM,
+                rateableItemId
+            ));
+
+        long ratingCount = ratingRepository.countVisibleByRateableItemIdAndVisibility(rateableItemId, Visibility.PUBLIC);
+        Double averageScore = ratingRepository.averageVisibleScoreByRateableItemIdAndVisibility(rateableItemId, Visibility.PUBLIC);
+
+        return new TopicDto(
+            item.getId(),
+            item.getTitle(),
+            item.getBody(),
+            item.getMediaAsset() == null ? null : item.getMediaAsset().getObjectKey(),
+            ratingCount,
+            averageScore == null ? null : java.math.BigDecimal.valueOf(averageScore)
+        );
     }
 
     private List<FeedItemDto> toFeedItems(List<Rating> ratings, User currentUser) {

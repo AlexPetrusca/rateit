@@ -5,10 +5,12 @@ import com.rateit.backend.entity.Rating;
 import com.rateit.backend.entity.RatingScale;
 import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.dto.FeedItemDto;
+import com.rateit.backend.entity.dto.TopicDto;
 import com.rateit.backend.entity.types.RateableItemType;
 import com.rateit.backend.entity.types.RatingScaleType;
 import com.rateit.backend.entity.types.Visibility;
 import com.rateit.backend.exception.ResourceNotFoundException;
+import com.rateit.backend.repository.RateableItemRepository;
 import com.rateit.backend.repository.RatingCommentRepository;
 import com.rateit.backend.repository.RatingLikeRepository;
 import com.rateit.backend.repository.RatingRepository;
@@ -47,6 +49,9 @@ class FeedServiceTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private RateableItemRepository rateableItemRepository;
+
     private FeedService feedService;
 
     @BeforeEach
@@ -55,7 +60,8 @@ class FeedServiceTest {
             ratingRepository,
             ratingLikeRepository,
             ratingCommentRepository,
-            userService
+            userService,
+            rateableItemRepository
         );
     }
 
@@ -141,6 +147,25 @@ class FeedServiceTest {
             ResourceNotFoundException.class,
             () -> feedService.getRating(404L, viewer.getPhoneNumber())
         );
+    }
+
+    @Test
+    void getTopicReturnsTopicMetadata() {
+        User viewer = user(9L, "+15550000099", "viewer");
+        User owner = user(1L, "+15550000001", "alpha");
+        RateableItem item = rateableItem(3L, owner, "Topic body", Visibility.PUBLIC);
+
+        when(userService.findByPhoneNumber(viewer.getPhoneNumber())).thenReturn(viewer);
+        when(rateableItemRepository.findById(3L)).thenReturn(Optional.of(item));
+        when(ratingRepository.countVisibleByRateableItemIdAndVisibility(3L, Visibility.PUBLIC)).thenReturn(2L);
+        when(ratingRepository.averageVisibleScoreByRateableItemIdAndVisibility(3L, Visibility.PUBLIC)).thenReturn(4.25);
+
+        TopicDto topic = feedService.getTopic(3L, viewer.getPhoneNumber());
+
+        assertEquals(3L, topic.id());
+        assertEquals("Topic body", topic.body());
+        assertEquals(2L, topic.ratingCount());
+        assertEquals(0, topic.averageScore().compareTo(new BigDecimal("4.25")));
     }
 
     private User user(Long id, String phoneNumber, String username) {

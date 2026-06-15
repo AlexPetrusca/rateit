@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Paper, Stack, Typography } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
@@ -83,17 +83,18 @@ const Topic = () => {
     const currentUserId = user?.userId ?? user?.id ?? null;
     const { notify } = useNotifications();
     const [feedItems, setFeedItems] = useState([]);
+    const [topicDetails, setTopicDetails] = useState(null);
     const [isFeedLoading, setIsFeedLoading] = useState(false);
     const [isFeedLoadingMore, setIsFeedLoadingMore] = useState(false);
     const [feedError, setFeedError] = useState(null);
     const [feedPage, setFeedPage] = useState(0);
     const [hasMoreFeed, setHasMoreFeed] = useState(true);
     const [activeComposer, setActiveComposer] = useState(null);
+    const [topicComposerDraft, setTopicComposerDraft] = useState({ score: '', reviewText: '' });
+    const [hoveredTopicScore, setHoveredTopicScore] = useState(null);
     const [commentsByRating, setCommentsByRating] = useState({});
     const [commentDrafts, setCommentDrafts] = useState({});
     const [hoveredCommentScores, setHoveredCommentScores] = useState({});
-    const [hoveredRerateScores, setHoveredRerateScores] = useState({});
-    const [rerateDrafts, setRerateDrafts] = useState({});
     const [expandedTopicImageUrl, setExpandedTopicImageUrl] = useState(null);
     const feedSentinelRef = useRef(null);
 
@@ -103,24 +104,28 @@ const Topic = () => {
     }, [routeRateableItemId]);
 
     const topicLabel = useMemo(() => {
-        const firstItem = feedItems[0]?.rateableItem;
-        return firstItem?.body || firstItem?.title || 'Topic';
-    }, [feedItems]);
+        return topicDetails?.body || topicDetails?.title || feedItems[0]?.rateableItem?.body || feedItems[0]?.rateableItem?.title || 'Topic';
+    }, [feedItems, topicDetails]);
 
-    const topicRatingCount = feedItems.length;
+    const topicRatingCount = topicDetails?.ratingCount ?? feedItems.length;
     const topicAverageRating = useMemo(() => {
+        if (topicDetails?.averageScore != null) {
+            return Number(topicDetails.averageScore);
+        }
+
         if (feedItems.length === 0) {
             return 0;
         }
 
         const total = feedItems.reduce((sum, item) => sum + (Number(item.score) || 0), 0);
         return total / feedItems.length;
-    }, [feedItems]);
+    }, [feedItems, topicDetails]);
     const displayedFeedItems = useMemo(() => [...feedItems].reverse(), [feedItems]);
     const topicMediaUrl = useMemo(() => {
-        const mediaObjectKey = feedItems[0]?.rateableItem?.mediaObjectKey;
+        const mediaObjectKey = topicDetails?.mediaObjectKey || feedItems[0]?.rateableItem?.mediaObjectKey;
         return mediaObjectKey ? `/api/s3/images/${mediaObjectKey}` : null;
-    }, [feedItems]);
+    }, [feedItems, topicDetails]);
+    const topicComposerScore = hoveredTopicScore ?? Number(topicComposerDraft.score);
 
     const isFullyAuthenticated = isAuthenticated && user != null;
 
@@ -130,19 +135,21 @@ const Topic = () => {
         }
 
         setFeedItems([]);
+        setTopicDetails(null);
         setFeedPage(0);
         setHasMoreFeed(true);
         setActiveComposer(null);
+        setTopicComposerDraft({ score: '', reviewText: '' });
+        setHoveredTopicScore(null);
         setCommentsByRating({});
         setCommentDrafts({});
         setHoveredCommentScores({});
-        setHoveredRerateScores({});
-        setRerateDrafts({});
     }, [isFullyAuthenticated, topicRateableItemId]);
 
     useEffect(() => {
         if (!isFullyAuthenticated) {
             setFeedItems([]);
+            setTopicDetails(null);
             setFeedPage(0);
             setHasMoreFeed(true);
             setIsFeedLoading(false);
@@ -186,6 +193,34 @@ const Topic = () => {
             isMounted = false;
         };
     }, [isFullyAuthenticated, feedPage, topicRateableItemId]);
+
+    useEffect(() => {
+        if (!isFullyAuthenticated) {
+            return;
+        }
+
+        if (topicRateableItemId == null) {
+            return;
+        }
+
+        let isMounted = true;
+
+        BackendApiService.getTopic(topicRateableItemId)
+            .then((topic) => {
+                if (isMounted) {
+                    setTopicDetails(topic);
+                }
+            })
+            .catch((error) => {
+                if (isMounted) {
+                    notify({ message: error.message || 'Failed to load topic', type: 'error', persistent: true });
+                }
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [isFullyAuthenticated, topicRateableItemId]);
 
     useEffect(() => {
         if (!isFullyAuthenticated || feedError || isFeedLoading || isFeedLoadingMore || !hasMoreFeed) {
@@ -260,12 +295,12 @@ const Topic = () => {
         navigate(`/users/${userId}`);
     };
 
-    const openPost = (ratingId) => {
-        if (ratingId == null) {
+    const openPost = (rateableItemId) => {
+        if (rateableItemId == null) {
             return;
         }
 
-        navigate(`/posts/${ratingId}`);
+        navigate(`/topics/${rateableItemId}`);
     };
 
     const openTopic = (rateableItemId) => {
@@ -445,91 +480,39 @@ const Topic = () => {
         );
     };
 
-    const submitRerate = async (ratingId) => {
-        const draft = rerateDrafts[ratingId] || {};
-        const score = Number(draft.score);
+    const submitTopicRating = async () => {
+        const sourceRatingId = feedItems.find((item) => !item.deleted && !item.deletedAt)?.ratingId ?? null;
+        const score = Number(topicComposerDraft.score);
+        const reviewText = topicComposerDraft.reviewText || '';
 
-        if (!score) {
-            notify({ message: 'Add a score before re-rating.', type: 'warning' });
+        if (sourceRatingId == null) {
+            notify({ message: 'Add a rating before posting another one to this topic.', type: 'warning' });
+            return;
+        }
+
+        if (!isScoreInRange(score)) {
+            notify({ message: 'Add a score before posting.', type: 'warning' });
             return;
         }
 
         try {
-            await BackendApiService.rerate(ratingId, score, draft.reviewText || '');
-            setRerateDrafts((current) => ({
-                ...current,
-                [ratingId]: { score: '', reviewText: '' }
-            }));
-            setActiveComposer(null);
+            await BackendApiService.rerate(sourceRatingId, score, reviewText);
+            setTopicComposerDraft({ score: '', reviewText: '' });
+            setHoveredTopicScore(null);
+
+            const requestedSize = Math.max(feedItems.length + 1, TOPIC_PAGE_SIZE);
             const items = await BackendApiService.getTopicRatings({
                 rateableItemId: topicRateableItemId,
                 page: 0,
-                size: Math.max(feedItems.length, TOPIC_PAGE_SIZE)
+                size: requestedSize
             });
             setFeedItems(items);
+            setHasMoreFeed(items.length === requestedSize);
+            const topic = await BackendApiService.getTopic(topicRateableItemId);
+            setTopicDetails(topic);
         } catch (error) {
             notify({ message: error.message, type: 'error' });
         }
-    };
-
-    const renderRerate = (item) => {
-        const ratingId = item.ratingId;
-        const draft = rerateDrafts[ratingId] || {};
-        const currentScore = draft.score ? Number(draft.score) : null;
-        const previewScore = hoveredRerateScores[ratingId] ?? currentScore;
-        const scoreLabel = Number.isFinite(Number(previewScore))
-            ? `${Number(previewScore).toFixed(1)} / 5`
-            : '0.0 / 5';
-
-        return (
-            <div className="feed-composer">
-                <label id={`rerate-score-label-${ratingId}`}>Your rating</label>
-                <div className="score-row">
-                    <output className="score-value">{scoreLabel}</output>
-                    <StarRating
-                        value={previewScore ?? 0}
-                        label={`Selected rating: ${scoreLabel}`}
-                        size="lg"
-                        interactive
-                        onChange={(nextScore) => setRerateDrafts((current) => ({
-                            ...current,
-                            [ratingId]: {
-                                ...current[ratingId],
-                                score: nextScore.toString()
-                            }
-                        }))}
-                        onHoverChange={(nextScore) => setHoveredRerateScores((current) => {
-                            const next = { ...current };
-
-                            if (nextScore == null) {
-                                delete next[ratingId];
-                            } else {
-                                next[ratingId] = nextScore;
-                            }
-
-                            return next;
-                        })}
-                    />
-                </div>
-                <textarea
-                    value={draft.reviewText || ''}
-                    onChange={(event) => setRerateDrafts((current) => ({
-                        ...current,
-                        [ratingId]: {
-                            ...current[ratingId],
-                            reviewText: event.target.value
-                        }
-                    }))}
-                    placeholder="Add your take on this topic"
-                    rows="3"
-                />
-                <div className="composer-actions">
-                    <button type="button" onClick={() => submitRerate(ratingId)}>
-                        Re-rate
-                    </button>
-                </div>
-            </div>
-        );
     };
 
     return (
@@ -584,7 +567,6 @@ const Topic = () => {
                             showTopicText={false}
                             showMedia={false}
                             renderFooter={(item) => {
-                                const rerateKey = getComposerKey(item.ratingId, 'rerate');
                                 const canEdit = item.author?.userId != null
                                     && item.author.userId === currentUserId
                                     && !item.deleted
@@ -595,21 +577,16 @@ const Topic = () => {
                                         likeCount={item.likeCount}
                                         commentCount={item.commentCount}
                                         onLike={() => toggleLike(item)}
-                                        onRerate={() => setActiveComposer((current) => (
-                                            current === rerateKey ? null : rerateKey
-                                        ))}
                                         onComment={() => openComments(item.ratingId)}
                                         onEdit={canEdit ? () => navigate(`/posts/${item.ratingId}/edit`) : undefined}
                                     />
                                 );
                             }}
                             renderAfterItem={(item) => {
-                                const rerateKey = getComposerKey(item.ratingId, 'rerate');
                                 const isCommentThreadActive = activeComposer?.startsWith(`${item.ratingId}:comment`);
 
                                 return (
                                     <>
-                                        {activeComposer === rerateKey && renderRerate(item)}
                                         {isCommentThreadActive && renderComments(item)}
                                     </>
                                 );
@@ -621,6 +598,44 @@ const Topic = () => {
                             endMessage="You’ve reached the end of the topic."
                             onTopicClick={openTopic}
                         />
+
+                        {!!feedItems.length && (
+                            <div className="feed-composer topic-rating-composer">
+                                <label id="topic-rating-label">Add your rating</label>
+                                <div className="score-row">
+                                    <output className="score-value">
+                                        {Number.isFinite(topicComposerScore)
+                                            ? `${topicComposerScore.toFixed(1)} / 5`
+                                            : '0.0 / 5'}
+                                    </output>
+                                    <StarRating
+                                        value={Number.isFinite(topicComposerScore) ? topicComposerScore : 0}
+                                        label="Selected rating for this topic"
+                                        size="lg"
+                                        interactive
+                                        onChange={(nextScore) => setTopicComposerDraft((current) => ({
+                                            ...current,
+                                            score: nextScore.toString()
+                                        }))}
+                                        onHoverChange={setHoveredTopicScore}
+                                    />
+                                </div>
+                                <textarea
+                                    value={topicComposerDraft.reviewText}
+                                    onChange={(event) => setTopicComposerDraft((current) => ({
+                                        ...current,
+                                        reviewText: event.target.value
+                                    }))}
+                                    placeholder="Add your take on this topic"
+                                    rows="3"
+                                />
+                                <div className="composer-actions">
+                                    <button type="button" onClick={submitTopicRating}>
+                                        Add rating
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {!isFeedLoading && feedError && (
                             <div className="inline-error">{feedError}</div>

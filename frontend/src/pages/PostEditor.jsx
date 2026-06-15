@@ -135,7 +135,7 @@ const PostEditor = () => {
             });
             setPost(updated);
             notify({ message: 'Post updated', type: 'info' });
-            navigate(`/posts/${ratingId}`);
+            navigate(`/topics/${updated?.rateableItem?.id ?? post?.rateableItem?.id ?? ratingId}`);
         } catch (error) {
             notify({ message: error.message || 'Failed to update post', type: 'error' });
         } finally {
@@ -153,7 +153,7 @@ const PostEditor = () => {
         try {
             await BackendApiService.deleteRating(ratingId);
             notify({ message: 'Post deleted', type: 'info' });
-            navigate(`/posts/${ratingId}`);
+            navigate(`/topics/${post?.rateableItem?.id ?? ratingId}`);
         } catch (error) {
             notify({ message: error.message || 'Failed to delete post', type: 'error' });
         } finally {

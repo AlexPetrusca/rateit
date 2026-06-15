@@ -17,7 +17,7 @@ import PostEditor from './pages/PostEditor';
 import Backlog from './pages/Backlog';
 import Topic from './pages/Topic';
 import SuggestionSubmit from './pages/SuggestionSubmit';
-import Post from './pages/Post';
+import PostRedirect from './pages/PostRedirect';
 import SearchUsers from './pages/SearchUsers';
 import FollowList from './pages/FollowList';
 import GuardedRoute from './components/GuardedRoute.jsx';
@@ -96,7 +96,7 @@ function App() {
                                 path="/posts/:ratingId"
                                 element={
                                     <GuardedRoute>
-                                        <Post />
+                                        <PostRedirect />
                                     </GuardedRoute>
                                 }
                             />

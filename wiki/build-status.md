@@ -15,6 +15,8 @@ Maintenance rule: keep this page current when features are started, completed, d
 ## To Do
 ### P1
 - Get rid of bar under top bar that says "Home" or "Create"
+- change hover and click of post to not be bright blue
+- add page with directions on how to add site to homepage on iphone.
 - Pulling down on mobile doesnt always refresh the page. only if finger is in the top bar labeled "home". if the screen is being dragged and grey at the top is exposed, the screen should refresh.
 - Clean up the `users` table so `first_name` and `last_name` are no longer required, and make `username` the required profile field instead. Ensure usernames have to be unique.
 - Add a basic censor that stops you from posting slurs
@@ -72,11 +74,14 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Posted photos are clickable and open in a larger full-screen lightbox from the shared post card.
 - Profile editor page added at `/profile/edit`; users can update their profile picture from the top-right profile menu.
 - Profile picture uploads can be cropped and resized before saving; the editor uploads a 512x512 cropped image.
+- Topic metadata now comes from a stable topic lookup, and deleting a rating hard-deletes empty ratings while preserving tombstones only when comments still exist.
 - Backlog suggestions now have a submit page, a suggestions table below the backlog board, and an admin moderation page for deleting suggestions.
 - The shared star control is now a little larger, uses blue selected stars, and supports sliding across the control on mobile to set a rating.
 - Clicking the topic text on a post now opens a linked topic page at `/topics/:rateableItemId` that shows every rating on the same shared topic.
+- Topic discussion rows now keep only like, comment, and edit actions, and the bottom of the topic page has a single rating + description composer for adding another rating.
 - The topic page now uses a raised summary card for the topic itself, and the summary shows the average star rating plus the raw count of ratings while individual ratings no longer repeat the topic text above each review.
 - When a topic has a photo, the image now lives in the raised topic summary card instead of repeating inside each rating row.
 - The topic summary stars now render the true average score exactly, rather than snapping the display to a half-star feel.
 - The topic page now renders ratings oldest-to-newest so the newest rating sits at the bottom.
+- Clicking a post now goes straight to the shared topic page, and the old `/posts/:ratingId` detail page has been removed.
 - Improve the star controls on mobile so they are easier to slide across and feel better to use.

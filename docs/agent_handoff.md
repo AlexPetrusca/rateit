@@ -4,7 +4,7 @@ This file is the entry point for a new agent joining the repo. Read it first, th
 
 ## Current Product State
 
-Critic is a React + Spring Boot app with phone-number login, JWT cookie auth, a public feed of ratings, threaded comments, re-rating, user profiles, user search, followers/following, a post detail page, and an admin area for moderation plus synthetic-data automation.
+Critic is a React + Spring Boot app with phone-number login, JWT cookie auth, a public feed of ratings, threaded comments, re-rating, user profiles, user search, followers/following, a topic view for shared ratings, and an admin area for moderation plus synthetic-data automation.
 
 ### What is implemented now
 
@@ -13,16 +13,16 @@ Critic is a React + Spring Boot app with phone-number login, JWT cookie auth, a 
 - JWT cookie auth with role-based backend security.
 - Admin-only APIs under `/api/admin/**` guarded by `ROLE_ADMIN`.
 - Infinite-scroll home feed with pagination in chunks of 5.
-- Shared feed/post/comment UI components used across home, profile, and post detail pages.
+- Shared feed/post/comment UI components used across home, profile, and topic pages.
 - User profile pages with user info and that user’s posts.
 - Profile editor page at `/profile/edit` for updating the signed-in user's profile picture.
 - Post editor page at `/posts/:ratingId/edit` for updating the author's topic text, review text, and score, plus soft-deleting the post.
 - Backlog page at `/backlog` for rendering the `To Do` section of `wiki/build-status.md` as an in-app project board.
 - Suggestion submit page at `/backlog/suggest`, plus a suggestions table on the backlog page and admin suggestion deletion.
-- Topic page at `/topics/:rateableItemId` for viewing every rating on a shared topic.
+- Topic page at `/topics/:rateableItemId` for viewing every rating on a shared topic, with a bottom composer for adding another rating to that topic and a stable topic lookup separate from individual ratings.
 - Public-safe user search by username for finding people to follow.
 - Profiles show follower/following counts, and those counts open list pages.
-- Post detail pages with the post and its threaded comments.
+- Post clicks now route directly to the shared topic page instead of a standalone post-detail page.
 - A shared notification system for info, warning, and error toasts.
 - Reusable modal component.
 - Shared star rating component with size variants.
@@ -71,7 +71,6 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 - `/profile`
 - `/profile/edit`
 - `/users/:userId`
-- `/posts/:ratingId`
 - `/topics/:rateableItemId`
 - `/backlog`
 - `/backlog/suggest`
@@ -97,9 +96,10 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 ### Feed and post actions
 
 - `FeedController` exposes feed, rating detail, topic-linked ratings, likes, comments, and re-rate.
+- `TopicController` exposes stable topic metadata for the shared item shown on `/topics/:rateableItemId`.
 - `FeedController` also exposes signed-in author post update/delete.
 - `FeedService` returns the feed read model.
-- `FeedActionService` handles create rating, like/unlike, comment, rerate, update, and delete.
+- `FeedActionService` handles create rating, like/unlike, comment, rerate, update, and delete. Deleting a rating hard-deletes it when it has no comments and tombstones it only when comments still exist.
 
 ### Admin
 
@@ -136,8 +136,8 @@ Use these instead of recreating the same UI:
 ## Current Behavior Constraints
 
 - User deletion is a hard delete and also removes their authored posts and the comments on those posts.
-- Admin post removal is a tombstone path that marks the rating deleted, removes likes/feed/external references, and preserves comment threads.
-- Signed-in authors use the same tombstone delete path for their own post deletions so comment threads remain readable.
+- Admin post removal deletes empty ratings outright and tombstones only ratings that still have comment threads, while still removing likes/feed/external references.
+- Signed-in authors use the same conditional delete path for their own post deletions so comment threads remain readable when they exist.
 - The home feed and profile feed should stay visually aligned by using the same backing list/card components.
 - Any new admin table should use the shared admin grid wrapper so vertical alignment stays consistent.
 

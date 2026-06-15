@@ -187,12 +187,12 @@ const Home = () => {
         navigate(`/users/${userId}`);
     };
 
-    const openPost = (ratingId) => {
-        if (ratingId == null) {
+    const openPost = (rateableItemId) => {
+        if (rateableItemId == null) {
             return;
         }
 
-        navigate(`/posts/${ratingId}`);
+        navigate(`/topics/${rateableItemId}`);
     };
 
     const openTopic = (rateableItemId) => {

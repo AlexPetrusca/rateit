@@ -188,18 +188,30 @@ const PostCard = ({
                         </time>
                     </header>
 
-                    {typeof onPostClick === 'function' && showMedia && mediaContent}
+                    {(typeof onPostClick === 'function' || typeof onTopicClick === 'function') && showMedia && mediaContent}
 
-                    {typeof onPostClick === 'function' ? (
+                    {typeof onTopicClick === 'function' || typeof onPostClick === 'function' ? (
                         <div
                             className="post-click-target"
                             role="button"
                             tabIndex={0}
-                            onClick={() => onPostClick(post.ratingId)}
+                            onClick={() => {
+                                if (typeof onTopicClick === 'function' && post.rateableItem?.id != null) {
+                                    onTopicClick(post.rateableItem.id);
+                                    return;
+                                }
+
+                                onPostClick(post.rateableItem?.id ?? post.ratingId);
+                            }}
                             onKeyDown={(event) => {
                                 if (event.key === 'Enter' || event.key === ' ') {
                                     event.preventDefault();
-                                    onPostClick(post.ratingId);
+                                    if (typeof onTopicClick === 'function' && post.rateableItem?.id != null) {
+                                        onTopicClick(post.rateableItem.id);
+                                        return;
+                                    }
+
+                                    onPostClick(post.rateableItem?.id ?? post.ratingId);
                                 }
                             }}
                         >

@@ -158,12 +158,15 @@ public class FeedActionService {
     public void deleteRating(Long ratingId, String currentUserPhoneNumber) {
         Rating rating = findEditableRating(ratingId, userService.findByPhoneNumber(currentUserPhoneNumber));
         RateableItem item = rating.getRateableItem();
+        long commentCount = ratingCommentRepository.countByRating(rating);
 
         feedEventRepository.deleteByRatingOrRateableItem(rating, item);
         externalReviewRepository.deleteByRatingOrRateableItem(rating, item);
         ratingLikeRepository.deleteByRating(rating);
 
-        if (rating.getDeletedAt() == null) {
+        if (commentCount == 0) {
+            ratingRepository.delete(rating);
+        } else if (rating.getDeletedAt() == null) {
             rating.setDeletedAt(java.time.Instant.now());
             ratingRepository.save(rating);
         }

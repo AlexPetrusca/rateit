@@ -105,6 +105,30 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         Pageable pageable
     );
 
+    @Query("""
+        select count(r)
+        from Rating r
+        where r.rateableItem.id = :rateableItemId
+          and r.visibility = :visibility
+          and r.deletedAt is null
+        """)
+    long countVisibleByRateableItemIdAndVisibility(
+        @Param("rateableItemId") Long rateableItemId,
+        @Param("visibility") Visibility visibility
+    );
+
+    @Query("""
+        select avg(r.score)
+        from Rating r
+        where r.rateableItem.id = :rateableItemId
+          and r.visibility = :visibility
+          and r.deletedAt is null
+        """)
+    Double averageVisibleScoreByRateableItemIdAndVisibility(
+        @Param("rateableItemId") Long rateableItemId,
+        @Param("visibility") Visibility visibility
+    );
+
     @Query(
         value = """
             select distinct r
