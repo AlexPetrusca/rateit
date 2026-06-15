@@ -104,7 +104,7 @@ const Topic = () => {
     }, [routeRateableItemId]);
 
     const topicLabel = useMemo(() => {
-        return topicDetails?.body || topicDetails?.title || feedItems[0]?.rateableItem?.body || feedItems[0]?.rateableItem?.title || 'Topic';
+        return topicDetails?.body || topicDetails?.title || feedItems[0]?.rateableItem?.body || feedItems[0]?.rateableItem?.title || '';
     }, [feedItems, topicDetails]);
 
     const topicRatingCount = topicDetails?.ratingCount ?? feedItems.length;
@@ -520,10 +520,6 @@ const Topic = () => {
             {isFullyAuthenticated ? (
                 <main className="twitter-shell">
                     <>
-                        <div className="timeline-header">
-                            <h1>Topic</h1>
-                        </div>
-
                         <Paper elevation={2} className="topic-summary-card">
                             <Stack spacing={1}>
                                 {topicMediaUrl && (
@@ -540,9 +536,11 @@ const Topic = () => {
                                         />
                                     </button>
                                 )}
-                                <Typography variant="h5" component="div" fontWeight={700}>
-                                    {topicLabel}
-                                </Typography>
+                                {topicLabel && (
+                                    <Typography variant="h5" component="div" fontWeight={700}>
+                                        {topicLabel}
+                                    </Typography>
+                                )}
                                 <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
                                     <Typography variant="body2" color="text.secondary" fontWeight={700}>
                                         {topicRatingCount}
