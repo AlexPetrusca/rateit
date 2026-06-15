@@ -49,6 +49,8 @@ Clicking a post opens the dedicated post page. That page shows:
 - threaded replies
 - a deleted-post placeholder when the rating was removed by moderation
 
+Post photos open in an in-place lightbox when clicked. This is handled by the shared `PostCard`, so feed, profile, and post detail images share the same larger-view behavior.
+
 ## Comment behavior
 
 - Comments are threaded.

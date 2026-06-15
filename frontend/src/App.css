@@ -1025,6 +1025,25 @@ button:disabled {
     background: #ffffff;
 }
 
+.rating-object-button {
+    display: block;
+    width: 100%;
+    padding: 0;
+    color: inherit;
+    cursor: zoom-in;
+}
+
+.rating-object-button:hover,
+.rating-object-button:focus,
+.rating-object-button:active {
+    background: #ffffff;
+}
+
+.rating-object-button:focus-visible {
+    outline: 2px solid #1d9bf0;
+    outline-offset: 2px;
+}
+
 .rating-object-media {
     display: block;
     width: 100%;
@@ -1118,6 +1137,62 @@ button:disabled {
 .post-click-target:active {
     background: transparent;
     background-color: transparent;
+}
+
+.image-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(15, 20, 25, 0.88);
+    cursor: zoom-out;
+}
+
+.image-lightbox-frame {
+    display: flex;
+    max-width: min(1100px, 100%);
+    max-height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-lightbox-image {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100vh - 48px);
+    object-fit: contain;
+    border-radius: 8px;
+    background: #000000;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+    cursor: default;
+}
+
+.image-lightbox-close {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 2001;
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 50%;
+    background: rgba(15, 20, 25, 0.72);
+    color: #ffffff;
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.image-lightbox-close:hover,
+.image-lightbox-close:focus {
+    background: rgba(83, 100, 113, 0.92);
 }
 
 .tweet-body,

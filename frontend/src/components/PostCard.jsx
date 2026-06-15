@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import StarRating from './StarRating.jsx';
 import UserAvatar from './UserAvatar.jsx';
 
@@ -35,12 +36,15 @@ const PostCard = ({
     postBodyClassName = '',
     bodyClassName = ''
 }) => {
+    const [expandedImageUrl, setExpandedImageUrl] = useState(null);
+
     if (!post) {
         return null;
     }
 
     const isDeleted = Boolean(post.deleted || post.deletedAt);
     const hasMedia = !isDeleted && Boolean(post.rateableItem?.mediaObjectKey);
+    const mediaUrl = hasMedia ? `/api/s3/images/${post.rateableItem.mediaObjectKey}` : null;
     const cardClassName = [
         'tweet-card',
         isDeleted ? 'tweet-card-deleted' : '',
@@ -48,129 +52,173 @@ const PostCard = ({
         className
     ].filter(Boolean).join(' ');
 
-    const postContent = (
+    const mediaContent = hasMedia && (
+        <button
+            type="button"
+            className="rating-object rating-object-button"
+            onClick={() => setExpandedImageUrl(mediaUrl)}
+            aria-label="Open photo"
+        >
+            <img
+                src={mediaUrl}
+                alt="Rated item"
+                className="rating-object-media"
+            />
+        </button>
+    );
+
+    const ratingTextContent = !isDeleted && (
+        <div className="text-rating">
+            {post.rateableItem?.body && (
+                <p className={['text-post-body', bodyClassName].filter(Boolean).join(' ')}>
+                    {post.rateableItem.body}
+                </p>
+            )}
+            <div className="text-rating-score">
+                <strong className="op-rating-stars">
+                    <StarRating
+                        value={post.score}
+                        label={formatScoreValue(post.score, post.ratingScale)}
+                        max={post.ratingScale?.max}
+                        size="sm"
+                    />
+                </strong>
+            </div>
+        </div>
+    );
+
+    const reviewContent = !isDeleted && post.reviewText && (
+        <p className={['tweet-review', postBodyClassName].filter(Boolean).join(' ')}>
+            {post.reviewText}
+        </p>
+    );
+
+    const clickableContent = (
         <>
             {isDeleted ? (
                 <div className="deleted-post-placeholder">
                     This post has been deleted.
                 </div>
-            ) : hasMedia && (
-                <div className="rating-object">
-                    <img
-                        src={`/api/s3/images/${post.rateableItem.mediaObjectKey}`}
-                        alt="Rated item"
-                        className="rating-object-media"
-                    />
-                </div>
-            )}
-
-            {!isDeleted && (
-                <div className="text-rating">
-                    {post.rateableItem?.body && (
-                        <p className={['text-post-body', bodyClassName].filter(Boolean).join(' ')}>
-                            {post.rateableItem.body}
-                        </p>
-                    )}
-                    <div className="text-rating-score">
-                        <strong className="op-rating-stars">
-                            <StarRating
-                                value={post.score}
-                                label={formatScoreValue(post.score, post.ratingScale)}
-                                max={post.ratingScale?.max}
-                                size="sm"
-                            />
-                        </strong>
-                    </div>
-                </div>
-            )}
-
-            {!isDeleted && post.reviewText && (
-                <p className={['tweet-review', postBodyClassName].filter(Boolean).join(' ')}>
-                    {post.reviewText}
-                </p>
+            ) : (
+                <>
+                    {ratingTextContent}
+                    {reviewContent}
+                </>
             )}
         </>
     );
 
     return (
-        <article className={cardClassName}>
-            <div className="tweet-avatar-column">
-                {post.author?.userId != null && typeof onAuthorClick === 'function' ? (
-                    <button
-                        type="button"
-                        className="profile-link profile-link-avatar"
-                        onClick={() => onAuthorClick(post.author.userId)}
-                        aria-label={`Open profile for ${post.author.username}`}
-                    >
+        <>
+            <article className={cardClassName}>
+                <div className="tweet-avatar-column">
+                    {post.author?.userId != null && typeof onAuthorClick === 'function' ? (
+                        <button
+                            type="button"
+                            className="profile-link profile-link-avatar"
+                            onClick={() => onAuthorClick(post.author.userId)}
+                            aria-label={`Open profile for ${post.author.username}`}
+                        >
+                            <UserAvatar
+                                username={post.author?.username}
+                                profilePicUrl={post.author?.profilePicUrl}
+                                alt=""
+                                size={avatarSize}
+                            />
+                        </button>
+                    ) : (
                         <UserAvatar
                             username={post.author?.username}
                             profilePicUrl={post.author?.profilePicUrl}
                             alt=""
                             size={avatarSize}
                         />
-                    </button>
-                ) : (
-                    <UserAvatar
-                        username={post.author?.username}
-                        profilePicUrl={post.author?.profilePicUrl}
-                        alt=""
-                        size={avatarSize}
-                    />
-                )}
-            </div>
+                    )}
+                </div>
 
-            <div className="tweet-main">
-                <header className="tweet-meta">
-                    {post.author?.userId != null && typeof onAuthorClick === 'function' ? (
+                <div className="tweet-main">
+                    <header className="tweet-meta">
+                        {post.author?.userId != null && typeof onAuthorClick === 'function' ? (
+                            <button
+                                type="button"
+                                className="profile-link profile-link-text"
+                                onClick={() => onAuthorClick(post.author.userId)}
+                            >
+                                <span className="tweet-name">{post.author?.username}</span>
+                                <span className="tweet-handle">@{post.author?.username}</span>
+                            </button>
+                        ) : (
+                            <>
+                                <span className="tweet-name">{post.author?.username}</span>
+                                <span className="tweet-handle">@{post.author?.username}</span>
+                            </>
+                        )}
+                        <span className="tweet-dot">.</span>
+                        <time className="tweet-time-desktop" dateTime={post.createdAt}>
+                            {formatPostDate(post.createdAt, {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                second: '2-digit'
+                            })}
+                        </time>
+                        <time className="tweet-time-mobile" dateTime={post.createdAt}>
+                            {formatPostDate(post.createdAt, {
+                                month: 'short',
+                                day: 'numeric'
+                            })}
+                        </time>
+                    </header>
+
+                    {typeof onPostClick === 'function' && mediaContent}
+
+                    {typeof onPostClick === 'function' ? (
                         <button
                             type="button"
-                            className="profile-link profile-link-text"
-                            onClick={() => onAuthorClick(post.author.userId)}
+                            className="post-click-target"
+                            onClick={() => onPostClick(post.ratingId)}
                         >
-                            <span className="tweet-name">{post.author?.username}</span>
-                            <span className="tweet-handle">@{post.author?.username}</span>
+                            {clickableContent}
                         </button>
                     ) : (
-                        <>
-                            <span className="tweet-name">{post.author?.username}</span>
-                            <span className="tweet-handle">@{post.author?.username}</span>
-                        </>
+                        <div className="post-click-target post-click-target-static">
+                            {mediaContent}
+                            {clickableContent}
+                        </div>
                     )}
-                    <span className="tweet-dot">.</span>
-                    <time className="tweet-time-desktop" dateTime={post.createdAt}>
-                        {formatPostDate(post.createdAt, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            second: '2-digit'
-                        })}
-                    </time>
-                    <time className="tweet-time-mobile" dateTime={post.createdAt}>
-                        {formatPostDate(post.createdAt, {
-                            month: 'short',
-                            day: 'numeric'
-                        })}
-                    </time>
-                </header>
 
-                {typeof onPostClick === 'function' ? (
+                    {footer ?? actions}
+                </div>
+            </article>
+
+            {expandedImageUrl && (
+                <div
+                    className="image-lightbox"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Expanded photo"
+                    onClick={() => setExpandedImageUrl(null)}
+                >
                     <button
                         type="button"
-                        className="post-click-target"
-                        onClick={() => onPostClick(post.ratingId)}
+                        className="image-lightbox-close"
+                        onClick={() => setExpandedImageUrl(null)}
+                        aria-label="Close photo"
                     >
-                        {postContent}
+                        x
                     </button>
-                ) : (
-                    <div className="post-click-target post-click-target-static">
-                        {postContent}
+                    <div className="image-lightbox-frame">
+                        <img
+                            src={expandedImageUrl}
+                            alt="Expanded rated item"
+                            className="image-lightbox-image"
+                            onClick={(event) => event.stopPropagation()}
+                        />
                     </div>
-                )}
-
-                {footer ?? actions}
-            </div>
-        </article>
+                </div>
+            )}
+        </>
     );
 };
 
