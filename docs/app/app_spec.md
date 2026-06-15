@@ -27,6 +27,7 @@ This document covers the main user-facing product surface outside the admin area
 - `/users/:userId`
 - `/posts/:ratingId`
 - `/posts/:ratingId/edit`
+- `/backlog`
 - `/search`
 - `/users/:userId/followers`
 - `/users/:userId/following`
@@ -74,6 +75,7 @@ Use the shared components below before creating new copies:
 - User profiles expose only public-safe profile information: avatar, username, handle, and visible posts.
 - The profile editor starts as a focused page for updating the signed-in user's profile picture, including square crop/size controls before upload.
 - The post editor lets the signed-in author update the topic text, review text, and rating score, or soft-delete the post so comment threads stay intact.
+- The backlog page renders the `To Do` section from `wiki/build-status.md` as a readable in-app project board.
 - User profiles expose the current viewer's follow relation to that profile user, plus follower/following counts.
 - Follower and following counts are clickable and open public-safe list pages.
 - User search is public-safe and supports finding people by username so users can follow them.

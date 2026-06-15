@@ -1105,6 +1105,56 @@ button:disabled {
     line-height: 1.25;
 }
 
+.backlog-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.backlog-header p {
+    margin: 6px 0 0;
+    color: #536471;
+    font-size: 0.95rem;
+}
+
+.backlog-body {
+    display: grid;
+    gap: 20px;
+    padding: 16px;
+}
+
+.backlog-section h2 {
+    margin: 0 0 10px;
+    color: #0f1419;
+    font-size: 1.05rem;
+}
+
+.backlog-section ul {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 8px;
+    color: #0f1419;
+}
+
+.backlog-section li {
+    line-height: 1.5;
+}
+
+.backlog-empty {
+    margin: 0;
+    color: #536471;
+}
+
+.backlog-section code {
+    padding: 0.08rem 0.28rem;
+    border-radius: 4px;
+    background: #eef3f8;
+    color: #0b5cad;
+    font-size: 0.95em;
+}
+
 .timeline {
     display: flex;
     flex-direction: column;

@@ -16,6 +16,7 @@ const TopBar = () => {
     const isAdmin = user?.role === 'ROLE_ADMIN';
     const isOnAdminPage = location.pathname.startsWith('/admin');
     const isOnSearchPage = location.pathname.startsWith('/search');
+    const isOnBacklogPage = location.pathname.startsWith('/backlog');
 
     useClickOutside(menuRef, () => setShowMenu(false));
 
@@ -83,6 +84,15 @@ const TopBar = () => {
                         >
                             <span className="nav-label-desktop">Find People</span>
                             <span className="nav-label-mobile">Find</span>
+                        </button>
+                        <button
+                            className={isOnBacklogPage ? 'nav-pill-button is-active' : 'nav-pill-button'}
+                            aria-current={isOnBacklogPage ? 'page' : undefined}
+                            aria-label="Open backlog"
+                            onClick={() => navigate('/backlog')}
+                        >
+                            <span className="nav-label-desktop">Backlog</span>
+                            <span className="nav-label-mobile">Backlog</span>
                         </button>
                         <div className="user-menu-container" ref={menuRef}>
                             <button

@@ -17,6 +17,7 @@ Critic is a React + Spring Boot app with phone-number login, JWT cookie auth, a 
 - User profile pages with user info and that user’s posts.
 - Profile editor page at `/profile/edit` for updating the signed-in user's profile picture.
 - Post editor page at `/posts/:ratingId/edit` for updating the author's topic text, review text, and score, plus soft-deleting the post.
+- Backlog page at `/backlog` for rendering the `To Do` section of `wiki/build-status.md` as an in-app project board.
 - Public-safe user search by username for finding people to follow.
 - Profiles show follower/following counts, and those counts open list pages.
 - Post detail pages with the post and its threaded comments.
@@ -69,6 +70,7 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 - `/profile/edit`
 - `/users/:userId`
 - `/posts/:ratingId`
+- `/backlog`
 - `/search`
 - `/users/:userId/followers`
 - `/users/:userId/following`

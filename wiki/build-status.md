@@ -18,8 +18,6 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Clean up the `users` table so `first_name` and `last_name` are no longer required, and make `username` the required profile field instead.
 - Add a basic censor that stops you from posting slurs
 - Add the ability to make your account private so only approved followers can see your posts.
-- Make the re-rate composer say `Add your take on this topic`.
-- Make the comment composer say `Add your take on this take`.
 - Update ui to add photos, it should be first and have symbols for upload vs use camera
 - Improve the star controls on mobile so they are easier to slide across and feel better to use.
 - Make the stars bigger, nicer, and flashier when rating.
@@ -48,6 +46,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Local backend startup with Java 25 in WSL.
 - Add a post editor, allowing the author to change rating, text of rating, text of topic, and delete the post with tombstoning.
 - Enable half-star ratings from `0.5` to `5`.
+- Backlog page added at `/backlog`, rendering the `To Do` section of `wiki/build-status.md` as an in-app project board.
 - Docker Desktop Kubernetes dependency flow.
 - Port-forward setup for Postgres, Redis, MinIO, mocker, and nginx.
 - Phone simulator connectivity using the extra mocker API bridge on `localhost:8090`.

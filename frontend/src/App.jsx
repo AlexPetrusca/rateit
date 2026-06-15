@@ -13,6 +13,7 @@ import AdminUsers from './pages/AdminUsers';
 import Profile from './pages/Profile';
 import ProfileEditor from './pages/ProfileEditor';
 import PostEditor from './pages/PostEditor';
+import Backlog from './pages/Backlog';
 import Post from './pages/Post';
 import SearchUsers from './pages/SearchUsers';
 import FollowList from './pages/FollowList';
@@ -109,6 +110,14 @@ function App() {
                                 element={
                                     <GuardedRoute>
                                         <SearchUsers />
+                                    </GuardedRoute>
+                                }
+                            />
+                            <Route
+                                path="/backlog"
+                                element={
+                                    <GuardedRoute>
+                                        <Backlog />
                                     </GuardedRoute>
                                 }
                             />

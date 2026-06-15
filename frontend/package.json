@@ -4,9 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/sync-backlog.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/sync-backlog.mjs",
     "build": "vite build",
     "test": "node --test",
+    "sync-backlog": "node scripts/sync-backlog.mjs",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
