@@ -15,6 +15,7 @@ import Profile from './pages/Profile';
 import ProfileEditor from './pages/ProfileEditor';
 import PostEditor from './pages/PostEditor';
 import Backlog from './pages/Backlog';
+import InstallIphone from './pages/InstallIphone';
 import Topic from './pages/Topic';
 import SuggestionSubmit from './pages/SuggestionSubmit';
 import PostRedirect from './pages/PostRedirect';
@@ -140,6 +141,7 @@ function App() {
                                     </GuardedRoute>
                                 }
                             />
+                            <Route path="/install" element={<InstallIphone />} />
                             <Route
                                 path="/users/:userId/followers"
                                 element={

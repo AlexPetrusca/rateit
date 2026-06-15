@@ -62,6 +62,15 @@ const TopBar = () => {
             <div className="top-bar-right">
                 {isFullyAuthenticated ? (
                     <>
+                        <button
+                            className={location.pathname === '/install' ? 'nav-pill-button is-active' : 'nav-pill-button'}
+                            aria-current={location.pathname === '/install' ? 'page' : undefined}
+                            aria-label="Install Critic on iPhone"
+                            onClick={() => navigate('/install')}
+                        >
+                            <span className="nav-label-desktop">Install</span>
+                            <span className="nav-label-mobile">Install</span>
+                        </button>
                         {isAdmin && (
                             <button
                                 className={isOnAdminPage ? 'admin-button is-active' : 'admin-button'}
@@ -120,9 +129,20 @@ const TopBar = () => {
                         </div>
                     </>
                 ) : (
-                    <button className="login-button" onClick={() => navigate('/login')}>
-                        Login
-                    </button>
+                    <>
+                        <button
+                            className={location.pathname === '/install' ? 'nav-pill-button is-active' : 'nav-pill-button'}
+                            aria-current={location.pathname === '/install' ? 'page' : undefined}
+                            aria-label="Install Critic on iPhone"
+                            onClick={() => navigate('/install')}
+                        >
+                            <span className="nav-label-desktop">Install</span>
+                            <span className="nav-label-mobile">Install</span>
+                        </button>
+                        <button className="login-button" onClick={() => navigate('/login')}>
+                            Login
+                        </button>
+                    </>
                 )}
             </div>
         </div>

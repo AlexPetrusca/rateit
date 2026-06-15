@@ -27,6 +27,7 @@ This document covers the main user-facing product surface outside the admin area
 - `/topics/:rateableItemId`
 - `/posts/:ratingId/edit`
 - `/backlog`
+- `/install`
 - `/backlog/suggest`
 - `/search`
 - `/users/:userId/followers`
@@ -77,6 +78,7 @@ Use the shared components below before creating new copies:
 - The profile editor starts as a focused page for updating the signed-in user's profile picture, including square crop/size controls before upload.
 - The post editor lets the signed-in author update the topic text, review text, and rating score, and it conditionally tombstones the post only when comment threads still need to stay intact.
 - The backlog page renders the `To Do` section from `wiki/build-status.md` as a readable in-app project board.
+- The install page explains how to add Critic to an iPhone home screen.
 - The backlog page includes a suggestion entry point and a suggestions table below the backlog sections.
 - The suggestion submit page lets signed-in users send new ideas into the shared suggestions list.
 - Clicking the topic text on a post opens a topic page that shows every rating on that shared topic.

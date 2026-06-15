@@ -15,7 +15,6 @@ Maintenance rule: keep this page current when features are started, completed, d
 ## To Do
 ### P1
 - change hover and click of post on desktop to not be bright blue
-- add page with directions on how to add site to homepage on iphone.
 - Pulling down on mobile doesnt always refresh the page. only if finger is in the top bar labeled "home". if the screen is being dragged and grey at the top is exposed, the screen should refresh.
 - Clean up the `users` table so `first_name` and `last_name` are no longer required, and make `username` the required profile field instead. Ensure usernames have to be unique.
 - Add a basic censor that stops you from posting slurs
@@ -30,7 +29,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 - There is a delay when loading things that seems unnecessary (alex item)
 - Add the ability to tag your own ratings.
 - Add videos.
-- Fix the re-rate logo/icon. The current cycle icon looks bad.
+- Fix the re-rate icon. The current cycle icon looks bad.
 ### P3
 - Find a way to categorize ratings.
 - Make topics show an overall average rating and a way to view all ratings tied to a topic.
@@ -85,3 +84,4 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Clicking a post now goes straight to the shared topic page, and the old `/posts/:ratingId` detail page has been removed.
 - Improve the star controls on mobile so they are easier to slide across and feel better to use.
 - The extra page header bar under the top nav on Home and Create is gone, so those pages now start directly at the content.
+- Added a public iPhone install page at `/install` with directions for adding Critic to the home screen.

@@ -921,6 +921,17 @@ button:disabled {
     line-height: 1.45;
 }
 
+.install-steps {
+    margin: 20px 0 0;
+    padding-left: 20px;
+    color: #0f1419;
+    line-height: 1.6;
+}
+
+.install-steps li + li {
+    margin-top: 12px;
+}
+
 .create-shell {
     width: min(960px, 100%);
 }
