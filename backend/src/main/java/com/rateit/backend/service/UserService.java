@@ -206,7 +206,20 @@ public class UserService {
     }
 
     public Optional<User> findByPhoneNumberIncludingDeleted(String phoneNumber) {
-        return userRepository.findByPhoneNumber(phoneNumber);
+        String normalizedPhoneNumber = normalizeLookupPhoneNumber(phoneNumber);
+        Optional<User> exactMatch = userRepository.findByPhoneNumber(normalizedPhoneNumber);
+        if (exactMatch.isPresent()) {
+            return exactMatch;
+        }
+
+        String normalizedDigits = digitsOnly(normalizedPhoneNumber);
+        if (normalizedDigits == null || normalizedDigits.isBlank()) {
+            return Optional.empty();
+        }
+
+        return userRepository.findAll().stream()
+            .filter(user -> normalizedDigits.equals(digitsOnly(user.getPhoneNumber())))
+            .findFirst();
     }
 
     public List<User> findAllTestUsers() {
@@ -320,5 +333,21 @@ public class UserService {
         }
 
         return value.trim();
+    }
+
+    private String normalizeLookupPhoneNumber(String phoneNumber) {
+        if (phoneNumber == null) {
+            return null;
+        }
+
+        return phoneNumber.trim();
+    }
+
+    private String digitsOnly(String phoneNumber) {
+        if (phoneNumber == null) {
+            return null;
+        }
+
+        return phoneNumber.replaceAll("\\D", "");
     }
 }

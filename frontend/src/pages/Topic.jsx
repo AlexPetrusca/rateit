@@ -24,6 +24,8 @@ const formatAverageRating = (value) => {
 };
 
 const AVERAGE_STAR_POINTS = '50 5 61 36 95 36 67 57 78 91 50 72 22 91 33 57 5 36 39 36';
+const AVERAGE_STAR_FILLED_COLOR = '#ff303a';
+const AVERAGE_STAR_EMPTY_COLOR = '#cfd9de';
 
 const AverageStarRating = ({ value, max = 5, label }) => {
     const score = Number(value);
@@ -48,8 +50,8 @@ const AverageStarRating = ({ value, max = 5, label }) => {
                                 <rect x="0" y="0" width={fill} height="1" />
                             </clipPath>
                         </defs>
-                        <polygon points={AVERAGE_STAR_POINTS} fill="#cfd9de" />
-                        <polygon points={AVERAGE_STAR_POINTS} fill="#1d9bf0" clipPath={`url(#${clipId})`} />
+                        <polygon points={AVERAGE_STAR_POINTS} fill={AVERAGE_STAR_EMPTY_COLOR} />
+                        <polygon points={AVERAGE_STAR_POINTS} fill={AVERAGE_STAR_FILLED_COLOR} clipPath={`url(#${clipId})`} />
                     </svg>
                 );
             })}

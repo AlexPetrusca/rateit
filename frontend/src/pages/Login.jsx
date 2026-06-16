@@ -10,6 +10,7 @@ const LOGIN_PHONE_STORAGE_KEY = 'critic.loginPhoneNumber';
 const LOGIN_COUNTRY_CODE_STORAGE_KEY = 'critic.loginCountryCode';
 const DEFAULT_COUNTRY_CODE = '+1';
 const US_LOCAL_DIGIT_COUNT = 10;
+const AUTH_RESOLUTION_RETRY_DELAYS_MS = [0, 300, 700];
 
 const COUNTRY_OPTIONS = [
     { value: '+1-us', code: '+1', country: 'United States', flag: '\uD83C\uDDFA\uD83C\uDDF8' },
@@ -294,6 +295,27 @@ const Login = () => {
         return () => document.removeEventListener('pointerdown', handlePointerDown);
     }, [isCountryMenuOpen]);
 
+    useEffect(() => {
+        if (hasVerifiedCurrentOtp && isAuthenticated && user != null) {
+            navigate('/');
+        }
+    }, [hasVerifiedCurrentOtp, isAuthenticated, user, navigate]);
+
+    const resolveAuthAfterVerification = async () => {
+        for (const delayMs of AUTH_RESOLUTION_RETRY_DELAYS_MS) {
+            if (delayMs > 0) {
+                await new Promise((resolve) => window.setTimeout(resolve, delayMs));
+            }
+
+            const resolvedUser = await checkAuthStatus();
+            if (resolvedUser) {
+                return resolvedUser;
+            }
+        }
+
+        return null;
+    };
+
     const handleSendOtp = async () => {
         const normalizedPhoneNumber = normalizePhoneNumber(countryCode, phoneNumber);
         if (!normalizedPhoneNumber) {
@@ -327,15 +349,15 @@ const Login = () => {
         setIsLoading(true);
         try {
             await BackendApiService.verifyOtp(normalizedPhoneNumber, verificationCode);
-            setHasVerifiedCurrentOtp(true);
-
-            const user = await checkAuthStatus();
+            const user = await resolveAuthAfterVerification();
 
             if (!user) {
+                setHasVerifiedCurrentOtp(true);
                 return;
             }
 
             navigate('/');
+            return;
         } catch (err) {
             const message = err.message || 'Network error. Please try again.';
             notify({ message, type: 'error' });

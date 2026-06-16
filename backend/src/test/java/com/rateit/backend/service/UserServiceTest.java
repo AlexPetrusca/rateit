@@ -177,6 +177,24 @@ class UserServiceTest {
     }
 
     @Test
+    void findByPhoneNumberFallsBackToDigitOnlyMatchWhenExactFormattingDiffers() {
+        User user = User.builder()
+            .phoneNumber("15550000001")
+            .username("alpha")
+            .role("ROLE_USER")
+            .build();
+        ReflectionTestUtils.setField(user, "id", 1L);
+
+        when(userRepository.findByPhoneNumber("+15550000001")).thenReturn(Optional.empty());
+        when(userRepository.findAll()).thenReturn(List.of(user));
+
+        User resolved = userService.findByPhoneNumber("+15550000001");
+
+        assertEquals("alpha", resolved.getUsername());
+        assertEquals("15550000001", resolved.getPhoneNumber());
+    }
+
+    @Test
     void searchUsersReturnsPublicSafeResultsWithRelationshipState() {
         User currentUser = User.builder()
             .phoneNumber("+15550000001")

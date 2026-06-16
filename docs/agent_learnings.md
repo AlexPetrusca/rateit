@@ -46,6 +46,8 @@ Do not use this file for:
 - User role state lives on the `users` row and must stay consistent with JWT/session handling.
 - The live `users` table still requires legacy `first_name` and `last_name` columns, so create/update flows must populate them even though the UI is username-first.
 - Authenticated users without a profile should be allowed to stay on the login route long enough to finish inline profile setup; do not force them back to the homepage before the username/photo form renders.
+- After OTP verification, give `/api/users/me` a short retry window before concluding that the user has no profile; the first authenticated lookup can arrive before the session is fully settled and can otherwise flash the account-setup form for an existing user.
+- Phone-number auth lookups should tolerate legacy formatting drift in stored rows; use a fallback that matches the digits-only form so existing users are not misclassified as brand new accounts.
 - If the source backend fails with Postgres `28P01` after a rename or secret change, check ignored `backend/.env` against `rateit-chart/values.secret.yaml`; stale local passwords keep Spring from staying up on `8080`.
 
 ### Twilio Verify

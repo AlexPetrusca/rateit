@@ -11,6 +11,7 @@ ENVIRONMENT="dev"
 IMAGE_TAG="latest"
 PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
 NO_CACHE=false
+BUILDX_BUILDER_NAME="${BUILDX_BUILDER_NAME:-multiarch}"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -53,17 +54,39 @@ if ! docker system info >/dev/null 2>&1; then
   exit 1
 fi
 
+# Buildx needs to write local activity metadata under ~/.docker/buildx.
+if ! mkdir -p "$HOME/.docker/buildx/activity" 2>/dev/null || ! touch "$HOME/.docker/buildx/activity/.write-test" 2>/dev/null; then
+  echo "Error: WSL's filesystem is read-only, so Docker buildx cannot write its local state." >&2
+  echo "Try 'wsl --shutdown' from Windows PowerShell, then reopen Docker Desktop and retry." >&2
+  exit 1
+fi
+rm -f "$HOME/.docker/buildx/activity/.write-test" 2>/dev/null || true
+
 # Ensure buildx builder exists and supports multi-arch
-if ! docker buildx inspect multiarch >/dev/null 2>&1; then
+if ! docker buildx inspect "$BUILDX_BUILDER_NAME" >/dev/null 2>&1; then
   docker buildx create \
-    --name multiarch \
+    --name "$BUILDX_BUILDER_NAME" \
     --driver docker-container \
     --use
 fi
 
 # Ensure builder is active and bootstrapped
-docker buildx use multiarch
-docker buildx inspect --bootstrap >/dev/null 2>&1
+docker buildx use "$BUILDX_BUILDER_NAME"
+if ! docker buildx inspect --bootstrap; then
+  fallback_builder_name="${BUILDX_BUILDER_NAME}-$(date +%Y%m%d%H%M%S)"
+  echo "Warning: builder '$BUILDX_BUILDER_NAME' could not bootstrap cleanly." >&2
+  echo "Trying a fresh builder named '$fallback_builder_name'..." >&2
+  docker buildx create \
+    --name "$fallback_builder_name" \
+    --driver docker-container \
+    --use
+  docker buildx inspect --bootstrap >/dev/null 2>&1 || {
+    echo "Error: unable to bootstrap a fresh Docker buildx builder." >&2
+    echo "Check that Docker Desktop is running and this WSL distro has access to the Docker daemon." >&2
+    exit 1
+  }
+  BUILDX_BUILDER_NAME="$fallback_builder_name"
+fi
 
 # Function to build and push
 build_and_push() {
