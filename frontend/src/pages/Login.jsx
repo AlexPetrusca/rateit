@@ -49,19 +49,39 @@ const CRITIC_TEXT_ROWS = [
     ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
     ['RYONESA', 'CRITIC', 'EVERYONESACRITICEVERYONESACRITICEVERYONESA'],
     ['CRITICEVERYONESACRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
-    ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERY'],
-    ['CRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
+    ['ACRITICEVERYONESACRITICEVERYONESACRITICEVERYONES'],
+    ['VERYONESACRITICEVERYONESACRITICEVERYONESACRITICE'],
     ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERY'],
     ['EVERYONESACRITICEVERYONESACRITICEVERYONESACRITIC'],
-    ['CRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
+    ['TICEVERYONESACRITICEVERYONESACRITICEVERYONESACRI'],
     ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERY'],
     ['CRITICEVERYONESACRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
     ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERY'],
-    ['EVERYONESACRITICEVERYONESACRITICEVERYONESACRITIC'],
-    ['CRITICEVERYONESACRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
-    ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERY'],
+    ['RYONESACRITICEVERYONESACRITICEVERYONESACRITICEVE'],
+    ['TICEVERYONESACRITICEVERYONESACRITICEVERYONESACRITICEVERYONESACRI'],
+    ['ACRITICEVERYONESACRITICEVERYONESACRITICEVERY'],
 
 ];
+
+const isCyclingWordmarkRow = (index) => (
+    index >= 0 && index <= CRITIC_TEXT_ROWS.length - 1
+);
+
+const CYCLING_WORDMARK_ROW_INDICES = CRITIC_TEXT_ROWS
+    .map((_, index) => index)
+    .filter(isCyclingWordmarkRow);
+
+const WORDMARK_ROW_CYCLE_DURATIONS = [3200, 3600, 4000, 4400, 4800];
+
+const getWordmarkRowCycleDuration = (index) => (
+    WORDMARK_ROW_CYCLE_DURATIONS[index % WORDMARK_ROW_CYCLE_DURATIONS.length]
+);
+
+const chooseCyclingWordmarkRows = () => {
+    const shuffledRows = [...CYCLING_WORDMARK_ROW_INDICES].sort(() => Math.random() - 0.5);
+    const rowCount = Math.floor(Math.random() * 2) + 3;
+    return shuffledRows.slice(0, rowCount);
+};
 
 const sanitizeDigits = (value) => value.replace(/\D/g, '').slice(0, US_LOCAL_DIGIT_COUNT);
 
@@ -142,6 +162,8 @@ const Login = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isCountryMenuOpen, setIsCountryMenuOpen] = useState(false);
     const [countrySearch, setCountrySearch] = useState('');
+    const [cyclingRows, setCyclingRows] = useState([]);
+    const [cyclingRunId, setCyclingRunId] = useState(0);
     const phoneInputRef = useRef(null);
     const countryMenuRef = useRef(null);
     const caretRef = useRef(null);
@@ -174,6 +196,16 @@ const Login = () => {
             document.documentElement.classList.remove('login-scroll-lock');
             document.body.classList.remove('login-scroll-lock');
         };
+    }, []);
+
+    useEffect(() => {
+        const runWordmarkCycle = () => {
+            setCyclingRows(chooseCyclingWordmarkRows());
+            setCyclingRunId((currentRunId) => currentRunId + 1);
+        };
+
+        const intervalId = window.setInterval(runWordmarkCycle, 6000);
+        return () => window.clearInterval(intervalId);
     }, []);
 
     const persistPhoneState = (nextCountryCode, nextPhoneNumber) => {
@@ -374,15 +406,36 @@ const Login = () => {
             <div className="login-entry" aria-label="Log in to Critic">
                 <div className="login-wordmark" aria-hidden="true">
                     {CRITIC_TEXT_ROWS.map((row, index) => (
-                        <div className="login-wordmark-row" key={`${row.join('-')}-${index}`}>
-                            {row.map((segment, segmentIndex) => (
-                                <span
-                                    key={`${segment}-${segmentIndex}`}
-                                    className={segmentIndex === 1 ? 'login-wordmark-accent' : undefined}
-                                >
-                                    {segment}
-                                </span>
-                            ))}
+                        <div
+                            className={`login-wordmark-row${isCyclingWordmarkRow(index) ? ' is-cycling' : ''}${cyclingRows.includes(index) ? ' is-cycling-active' : ''}`}
+                            key={`${row.join('-')}-${index}`}
+                            style={{ '--login-row-cycle-duration': `${getWordmarkRowCycleDuration(index)}ms` }}
+                        >
+                            {isCyclingWordmarkRow(index) ? (
+                                <div className="login-wordmark-row-track" key={`${index}-${cyclingRunId}`}>
+                                    {[0, 1].map((copyIndex) => (
+                                        <span className="login-wordmark-row-copy" key={copyIndex}>
+                                            {row.map((segment, segmentIndex) => (
+                                                <span
+                                                    key={`${segment}-${segmentIndex}-${copyIndex}`}
+                                                    className={segmentIndex === 1 ? 'login-wordmark-accent' : undefined}
+                                                >
+                                                    {segment}
+                                                </span>
+                                            ))}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                row.map((segment, segmentIndex) => (
+                                    <span
+                                        key={`${segment}-${segmentIndex}`}
+                                        className={segmentIndex === 1 ? 'login-wordmark-accent' : undefined}
+                                    >
+                                        {segment}
+                                    </span>
+                                ))
+                            )}
                         </div>
                     ))}
                 </div>

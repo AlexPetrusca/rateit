@@ -2382,6 +2382,36 @@ button:disabled {
   white-space: nowrap;
 }
 
+.login-wordmark-row.is-cycling {
+  overflow: visible;
+}
+
+.login-wordmark-row-track {
+  display: inline-flex;
+  width: max-content;
+  will-change: transform;
+  transform: translateX(-50%);
+}
+
+.login-wordmark-row-copy {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.login-wordmark-row.is-cycling-active .login-wordmark-row-track {
+  animation: login-wordmark-row-cycle var(--login-row-cycle-duration, 2300ms) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes login-wordmark-row-cycle {
+  from {
+    transform: translateX(-50%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
 .login-wordmark-accent {
   color: #ff303a;
 }
@@ -2434,7 +2464,8 @@ button:disabled {
 
 @media (prefers-reduced-motion: reduce) {
   .login-phone-panel,
-  .login-change-phone-button {
+  .login-change-phone-button,
+  .login-wordmark-row-track {
     animation: none;
   }
 }
