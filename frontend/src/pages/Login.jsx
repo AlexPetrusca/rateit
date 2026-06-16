@@ -199,6 +199,31 @@ const Login = () => {
         caretRef.current = caretIndexForDigitCount(formatPhoneNumber(parsed.phoneNumber), digitsBeforeCaret);
     };
 
+    const handlePhoneSelectionDelete = (event) => {
+        const input = event.currentTarget;
+        const selectionStart = input.selectionStart ?? 0;
+        const selectionEnd = input.selectionEnd ?? selectionStart;
+
+        if (selectionStart === selectionEnd) {
+            return false;
+        }
+
+        const firstSelectedDigit = digitCountBeforeCaret(input.value, selectionStart);
+        const lastSelectedDigit = digitCountBeforeCaret(input.value, selectionEnd);
+
+        if (firstSelectedDigit === lastSelectedDigit) {
+            return false;
+        }
+
+        event.preventDefault();
+        const nextPhoneNumber = `${phoneNumber.slice(0, firstSelectedDigit)}${phoneNumber.slice(lastSelectedDigit)}`;
+        hasEditedPhoneRef.current = true;
+        setPhoneNumber(nextPhoneNumber);
+        persistPhoneState(countryCode, nextPhoneNumber);
+        caretRef.current = caretIndexForDigitCount(formatPhoneNumber(nextPhoneNumber), firstSelectedDigit);
+        return true;
+    };
+
     useLayoutEffect(() => {
         if (phoneInputRef.current && caretRef.current !== null) {
             phoneInputRef.current.setSelectionRange(caretRef.current, caretRef.current);
@@ -273,6 +298,11 @@ const Login = () => {
         if (event.key === 'Enter') {
             event.preventDefault();
             handleSendOtp();
+            return;
+        }
+
+        if (event.key === 'Backspace' || event.key === 'Delete') {
+            handlePhoneSelectionDelete(event);
         }
     };
 

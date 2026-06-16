@@ -2370,11 +2370,30 @@ button:disabled {
   top: 28%;
   transform: translate(-50%, -50%);
   width: min(246px, calc(100vw - 32px));
+  animation: login-phone-panel-enter 800ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
 }
 
 .login-country-menu-root {
   position: relative;
   width: 100%;
+}
+
+@keyframes login-phone-panel-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 18px));
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-phone-panel {
+    animation: none;
+  }
 }
 
 .login-phone-field {
@@ -2450,6 +2469,8 @@ button:disabled {
   font-variant-numeric: tabular-nums;
   caret-color: #2563eb;
   outline: 0;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .login-phone-input:focus {
@@ -2459,6 +2480,10 @@ button:disabled {
 .login-phone-input::placeholder {
   color: #9aa4b2;
   opacity: 1;
+}
+
+.login-phone-input::selection {
+  background: rgba(37, 99, 235, 0.22);
 }
 
 .login-country-menu {
