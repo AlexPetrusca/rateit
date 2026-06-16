@@ -2417,36 +2417,42 @@ button:disabled {
 }
 
 .page-content-login {
-  position: fixed;
-  inset: 0;
-  min-height: 100vh;
-  min-height: 100svh;
-  overflow: hidden;
-  overscroll-behavior: none;
+    position: fixed;
+    inset: 0;
+    min-height: 100vh;
+    min-height: 100svh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
 }
 
 .login-fullscreen {
-  min-height: 100vh;
-  min-height: 100svh;
-  height: 100vh;
-  height: 100svh;
-  width: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
-  background: #ffffff;
-  color: #000000;
+    position: fixed;
+    inset: 0;
+    min-height: 100vh;
+    min-height: 100svh;
+    height: 100vh;
+    height: 100svh;
+    width: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+    background: #ffffff;
+    color: #000000;
 }
 
 .login-entry {
-  position: relative;
-  min-height: 100vh;
-  min-height: 100svh;
-  height: 100vh;
-  height: 100svh;
-  width: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
-  background: #ffffff;
+    position: relative;
+    inset: 0;
+    min-height: 100vh;
+    min-height: 100svh;
+    height: 100vh;
+    height: 100svh;
+    width: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+    background: #ffffff;
 }
 
 .login-wordmark {
@@ -2654,6 +2660,30 @@ button:disabled {
 
 .login-phone-input::selection {
   background: rgba(37, 99, 235, 0.22);
+}
+
+.login-phone-enter-row {
+  display: none;
+}
+
+.login-phone-enter-button {
+  width: 100%;
+  margin: 5px 0 0;
+  padding: 5px 20px;
+  border: 1px solid #111827;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 24px rgba(20, 29, 46, 0.08);
+  color: #111827;
+  font-family: Arial, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.login-phone-enter-button:hover,
+.login-phone-enter-button:focus {
+  background: #f3f6fb;
+  color: #111827;
 }
 
 .login-verification-field {
@@ -2951,5 +2981,10 @@ button:disabled {
   .login-phone-field {
     min-height: 50px;
     padding: 0 10px;
+  }
+
+  .login-phone-enter-row {
+    display: flex;
+    width: 100%;
   }
 }

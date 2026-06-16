@@ -453,33 +453,44 @@ const Login = () => {
                         ref={countryMenuRef}
                     >
                         {step === 'phone' ? (
-                            <div className="login-phone-field">
-                                <button
-                                    type="button"
-                                    className="login-country-button"
-                                    onClick={() => setIsCountryMenuOpen((current) => !current)}
-                                    aria-label={`Country code, ${selectedCountry.country} ${getCountryDisplayCode(selectedCountry)}`}
-                                    aria-expanded={isCountryMenuOpen}
-                                >
-                                    <span className="login-phone-flag" aria-hidden="true">{selectedCountry.flag}</span>
-                                </button>
-                                <span className="login-phone-prefix">{getCountryDisplayCode(selectedCountry)}</span>
-                                <input
-                                    id="phoneNumber"
-                                    ref={phoneInputRef}
-                                    className="login-phone-input"
-                                    type="tel"
-                                    name="phoneNumber"
-                                    autoComplete="tel"
-                                    inputMode="numeric"
-                                    value={formatPhoneNumber(phoneNumber)}
-                                    onChange={handlePhoneNumberChange}
-                                    onKeyDown={handlePhoneKeyDown}
-                                    placeholder="(___) ___-____"
-                                    aria-label="Phone number"
-                                    autoFocus
-                                />
-                            </div>
+                            <>
+                                <div className="login-phone-field">
+                                    <button
+                                        type="button"
+                                        className="login-country-button"
+                                        onClick={() => setIsCountryMenuOpen((current) => !current)}
+                                        aria-label={`Country code, ${selectedCountry.country} ${getCountryDisplayCode(selectedCountry)}`}
+                                        aria-expanded={isCountryMenuOpen}
+                                    >
+                                        <span className="login-phone-flag" aria-hidden="true">{selectedCountry.flag}</span>
+                                    </button>
+                                    <span className="login-phone-prefix">{getCountryDisplayCode(selectedCountry)}</span>
+                                    <input
+                                        id="phoneNumber"
+                                        ref={phoneInputRef}
+                                        className="login-phone-input"
+                                        type="tel"
+                                        name="phoneNumber"
+                                        autoComplete="tel"
+                                        inputMode="numeric"
+                                        value={formatPhoneNumber(phoneNumber)}
+                                        onChange={handlePhoneNumberChange}
+                                        onKeyDown={handlePhoneKeyDown}
+                                        placeholder="(___) ___-____"
+                                        aria-label="Phone number"
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className="login-phone-enter-row">
+                                    <button
+                                        type="button"
+                                        className="login-phone-enter-button"
+                                        onClick={handleSendOtp}
+                                    >
+                                        Enter
+                                    </button>
+                                </div>
+                            </>
                         ) : needsAccountSetup ? (
                             <div className="login-account-setup-shell">
                                 <AccountSetupForm className="login-account-setup" />
