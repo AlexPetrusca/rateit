@@ -178,7 +178,9 @@ function App() {
                             </Route>
 
                             <Route path="/" element={
-                                <Home />
+                                <GuardedRoute>
+                                    <Home />
+                                </GuardedRoute>
                             } />
                         </Routes>
                     </Layout>

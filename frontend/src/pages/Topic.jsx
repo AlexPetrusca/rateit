@@ -902,12 +902,7 @@ const Topic = () => {
                     </>
                 </main>
             ) : (
-                <main className="guest-shell">
-                    <div className="guest-card">
-                        <h2>Welcome to Critic!</h2>
-                        <p>Please login to continue.</p>
-                    </div>
-                </main>
+                <main className="guest-shell" />
             )}
         </div>
     );

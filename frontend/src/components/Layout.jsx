@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import TopBar from './TopBar';
 
 const PULL_THRESHOLD = 72;
@@ -6,6 +7,7 @@ const MAX_PULL_DISTANCE = 140;
 const EDGE_THRESHOLD = 8;
 
 const Layout = ({ children }) => {
+    const location = useLocation();
     const [pullDistance, setPullDistance] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const gestureRef = useRef({
@@ -15,6 +17,10 @@ const Layout = ({ children }) => {
     });
 
     useEffect(() => {
+        if (location.pathname === '/login') {
+            return undefined;
+        }
+
         const resetGesture = () => {
             gestureRef.current = {
                 active: false,
@@ -94,7 +100,7 @@ const Layout = ({ children }) => {
             window.removeEventListener('touchend', handleTouchEnd);
             window.removeEventListener('touchcancel', handleTouchEnd);
         };
-    }, [isRefreshing]);
+    }, [isRefreshing, location.pathname]);
 
     const refreshProgress = Math.min(1, pullDistance / PULL_THRESHOLD);
     const refreshMessage = isRefreshing
@@ -102,19 +108,24 @@ const Layout = ({ children }) => {
         : pullDistance >= PULL_THRESHOLD
             ? 'Release to refresh'
             : 'Pull down to refresh';
+    const isLoginPage = location.pathname === '/login';
 
     return (
         <>
-            <div
-                className={`refresh-banner ${pullDistance > 0 || isRefreshing ? 'is-visible' : ''}`}
-                style={{ '--refresh-progress': refreshProgress }}
-                aria-hidden="true"
-            >
-                <span className="refresh-banner-icon" />
-                <span className="refresh-banner-text">{refreshMessage}</span>
-            </div>
-            <TopBar />
-            <main className="page-content">
+            {!isLoginPage && (
+                <>
+                    <div
+                        className={`refresh-banner ${pullDistance > 0 || isRefreshing ? 'is-visible' : ''}`}
+                        style={{ '--refresh-progress': refreshProgress }}
+                        aria-hidden="true"
+                    >
+                        <span className="refresh-banner-icon" />
+                        <span className="refresh-banner-text">{refreshMessage}</span>
+                    </div>
+                    <TopBar />
+                </>
+            )}
+            <main className={isLoginPage ? 'page-content page-content-login' : 'page-content'}>
                 {children}
             </main>
         </>
