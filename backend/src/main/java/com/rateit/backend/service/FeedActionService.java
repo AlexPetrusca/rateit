@@ -4,6 +4,7 @@ import com.rateit.backend.entity.MediaAsset;
 import com.rateit.backend.entity.RateableItem;
 import com.rateit.backend.entity.Rating;
 import com.rateit.backend.entity.RatingComment;
+import com.rateit.backend.entity.RatingCommentLike;
 import com.rateit.backend.entity.RatingLike;
 import com.rateit.backend.entity.RatingScale;
 import com.rateit.backend.entity.User;
@@ -12,6 +13,7 @@ import com.rateit.backend.entity.dto.RatingCommentDto;
 import com.rateit.backend.entity.rest.CreateRatingRequest;
 import com.rateit.backend.entity.rest.CreateRatingCommentRequest;
 import com.rateit.backend.entity.rest.CreateRerateRequest;
+import com.rateit.backend.entity.rest.UpdateRatingCommentRequest;
 import com.rateit.backend.entity.rest.UpdateRatingRequest;
 import com.rateit.backend.entity.types.RateableItemType;
 import com.rateit.backend.entity.types.Resource;
@@ -24,6 +26,7 @@ import com.rateit.backend.repository.MediaAssetRepository;
 import com.rateit.backend.repository.ExternalReviewRepository;
 import com.rateit.backend.repository.FeedEventRepository;
 import com.rateit.backend.repository.RatingCommentRepository;
+import com.rateit.backend.repository.RatingCommentLikeRepository;
 import com.rateit.backend.repository.RatingLikeRepository;
 import com.rateit.backend.repository.RatingScaleRepository;
 import com.rateit.backend.repository.RatingRepository;
@@ -44,6 +47,7 @@ public class FeedActionService {
     private final RatingRepository ratingRepository;
     private final RatingLikeRepository ratingLikeRepository;
     private final RatingCommentRepository ratingCommentRepository;
+    private final RatingCommentLikeRepository ratingCommentLikeRepository;
     private final RatingScaleRepository ratingScaleRepository;
     private final RateableItemRepository rateableItemRepository;
     private final MediaAssetRepository mediaAssetRepository;
@@ -190,14 +194,18 @@ public class FeedActionService {
             .score(request.score())
             .build();
 
-        return RatingCommentDto.fromComment(ratingCommentRepository.save(comment));
+        RatingComment savedComment = ratingCommentRepository.save(comment);
+        return toDto(savedComment, currentUser);
     }
 
     @Transactional(readOnly = true)
-    public List<RatingCommentDto> listComments(Long ratingId) {
+    public List<RatingCommentDto> listComments(Long ratingId, String currentUserPhoneNumber) {
         Rating rating = findRating(ratingId);
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
         List<RatingComment> comments = ratingCommentRepository.findThreadByRatingOrderByCreatedAtAsc(rating);
         Map<Long, List<RatingComment>> repliesByParentId = new LinkedHashMap<>();
+        Map<Long, Long> likeCountsByCommentId = loadCommentLikeCounts(comments);
+        Map<Long, Boolean> likedCommentIds = loadLikedCommentIds(currentUser, comments);
         List<RatingComment> rootComments = new ArrayList<>();
 
         for (RatingComment comment : comments) {
@@ -211,8 +219,56 @@ public class FeedActionService {
         }
 
         return rootComments.stream()
-            .map(comment -> toThreadDto(comment, repliesByParentId))
+            .map(comment -> toThreadDto(comment, repliesByParentId, likeCountsByCommentId, likedCommentIds, currentUser))
             .toList();
+    }
+
+    @Transactional
+    public RatingCommentDto likeComment(Long commentId, String currentUserPhoneNumber) {
+        RatingComment comment = findComment(commentId);
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+
+        if (ratingCommentLikeRepository.existsByCommentAndUser(comment, currentUser)) {
+            return toDto(comment, currentUser);
+        }
+
+        ratingCommentLikeRepository.save(RatingCommentLike.builder()
+            .comment(comment)
+            .user(currentUser)
+            .build());
+
+        return toDto(comment, currentUser);
+    }
+
+    @Transactional
+    public RatingCommentDto unlikeComment(Long commentId, String currentUserPhoneNumber) {
+        RatingComment comment = findComment(commentId);
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+
+        ratingCommentLikeRepository.findByCommentAndUser(comment, currentUser)
+            .ifPresent(ratingCommentLikeRepository::delete);
+
+        return toDto(comment, currentUser);
+    }
+
+    @Transactional
+    public RatingCommentDto updateComment(Long commentId, UpdateRatingCommentRequest request, String currentUserPhoneNumber) {
+        RatingComment comment = findComment(commentId);
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+
+        if (!comment.getAuthorUser().getId().equals(currentUser.getId())) {
+            throw AuthorizationException.forbidden("You can only edit your own comments");
+        }
+
+        if (comment.getRating().getDeletedAt() != null) {
+            throw BadRequestException.invalidRequest("Comments on deleted posts cannot be edited");
+        }
+
+        validateScore(request.score(), comment.getRating());
+        comment.setText(request.text().trim());
+        comment.setScore(request.score());
+
+        return toDto(ratingCommentRepository.save(comment), currentUser);
     }
 
     @Transactional
@@ -259,6 +315,11 @@ public class FeedActionService {
     private Rating findRating(Long ratingId) {
         return ratingRepository.findById(ratingId)
             .orElseThrow(() -> ResourceNotFoundException.resource(Resource.RATING, ratingId));
+    }
+
+    private RatingComment findComment(Long commentId) {
+        return ratingCommentRepository.findById(commentId)
+            .orElseThrow(() -> ResourceNotFoundException.resource(Resource.RATING_COMMENT, commentId));
     }
 
     private Rating findEditableRating(Long ratingId, User currentUser) {
@@ -308,13 +369,54 @@ public class FeedActionService {
 
     private RatingCommentDto toThreadDto(
         RatingComment comment,
-        Map<Long, List<RatingComment>> repliesByParentId
+        Map<Long, List<RatingComment>> repliesByParentId,
+        Map<Long, Long> likeCountsByCommentId,
+        Map<Long, Boolean> likedCommentIds,
+        User currentUser
     ) {
         List<RatingCommentDto> replies = repliesByParentId.getOrDefault(comment.getId(), List.of())
             .stream()
-            .map(reply -> toThreadDto(reply, repliesByParentId))
+            .map(reply -> toThreadDto(reply, repliesByParentId, likeCountsByCommentId, likedCommentIds, currentUser))
             .toList();
 
-        return RatingCommentDto.fromComment(comment, replies);
+        return RatingCommentDto.fromComment(
+            comment,
+            likeCountsByCommentId.getOrDefault(comment.getId(), 0L),
+            likedCommentIds.getOrDefault(comment.getId(), false),
+            replies
+        );
+    }
+
+    private RatingCommentDto toDto(RatingComment comment, User currentUser) {
+        long likeCount = ratingCommentLikeRepository.countByComment(comment);
+        boolean likedByCurrentUser = ratingCommentLikeRepository.existsByCommentAndUser(comment, currentUser);
+        return RatingCommentDto.fromComment(comment, likeCount, likedByCurrentUser, List.of());
+    }
+
+    private Map<Long, Long> loadCommentLikeCounts(List<RatingComment> comments) {
+        List<Long> commentIds = comments.stream().map(RatingComment::getId).toList();
+        Map<Long, Long> likeCounts = new LinkedHashMap<>();
+
+        if (commentIds.isEmpty()) {
+            return likeCounts;
+        }
+
+        ratingCommentLikeRepository.countLikesByCommentIds(commentIds).forEach(row ->
+            likeCounts.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue())
+        );
+        return likeCounts;
+    }
+
+    private Map<Long, Boolean> loadLikedCommentIds(User currentUser, List<RatingComment> comments) {
+        List<Long> commentIds = comments.stream().map(RatingComment::getId).toList();
+        Map<Long, Boolean> likedCommentIds = new LinkedHashMap<>();
+
+        if (commentIds.isEmpty()) {
+            return likedCommentIds;
+        }
+
+        ratingCommentLikeRepository.findLikedCommentIdsByUserAndCommentIds(currentUser, commentIds)
+            .forEach(commentId -> likedCommentIds.put(commentId, true));
+        return likedCommentIds;
     }
 }

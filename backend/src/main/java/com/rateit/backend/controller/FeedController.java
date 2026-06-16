@@ -5,6 +5,7 @@ import com.rateit.backend.entity.dto.RatingCommentDto;
 import com.rateit.backend.entity.rest.CreateRatingRequest;
 import com.rateit.backend.entity.rest.CreateRatingCommentRequest;
 import com.rateit.backend.entity.rest.CreateRerateRequest;
+import com.rateit.backend.entity.rest.UpdateRatingCommentRequest;
 import com.rateit.backend.entity.rest.UpdateRatingRequest;
 import com.rateit.backend.service.FeedActionService;
 import com.rateit.backend.service.FeedService;
@@ -107,8 +108,27 @@ public class FeedController {
     }
 
     @GetMapping("/ratings/{ratingId}/comments")
-    public ResponseEntity<List<RatingCommentDto>> listComments(@PathVariable Long ratingId) {
-        return ResponseEntity.ok(feedActionService.listComments(ratingId));
+    public ResponseEntity<List<RatingCommentDto>> listComments(@PathVariable Long ratingId, JwtAuthenticationToken token) {
+        return ResponseEntity.ok(feedActionService.listComments(ratingId, token.getToken().getSubject()));
+    }
+
+    @PostMapping("/comments/{commentId}/like")
+    public ResponseEntity<RatingCommentDto> likeComment(@PathVariable Long commentId, JwtAuthenticationToken token) {
+        return ResponseEntity.ok(feedActionService.likeComment(commentId, token.getToken().getSubject()));
+    }
+
+    @DeleteMapping("/comments/{commentId}/like")
+    public ResponseEntity<RatingCommentDto> unlikeComment(@PathVariable Long commentId, JwtAuthenticationToken token) {
+        return ResponseEntity.ok(feedActionService.unlikeComment(commentId, token.getToken().getSubject()));
+    }
+
+    @PutMapping("/comments/{commentId}")
+    public ResponseEntity<RatingCommentDto> updateComment(
+        @PathVariable Long commentId,
+        @RequestBody @Valid UpdateRatingCommentRequest request,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.ok(feedActionService.updateComment(commentId, request, token.getToken().getSubject()));
     }
 
     @PostMapping("/ratings/{ratingId}/rerate")

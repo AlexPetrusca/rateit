@@ -33,7 +33,10 @@ const PostActions = ({
     onLike,
     onRerate,
     onComment,
-    onEdit
+    onEdit,
+    commentLabel = 'Comment',
+    commentAriaLabel,
+    showCommentCount = true
 }) => (
     <div className="tweet-actions" aria-label="Rating actions">
         {onLike && (
@@ -70,14 +73,14 @@ const PostActions = ({
                 type="button"
                 className="tweet-action"
                 onClick={onComment}
-                aria-label={`Comment on post. ${commentCount || 0} comments`}
-                title="Comment"
+                aria-label={commentAriaLabel || `${commentLabel} on post. ${commentCount || 0} comments`}
+                title={commentLabel}
             >
                 <span className="action-icon">
                     <CommentIcon />
                 </span>
-                <span className="sr-only">Comment</span>
-                <span className="tweet-action-count">{commentCount || 0}</span>
+                <span className="sr-only">{commentLabel}</span>
+                {showCommentCount && <span className="tweet-action-count">{commentCount || 0}</span>}
             </button>
         )}
         {onEdit && (

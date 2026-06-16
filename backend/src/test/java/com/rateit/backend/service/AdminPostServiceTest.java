@@ -140,6 +140,7 @@ class AdminPostServiceTest {
         Rating rating = rating(4L, author, item, scale, new BigDecimal("4.5"), "Review", Visibility.PUBLIC);
 
         when(ratingRepository.findById(4L)).thenReturn(Optional.of(rating));
+        when(ratingCommentRepository.countByRating(rating)).thenReturn(1L);
         when(ratingRepository.save(any(Rating.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         adminPostService.deleteAdminPost(4L);
@@ -165,6 +166,8 @@ class AdminPostServiceTest {
 
         when(ratingRepository.findById(10L)).thenReturn(Optional.of(firstRating));
         when(ratingRepository.findById(11L)).thenReturn(Optional.of(secondRating));
+        when(ratingCommentRepository.countByRating(firstRating)).thenReturn(1L);
+        when(ratingCommentRepository.countByRating(secondRating)).thenReturn(1L);
         when(ratingRepository.save(any(Rating.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         var result = adminPostService.deleteAdminPosts(List.of(10L, 11L));

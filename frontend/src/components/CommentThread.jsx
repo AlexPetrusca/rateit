@@ -1,5 +1,6 @@
 import StarRating from './StarRating.jsx';
 import UserAvatar from './UserAvatar.jsx';
+import PostActions from './PostActions.jsx';
 
 const FIVE_STAR_SCALE = { max: 5, symbol: 'star' };
 
@@ -26,9 +27,15 @@ const CommentThread = ({
     comments = [],
     onAuthorClick,
     onReplyClick,
+    onLikeClick,
+    onEditClick,
     activeReplyKey,
+    activeEditKey,
     getReplyKey,
+    getEditKey,
     renderReplyComposer,
+    renderEditComposer,
+    currentUserId,
     avatarSize = 'sm',
     indentStep = 18,
     authorFallback = 'Someone',
@@ -38,7 +45,10 @@ const CommentThread = ({
         return threadComments.map((comment) => {
             const replies = comment.replies || [];
             const replyKey = typeof getReplyKey === 'function' ? getReplyKey(comment, depth) : comment.id;
+            const editKey = typeof getEditKey === 'function' ? getEditKey(comment, depth) : `edit:${comment.id}`;
             const canReply = typeof onReplyClick === 'function';
+            const canLike = typeof onLikeClick === 'function';
+            const canEdit = typeof onEditClick === 'function' && comment.author?.userId != null && currentUserId != null && comment.author.userId === currentUserId;
             const authorName = comment.author?.username || authorFallback;
 
             return (
@@ -93,19 +103,24 @@ const CommentThread = ({
                                 )}
                             </div>
                             <div className="comment-text">{comment.text}</div>
-                            {canReply && (
-                                <button
-                                    type="button"
-                                    className="comment-reply-button"
-                                    onClick={() => onReplyClick(comment)}
-                                >
-                                    {replyButtonLabel}
-                                </button>
-                            )}
+                            <PostActions
+                                liked={Boolean(comment.likedByCurrentUser)}
+                                likeCount={comment.likeCount || 0}
+                                commentCount={0}
+                                onLike={canLike ? () => onLikeClick(comment) : undefined}
+                                onComment={canReply ? () => onReplyClick(comment) : undefined}
+                                onEdit={canEdit ? () => onEditClick(comment) : undefined}
+                                commentLabel={replyButtonLabel}
+                                commentAriaLabel={`${replyButtonLabel} on comment. ${comment.likeCount || 0} likes`}
+                                showCommentCount={false}
+                            />
                         </div>
                     </div>
                     {activeReplyKey === replyKey && typeof renderReplyComposer === 'function' && (
                         renderReplyComposer(comment, depth)
+                    )}
+                    {activeEditKey === editKey && typeof renderEditComposer === 'function' && (
+                        renderEditComposer(comment, depth)
                     )}
                     {replies.length > 0 && (
                         <div className="comment-replies">

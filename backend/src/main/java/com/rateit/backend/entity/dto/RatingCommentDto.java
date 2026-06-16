@@ -14,14 +14,21 @@ public record RatingCommentDto(
     String text,
     BigDecimal score,
     Instant createdAt,
+    long likeCount,
+    boolean likedByCurrentUser,
     Author author,
     List<RatingCommentDto> replies
 ) {
     public static RatingCommentDto fromComment(RatingComment comment) {
-        return fromComment(comment, List.of());
+        return fromComment(comment, 0, false, List.of());
     }
 
-    public static RatingCommentDto fromComment(RatingComment comment, List<RatingCommentDto> replies) {
+    public static RatingCommentDto fromComment(
+        RatingComment comment,
+        long likeCount,
+        boolean likedByCurrentUser,
+        List<RatingCommentDto> replies
+    ) {
         User author = comment.getAuthorUser();
         boolean authorDeleted = author.getDeletedAt() != null;
 
@@ -32,6 +39,8 @@ public record RatingCommentDto(
             comment.getText(),
             comment.getScore(),
             comment.getCreatedAt(),
+            likeCount,
+            likedByCurrentUser,
             new Author(
                 authorDeleted ? null : author.getId(),
                 authorDeleted ? "[deleted]" : author.getUsername(),

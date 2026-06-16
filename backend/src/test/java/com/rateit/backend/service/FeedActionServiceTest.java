@@ -18,6 +18,7 @@ import com.rateit.backend.repository.ExternalReviewRepository;
 import com.rateit.backend.repository.FeedEventRepository;
 import com.rateit.backend.repository.RateableItemRepository;
 import com.rateit.backend.repository.RatingCommentRepository;
+import com.rateit.backend.repository.RatingCommentLikeRepository;
 import com.rateit.backend.repository.RatingLikeRepository;
 import com.rateit.backend.repository.RatingRepository;
 import com.rateit.backend.repository.RatingScaleRepository;
@@ -52,6 +53,9 @@ class FeedActionServiceTest {
     private RatingCommentRepository ratingCommentRepository;
 
     @Mock
+    private RatingCommentLikeRepository ratingCommentLikeRepository;
+
+    @Mock
     private RatingScaleRepository ratingScaleRepository;
 
     @Mock
@@ -77,6 +81,7 @@ class FeedActionServiceTest {
             ratingRepository,
             ratingLikeRepository,
             ratingCommentRepository,
+            ratingCommentLikeRepository,
             ratingScaleRepository,
             rateableItemRepository,
             mediaAssetRepository,
@@ -319,6 +324,7 @@ class FeedActionServiceTest {
 
         when(userService.findByPhoneNumber(author.getPhoneNumber())).thenReturn(author);
         when(ratingRepository.findById(rating.getId())).thenReturn(Optional.of(rating));
+        when(ratingCommentRepository.countByRating(rating)).thenReturn(1L);
 
         feedActionService.deleteRating(rating.getId(), author.getPhoneNumber());
 

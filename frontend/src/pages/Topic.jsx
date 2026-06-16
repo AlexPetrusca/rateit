@@ -91,6 +91,7 @@ const Topic = () => {
     const [hasMoreFeed, setHasMoreFeed] = useState(true);
     const [activeComposer, setActiveComposer] = useState(null);
     const [commentComposerTargetRatingId, setCommentComposerTargetRatingId] = useState(null);
+    const [activeCommentEditKey, setActiveCommentEditKey] = useState(null);
     const [topicComposerDraft, setTopicComposerDraft] = useState({ score: '', reviewText: '' });
     const [hoveredTopicScore, setHoveredTopicScore] = useState(null);
     const [commentsByRating, setCommentsByRating] = useState({});
@@ -141,6 +142,7 @@ const Topic = () => {
         setHasMoreFeed(true);
         setActiveComposer(null);
         setCommentComposerTargetRatingId(null);
+        setActiveCommentEditKey(null);
         setTopicComposerDraft({ score: '', reviewText: '' });
         setHoveredTopicScore(null);
         setCommentsByRating({});
@@ -321,6 +323,97 @@ const Topic = () => {
         }));
     };
 
+    const getCommentEditDraftKey = (commentId) => `edit:${commentId}`;
+
+    const getCommentDraftByKey = (draftKey) => {
+        const draft = commentDrafts[draftKey];
+
+        if (typeof draft === 'string') {
+            return { text: draft, score: '' };
+        }
+
+        return draft || { text: '', score: '' };
+    };
+
+    const updateCommentDraftByKey = (draftKey, field, value) => {
+        setCommentDrafts((current) => ({
+            ...current,
+            [draftKey]: {
+                ...(typeof current[draftKey] === 'string'
+                    ? { text: current[draftKey], score: '' }
+                    : current[draftKey] || { text: '', score: '' }),
+                [field]: value
+            }
+        }));
+    };
+
+    const replaceCommentInTree = (comments, updatedComment) => {
+        let changed = false;
+
+        const nextComments = comments.map((comment) => {
+            if (comment.id === updatedComment.id) {
+                changed = true;
+                return {
+                    ...comment,
+                    ...updatedComment,
+                    replies: Array.isArray(updatedComment.replies) && updatedComment.replies.length > 0
+                        ? updatedComment.replies
+                        : comment.replies
+                };
+            }
+
+            if (Array.isArray(comment.replies) && comment.replies.length > 0) {
+                const nextReplies = replaceCommentInTree(comment.replies, updatedComment);
+
+                if (nextReplies !== comment.replies) {
+                    changed = true;
+                    return {
+                        ...comment,
+                        replies: nextReplies
+                    };
+                }
+            }
+
+            return comment;
+        });
+
+        return changed ? nextComments : comments;
+    };
+
+    const updateCommentById = (comments, commentId, updater) => {
+        let changed = false;
+
+        const nextComments = comments.map((comment) => {
+            if (comment.id === commentId) {
+                changed = true;
+                return updater(comment);
+            }
+
+            if (Array.isArray(comment.replies) && comment.replies.length > 0) {
+                const nextReplies = updateCommentById(comment.replies, commentId, updater);
+
+                if (nextReplies !== comment.replies) {
+                    changed = true;
+                    return {
+                        ...comment,
+                        replies: nextReplies
+                    };
+                }
+            }
+
+            return comment;
+        });
+
+        return changed ? nextComments : comments;
+    };
+
+    const updateCommentsByRating = (ratingId, updater) => {
+        setCommentsByRating((current) => ({
+            ...current,
+            [ratingId]: updater(current[ratingId] || [])
+        }));
+    };
+
     const getDefaultCommentScore = () => 2.5;
     const isScoreInRange = (score) => Number.isFinite(score) && score >= 0.5 && score <= 5;
     const getComposerKey = (ratingId, type) => `${ratingId}:${type}`;
@@ -401,56 +494,117 @@ const Topic = () => {
         }
     };
 
-    const submitComment = async (item, parentCommentId = null) => {
+    const openEditComment = (item, comment) => {
+        const draftKey = getCommentEditDraftKey(comment.id);
+        const currentDraft = getCommentDraftByKey(draftKey);
+
+        setCommentDrafts((current) => ({
+            ...current,
+            [draftKey]: {
+                ...currentDraft,
+                text: comment.text || '',
+                score: comment.score != null ? comment.score.toString() : ''
+            }
+        }));
+        setActiveCommentEditKey((current) => (current === draftKey ? null : draftKey));
+        setActiveComposer(getComposerKey(item.ratingId, 'comment'));
+    };
+
+    const toggleCommentLike = async (item, comment) => {
+        const wasLiked = Boolean(comment.likedByCurrentUser);
         const ratingId = item.ratingId;
-        const draft = getCommentDraft(ratingId, parentCommentId);
-        const draftKey = getCommentDraftKey(ratingId, parentCommentId);
+
+        updateCommentsByRating(ratingId, (comments) => updateCommentById(comments, comment.id, (current) => ({
+            ...current,
+            likedByCurrentUser: !wasLiked,
+            likeCount: Math.max(0, (current.likeCount || 0) + (wasLiked ? -1 : 1))
+        })));
+
+        try {
+            const updated = wasLiked
+                ? await BackendApiService.unlikeComment(comment.id)
+                : await BackendApiService.likeComment(comment.id);
+
+            if (updated) {
+                updateCommentsByRating(ratingId, (comments) => replaceCommentInTree(comments, updated));
+            }
+        } catch (error) {
+            updateCommentsByRating(ratingId, (comments) => updateCommentById(comments, comment.id, (current) => ({
+                ...current,
+                likedByCurrentUser: wasLiked,
+                likeCount: Math.max(0, (current.likeCount || 0) + (wasLiked ? 1 : -1))
+            })));
+            notify({ message: error.message || 'Failed to like comment', type: 'error' });
+        }
+    };
+
+    const submitComment = async (item, parentCommentId = null, editingComment = null) => {
+        const ratingId = item.ratingId;
+        const draftKey = editingComment ? getCommentEditDraftKey(editingComment.id) : getCommentDraftKey(ratingId, parentCommentId);
+        const draft = editingComment ? getCommentDraftByKey(draftKey) : getCommentDraft(ratingId, parentCommentId);
         const text = draft.text?.trim();
         const score = Number(draft.score || getDefaultCommentScore(item));
 
         if (!text) {
-            notify({ message: 'Add a comment before replying.', type: 'warning' });
+            notify({ message: editingComment ? 'Add a comment before saving.' : 'Add a comment before replying.', type: 'warning' });
             return;
         }
 
         if (!isScoreInRange(score)) {
-            notify({ message: 'Add a rating before replying.', type: 'warning' });
+            notify({ message: editingComment ? 'Add a rating before saving.' : 'Add a rating before replying.', type: 'warning' });
             return;
         }
 
         try {
-            await BackendApiService.createRatingComment(ratingId, text, score, parentCommentId);
-            const comments = await BackendApiService.getRatingComments(ratingId);
-            setCommentsByRating((current) => ({
-                ...current,
-                [ratingId]: comments
-            }));
-            setCommentDrafts((current) => ({
-                ...current,
-                [draftKey]: { text: '', score: '' }
-            }));
-            setActiveComposer(getComposerKey(ratingId, 'comment'));
-            updateFeedItem(ratingId, (item) => ({
-                ...item,
-                commentCount: (item.commentCount || 0) + 1
-            }));
+            if (editingComment) {
+                const updatedComment = await BackendApiService.updateRatingComment(editingComment.id, text, score);
+                updateCommentsByRating(ratingId, (comments) => replaceCommentInTree(comments, updatedComment));
+                setCommentDrafts((current) => {
+                    const next = { ...current };
+                    delete next[draftKey];
+                    return next;
+                });
+                setActiveCommentEditKey(null);
+            } else {
+                await BackendApiService.createRatingComment(ratingId, text, score, parentCommentId);
+                const comments = await BackendApiService.getRatingComments(ratingId);
+                setCommentsByRating((current) => ({
+                    ...current,
+                    [ratingId]: comments
+                }));
+                setCommentDrafts((current) => ({
+                    ...current,
+                    [draftKey]: { text: '', score: '' }
+                }));
+                setActiveComposer(getComposerKey(ratingId, 'comment'));
+                updateFeedItem(ratingId, (item) => ({
+                    ...item,
+                    commentCount: (item.commentCount || 0) + 1
+                }));
+            }
         } catch (error) {
-            notify({ message: error.message || 'Failed to comment', type: 'error' });
+            notify({ message: error.message || (editingComment ? 'Failed to update comment' : 'Failed to comment'), type: 'error' });
         }
     };
 
-    const renderCommentComposer = (item, parentCommentId = null) => {
+    const renderCommentComposer = (item, parentCommentId = null, editingComment = null) => {
         const ratingId = item.ratingId;
-        const draft = getCommentDraft(ratingId, parentCommentId);
-        const commentScore = draft.score || getDefaultCommentScore(item);
-        const scoreInputId = `comment-score-${ratingId}-${parentCommentId || 'root'}`;
-        const draftKey = getCommentDraftKey(ratingId, parentCommentId);
+        const draftKey = editingComment ? getCommentEditDraftKey(editingComment.id) : getCommentDraftKey(ratingId, parentCommentId);
+        const draft = editingComment ? getCommentDraftByKey(draftKey) : getCommentDraft(ratingId, parentCommentId);
+        const commentScore = draft.score || (editingComment?.score != null ? editingComment.score : getDefaultCommentScore(item));
+        const scoreInputId = editingComment
+            ? `comment-score-edit-${editingComment.id}`
+            : `comment-score-${ratingId}-${parentCommentId || 'root'}`;
         const previewScore = hoveredCommentScores[draftKey] || commentScore;
+        const composerTitle = editingComment ? 'Edit your take on this take' : 'Add your take on this take';
+        const composerPlaceholder = editingComment ? 'Edit your take on this take' : (parentCommentId == null ? 'Add your take on this take' : 'Reply in thread');
+        const submitLabel = editingComment ? 'Save' : 'Reply';
+        const isNestedComposer = parentCommentId != null || (editingComment?.parentCommentId != null);
 
         return (
-            <div className={parentCommentId == null ? 'comment-composer' : 'comment-composer comment-composer-nested'}>
+            <div className={isNestedComposer ? 'comment-composer comment-composer-nested' : 'comment-composer'}>
                 <div className="comment-rating-control">
-                    <label id={`${scoreInputId}-label`}>Your rating</label>
+                    <label id={`${scoreInputId}-label`}>{composerTitle}</label>
                     <output aria-live="polite">
                         {formatScoreValue(previewScore, FIVE_STAR_SCALE)}
                     </output>
@@ -459,7 +613,7 @@ const Topic = () => {
                         label={`Selected rating: ${formatScoreValue(commentScore, FIVE_STAR_SCALE)}`}
                         size="sm"
                         interactive
-                        onChange={(nextScore) => updateCommentDraft(ratingId, parentCommentId, 'score', nextScore.toString())}
+                        onChange={(nextScore) => updateCommentDraftByKey(draftKey, 'score', nextScore.toString())}
                         onHoverChange={(nextScore) => setHoveredCommentScores((current) => {
                             const next = { ...current };
 
@@ -475,13 +629,13 @@ const Topic = () => {
                 </div>
                 <textarea
                     value={draft.text}
-                    onChange={(event) => updateCommentDraft(ratingId, parentCommentId, 'text', event.target.value)}
-                    placeholder={parentCommentId == null ? 'Add your take on this take' : 'Reply in thread'}
+                    onChange={(event) => updateCommentDraftByKey(draftKey, 'text', event.target.value)}
+                    placeholder={composerPlaceholder}
                     rows="3"
                 />
                 <div className="composer-actions">
-                    <button type="button" onClick={() => submitComment(item, parentCommentId)}>
-                        Reply
+                    <button type="button" onClick={() => submitComment(item, parentCommentId, editingComment)}>
+                        {submitLabel}
                     </button>
                 </div>
             </div>
@@ -495,12 +649,12 @@ const Topic = () => {
         return (
             <div className="feed-composer">
                 <div className="comment-list">
-                    {comments.length === 0 ? (
-                        <p className="feed-muted">No comments yet.</p>
-                    ) : (
+                    {comments.length > 0 && (
                         <CommentThread
                             comments={comments}
                             onAuthorClick={openProfile}
+                            onLikeClick={(comment) => toggleCommentLike(item, comment)}
+                            onEditClick={(comment) => openEditComment(item, comment)}
                             onReplyClick={(comment) => {
                                 const replyKey = getCommentReplyKey(item.ratingId, comment.id);
                                 setActiveComposer((current) => (
@@ -510,14 +664,59 @@ const Topic = () => {
                                 ));
                             }}
                             activeReplyKey={activeComposer}
+                            activeEditKey={activeCommentEditKey}
                             getReplyKey={(comment) => getCommentReplyKey(item.ratingId, comment.id)}
+                            getEditKey={(comment) => getCommentEditDraftKey(comment.id)}
                             renderReplyComposer={(comment) => renderCommentComposer(item, comment.id)}
+                            renderEditComposer={(comment) => renderCommentComposer(item, null, comment)}
+                            currentUserId={currentUserId}
+                            replyButtonLabel="Comment"
                         />
                     )}
                 </div>
             </div>
         );
     };
+
+    const renderTopicComposer = () => (
+        <div className="feed-composer topic-rating-composer">
+            <label id="topic-rating-label">
+                {commentComposerTargetRatingId != null ? 'Add your take on this take' : 'Add your take on this topic'}
+            </label>
+            <div className="score-row">
+                <output className="score-value">
+                    {Number.isFinite(topicComposerScore)
+                        ? `${topicComposerScore.toFixed(1)} / 5`
+                        : '0.0 / 5'}
+                </output>
+                <StarRating
+                    value={Number.isFinite(topicComposerScore) ? topicComposerScore : 0}
+                    label="Selected rating for this topic"
+                    size="lg"
+                    interactive
+                    onChange={(nextScore) => setTopicComposerDraft((current) => ({
+                        ...current,
+                        score: nextScore.toString()
+                    }))}
+                    onHoverChange={setHoveredTopicScore}
+                />
+            </div>
+            <textarea
+                value={topicComposerDraft.reviewText}
+                onChange={(event) => setTopicComposerDraft((current) => ({
+                    ...current,
+                    reviewText: event.target.value
+                }))}
+                placeholder={commentComposerTargetRatingId != null ? 'Add your take on this take' : 'Add your take on this topic'}
+                rows="3"
+            />
+            <div className="composer-actions">
+                <button type="button" onClick={submitTopicRating}>
+                    {commentComposerTargetRatingId != null ? 'Reply' : 'Add rating'}
+                </button>
+            </div>
+        </div>
+    );
 
     const submitTopicRating = async () => {
         const sourceRatingId = feedItems.find((item) => !item.deleted && !item.deletedAt)?.ratingId ?? null;
@@ -655,54 +854,20 @@ const Topic = () => {
                                     />
                                 );
                             }}
-                            renderAfterItem={(item) => renderComments(item)}
+                            renderAfterItem={(item) => (
+                                <>
+                                    {commentComposerTargetRatingId === item.ratingId && renderTopicComposer()}
+                                    {renderComments(item)}
+                                </>
+                            )}
                             sentinelRef={feedSentinelRef}
                             hasMore={hasMoreFeed}
                             isLoadingMore={isFeedLoadingMore}
                             loadingMoreMessage="Loading more ratings..."
-                            endMessage="You’ve reached the end of the topic."
                             onTopicClick={openTopic}
                         />
 
-                        {!!feedItems.length && (
-                            <div className="feed-composer topic-rating-composer">
-                                <label id="topic-rating-label">
-                                    {commentComposerTargetRatingId != null ? 'Add your take on this take' : 'Add your take on this topic'}
-                                </label>
-                                <div className="score-row">
-                                    <output className="score-value">
-                                        {Number.isFinite(topicComposerScore)
-                                            ? `${topicComposerScore.toFixed(1)} / 5`
-                                            : '0.0 / 5'}
-                                    </output>
-                                    <StarRating
-                                        value={Number.isFinite(topicComposerScore) ? topicComposerScore : 0}
-                                        label="Selected rating for this topic"
-                                        size="lg"
-                                        interactive
-                                        onChange={(nextScore) => setTopicComposerDraft((current) => ({
-                                            ...current,
-                                            score: nextScore.toString()
-                                        }))}
-                                        onHoverChange={setHoveredTopicScore}
-                                    />
-                                </div>
-                                <textarea
-                                    value={topicComposerDraft.reviewText}
-                                    onChange={(event) => setTopicComposerDraft((current) => ({
-                                        ...current,
-                                        reviewText: event.target.value
-                                    }))}
-                                    placeholder={commentComposerTargetRatingId != null ? 'Add your take on this take' : 'Add your take on this topic'}
-                                    rows="3"
-                                />
-                                <div className="composer-actions">
-                                    <button type="button" onClick={submitTopicRating}>
-                                        {commentComposerTargetRatingId != null ? 'Reply' : 'Add rating'}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                        {!!feedItems.length && !commentComposerTargetRatingId && renderTopicComposer()}
 
                         {!isFeedLoading && feedError && (
                             <div className="inline-error">{feedError}</div>

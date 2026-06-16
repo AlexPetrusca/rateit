@@ -200,6 +200,42 @@ const BackendApiService = {
         return await response.json();
     },
 
+    likeComment: async (commentId) => {
+        const response = await fetch(`/api/feed/comments/${commentId}/like`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            throw new Error('Failed to like comment');
+        }
+        return await response.json();
+    },
+
+    unlikeComment: async (commentId) => {
+        const response = await fetch(`/api/feed/comments/${commentId}/like`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            throw new Error('Failed to unlike comment');
+        }
+        return await response.json();
+    },
+
+    updateRatingComment: async (commentId, text, score) => {
+        const response = await fetch(`/api/feed/comments/${commentId}`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, score })
+        });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to update comment');
+        }
+        return await response.json();
+    },
+
     rerate: async (ratingId, score, reviewText) => {
         const response = await fetch(`/api/feed/ratings/${ratingId}/rerate`, {
             method: 'POST',

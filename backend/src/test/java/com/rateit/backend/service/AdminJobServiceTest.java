@@ -298,6 +298,8 @@ class AdminJobServiceTest {
                 request.text(),
                 request.score(),
                 Instant.parse("2025-01-01T00:00:00Z"),
+                0L,
+                false,
                 new RatingCommentDto.Author(
                     parentCommentId == null ? authorA.getId() : authorB.getId(),
                     parentCommentId == null ? authorA.getUsername() : authorB.getUsername(),
