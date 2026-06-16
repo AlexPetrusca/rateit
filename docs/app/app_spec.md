@@ -84,6 +84,8 @@ Use the shared components below before creating new copies:
 - The backlog page includes a suggestion entry point and a suggestions table below the backlog sections.
 - The suggestion submit page lets signed-in users send new ideas into the shared suggestions list.
 - Clicking the topic text on a post opens a topic page that shows every rating on that shared topic.
+- The topic page expands comment threads automatically under each rating, instead of hiding them behind an extra click.
+- The bottom composer on the topic page switches between adding a new rating and replying to a selected rating when the comment button is toggled.
 - The topic page keeps like/comment/edit controls on each rating row and exposes one bottom composer for adding another rating to the topic.
 - Topic metadata comes from a stable topic lookup, so the topic page can still render the shared item even if a rating row is deleted.
 - User profiles expose the current viewer's follow relation to that profile user, plus follower/following counts.

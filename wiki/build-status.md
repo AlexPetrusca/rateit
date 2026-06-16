@@ -14,6 +14,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 
 ## To Do
 ### P1
+- Need the ability to @people in posts
 - Pulling down on mobile doesnt always refresh the page. only if finger is in the top bar labeled "home". if the screen is being dragged and grey at the top is exposed, the screen should refresh.
 - Clean up the `users` table so `first_name` and `last_name` are no longer required, and make `username` the required profile field instead. Ensure usernames have to be unique.
 - Add a basic censor that stops you from posting slurs
@@ -21,7 +22,6 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Add the ability to make your account private so only approved followers can see your posts.
 - Update ui to add photos, it should be first and have symbols for upload vs use camera
 - Make the stars bigger, nicer, and flashier when rating.
-- Add a suggestion box in the bottom-right corner and route it into a suggestion tab where suggestions are rated and sorted by rating.
 - Split the feed into two views, one public and one following-only.
 - Add a notifications pane for likes, comments, follows, and other activity.
 - Resolve the container registry namespace mismatch so Critic backend and mocker images can live under the right owner/repo instead of depending on legacy RateIt image names.
@@ -78,6 +78,8 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Clicking the topic text on a post now opens a linked topic page at `/topics/:rateableItemId` that shows every rating on the same shared topic.
 - Topic discussion rows now keep only like, comment, and edit actions, and the bottom of the topic page has a single rating + description composer for adding another rating.
 - The topic page now uses a raised summary card for the topic itself, and the summary shows the average star rating plus the raw count of ratings while individual ratings no longer repeat the topic text above each review.
+- Topic page comments now load and expand automatically under each rating instead of waiting for a click.
+- Clicking a rating's comment button now toggles the bottom topic composer between `Add your take on this topic` and `Add your take on this take`.
 - When a topic has a photo, the image now lives in the raised topic summary card instead of repeating inside each rating row.
 - The topic summary stars now render the true average score exactly, rather than snapping the display to a half-star feel.
 - The topic page now renders ratings oldest-to-newest so the newest rating sits at the bottom.

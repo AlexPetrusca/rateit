@@ -90,6 +90,7 @@ const Topic = () => {
     const [feedPage, setFeedPage] = useState(0);
     const [hasMoreFeed, setHasMoreFeed] = useState(true);
     const [activeComposer, setActiveComposer] = useState(null);
+    const [commentComposerTargetRatingId, setCommentComposerTargetRatingId] = useState(null);
     const [topicComposerDraft, setTopicComposerDraft] = useState({ score: '', reviewText: '' });
     const [hoveredTopicScore, setHoveredTopicScore] = useState(null);
     const [commentsByRating, setCommentsByRating] = useState({});
@@ -139,6 +140,7 @@ const Topic = () => {
         setFeedPage(0);
         setHasMoreFeed(true);
         setActiveComposer(null);
+        setCommentComposerTargetRatingId(null);
         setTopicComposerDraft({ score: '', reviewText: '' });
         setHoveredTopicScore(null);
         setCommentsByRating({});
@@ -246,6 +248,45 @@ const Topic = () => {
         return () => observer.disconnect();
     }, [isFullyAuthenticated, feedError, isFeedLoading, isFeedLoadingMore, hasMoreFeed]);
 
+    useEffect(() => {
+        if (!isFullyAuthenticated || feedItems.length === 0) {
+            return;
+        }
+
+        const missingCommentIds = feedItems
+            .map((item) => item.ratingId)
+            .filter((ratingId) => ratingId != null && commentsByRating[ratingId] == null);
+
+        if (missingCommentIds.length === 0) {
+            return;
+        }
+
+        let isMounted = true;
+
+        Promise.all(
+            missingCommentIds.map(async (ratingId) => [ratingId, await BackendApiService.getRatingComments(ratingId)])
+        )
+            .then((commentEntries) => {
+                if (!isMounted) {
+                    return;
+                }
+
+                setCommentsByRating((current) => ({
+                    ...current,
+                    ...Object.fromEntries(commentEntries)
+                }));
+            })
+            .catch((error) => {
+                if (isMounted) {
+                    notify({ message: error.message || 'Failed to load comments', type: 'error' });
+                }
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [commentsByRating, feedItems, isFullyAuthenticated, notify]);
+
     const updateFeedItem = (ratingId, updater) => {
         setFeedItems((items) => items.map((item) => (
             item.ratingId === ratingId ? updater(item) : item
@@ -343,8 +384,7 @@ const Topic = () => {
     };
 
     const openComments = async (ratingId) => {
-        const key = getComposerKey(ratingId, 'comment');
-        setActiveComposer((current) => (current === key ? null : key));
+        setCommentComposerTargetRatingId((current) => (current === ratingId ? null : ratingId));
 
         if (commentsByRating[ratingId]) {
             return;
@@ -475,7 +515,6 @@ const Topic = () => {
                         />
                     )}
                 </div>
-                {activeComposer === getComposerKey(ratingId, 'comment') && renderCommentComposer(item)}
             </div>
         );
     };
@@ -484,6 +523,41 @@ const Topic = () => {
         const sourceRatingId = feedItems.find((item) => !item.deleted && !item.deletedAt)?.ratingId ?? null;
         const score = Number(topicComposerDraft.score);
         const reviewText = topicComposerDraft.reviewText || '';
+
+        if (commentComposerTargetRatingId != null) {
+            if (!isScoreInRange(score)) {
+                notify({ message: 'Add a score before posting a comment.', type: 'warning' });
+                return;
+            }
+
+            const targetItem = feedItems.find((item) => item.ratingId === commentComposerTargetRatingId);
+
+            if (!targetItem) {
+                notify({ message: 'Could not find the selected rating.', type: 'error' });
+                return;
+            }
+
+            try {
+                await BackendApiService.createRatingComment(commentComposerTargetRatingId, reviewText || '', score, null);
+                setTopicComposerDraft({ score: '', reviewText: '' });
+                setHoveredTopicScore(null);
+                setCommentComposerTargetRatingId(null);
+
+                const comments = await BackendApiService.getRatingComments(commentComposerTargetRatingId);
+                setCommentsByRating((current) => ({
+                    ...current,
+                    [commentComposerTargetRatingId]: comments
+                }));
+                updateFeedItem(commentComposerTargetRatingId, (item) => ({
+                    ...item,
+                    commentCount: (item.commentCount || 0) + 1
+                }));
+            } catch (error) {
+                notify({ message: error.message || 'Failed to comment', type: 'error' });
+            }
+
+            return;
+        }
 
         if (sourceRatingId == null) {
             notify({ message: 'Add a rating before posting another one to this topic.', type: 'warning' });
@@ -559,6 +633,7 @@ const Topic = () => {
                         )}
 
                         <FeedTimeline
+                            className="topic-feed"
                             items={displayedFeedItems}
                             onAuthorClick={openProfile}
                             onPostClick={openPost}
@@ -580,15 +655,7 @@ const Topic = () => {
                                     />
                                 );
                             }}
-                            renderAfterItem={(item) => {
-                                const isCommentThreadActive = activeComposer?.startsWith(`${item.ratingId}:comment`);
-
-                                return (
-                                    <>
-                                        {isCommentThreadActive && renderComments(item)}
-                                    </>
-                                );
-                            }}
+                            renderAfterItem={(item) => renderComments(item)}
                             sentinelRef={feedSentinelRef}
                             hasMore={hasMoreFeed}
                             isLoadingMore={isFeedLoadingMore}
@@ -599,7 +666,9 @@ const Topic = () => {
 
                         {!!feedItems.length && (
                             <div className="feed-composer topic-rating-composer">
-                                <label id="topic-rating-label">Add your rating</label>
+                                <label id="topic-rating-label">
+                                    {commentComposerTargetRatingId != null ? 'Add your take on this take' : 'Add your take on this topic'}
+                                </label>
                                 <div className="score-row">
                                     <output className="score-value">
                                         {Number.isFinite(topicComposerScore)
@@ -624,12 +693,12 @@ const Topic = () => {
                                         ...current,
                                         reviewText: event.target.value
                                     }))}
-                                    placeholder="Add your take on this topic"
+                                    placeholder={commentComposerTargetRatingId != null ? 'Add your take on this take' : 'Add your take on this topic'}
                                     rows="3"
                                 />
                                 <div className="composer-actions">
                                     <button type="button" onClick={submitTopicRating}>
-                                        Add rating
+                                        {commentComposerTargetRatingId != null ? 'Reply' : 'Add rating'}
                                     </button>
                                 </div>
                             </div>

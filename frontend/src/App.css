@@ -1617,6 +1617,16 @@ button:disabled {
     border-left: 3px solid #cfd9de;
 }
 
+.topic-feed .tweet-review {
+    color: #0f1419;
+    padding-left: 0;
+    border-left: 0;
+}
+
+.topic-feed .tweet-card-text {
+    padding-bottom: 10px;
+}
+
 .tweet-actions {
     display: flex;
     justify-content: space-between;
