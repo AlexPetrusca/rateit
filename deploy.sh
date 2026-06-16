@@ -66,6 +66,15 @@ if ! command -v helm &> /dev/null; then
   exit 1
 fi
 
+# Back up the current local Postgres data before making any cluster changes.
+# This is best-effort so fresh clusters and broken local setups can still deploy.
+echo "Backing up local Postgres data before deploy..."
+if bash ./wiki/bin/critic-db-backup.sh; then
+  echo "Local Postgres backup complete"
+else
+  echo "Warning: local Postgres backup skipped or failed; continuing with deploy"
+fi
+
 # Build Helm dependencies
 echo "Updating Helm dependencies..."
 helm dependency build rateit-chart
