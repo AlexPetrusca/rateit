@@ -3,7 +3,6 @@ import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
-import CreateAccount from './pages/CreateAccount';
 import Create from './pages/Create';
 import Admin from './pages/Admin';
 import AdminJobs from './pages/AdminJobs';
@@ -32,7 +31,7 @@ const OwnProfileRedirect = () => {
     const currentUserId = user?.userId ?? user?.id;
 
     if (currentUserId == null) {
-        return <Navigate to="/create-account" replace />;
+        return <Navigate to="/login" replace />;
     }
 
     return <Navigate to={`/users/${currentUserId}`} replace />;
@@ -60,14 +59,7 @@ function App() {
                                 }
                             />
 
-                            <Route
-                                path="/create-account"
-                                element={
-                                    <GuardedRoute requireUser={false}>
-                                        <CreateAccount />
-                                    </GuardedRoute>
-                                }
-                            />
+                            <Route path="/create-account" element={<Navigate to="/login" replace />} />
 
                             <Route
                                 path="/profile"

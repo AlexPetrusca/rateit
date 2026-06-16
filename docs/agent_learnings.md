@@ -45,6 +45,7 @@ Do not use this file for:
 - `ROLE_TEST_USER` is reserved for synthetic accounts and test-user OTP bypass behavior.
 - User role state lives on the `users` row and must stay consistent with JWT/session handling.
 - The live `users` table still requires legacy `first_name` and `last_name` columns, so create/update flows must populate them even though the UI is username-first.
+- Authenticated users without a profile should be allowed to stay on the login route long enough to finish inline profile setup; do not force them back to the homepage before the username/photo form renders.
 - If the source backend fails with Postgres `28P01` after a rename or secret change, check ignored `backend/.env` against `rateit-chart/values.secret.yaml`; stale local passwords keep Spring from staying up on `8080`.
 
 ### Twilio Verify

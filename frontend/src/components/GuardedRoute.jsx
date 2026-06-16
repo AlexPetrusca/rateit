@@ -14,7 +14,7 @@ const GuardedRoute = ({ children, requireUser = true, requiredRole = null }) => 
     }
 
     if (requireUser && user == null) {
-        return <Navigate to="/create-account" replace />;
+        return <Navigate to="/login" replace />;
     }
 
     if (requiredRole && user?.role !== requiredRole) {

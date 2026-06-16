@@ -971,6 +971,102 @@ button:disabled {
     padding: 16px;
 }
 
+.create-account-page {
+    min-height: calc(100vh - 64px);
+    display: grid;
+    place-items: center;
+    padding: 24px 16px;
+    background:
+        radial-gradient(circle at top, rgba(255, 48, 58, 0.08), transparent 38%),
+        linear-gradient(180deg, #f8fbff 0%, #eef3f8 100%);
+}
+
+.create-account-card {
+    width: min(420px, calc(100vw - 32px));
+}
+
+.account-setup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    border: 1px solid #e1e5ee;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 20px 48px rgba(20, 29, 46, 0.12);
+}
+
+.login-account-setup {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.account-setup-form .form-group {
+    margin-bottom: 0;
+}
+
+.account-setup-form .form-group label {
+    margin-bottom: 0.45rem;
+}
+
+.account-setup-upload-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.account-setup-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.account-setup-upload-button {
+    align-self: flex-start;
+    margin: 0;
+    padding: 0.7rem 1rem;
+    border: 1px solid #cfd9de;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #0f1419;
+    font-weight: 700;
+}
+
+.account-setup-upload-button:hover {
+    background: #f7f9f9;
+}
+
+.account-setup-file-name {
+    color: #536471;
+    font-size: 0.92rem;
+    overflow-wrap: anywhere;
+}
+
+.account-setup-preview {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid #e1e5ee;
+    background: #f8fafc;
+}
+
+.account-setup-actions {
+    margin-top: 4px;
+}
+
 .create-layout {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
@@ -2424,6 +2520,12 @@ button:disabled {
   transform: translate(-50%, -50%);
   width: min(246px, calc(100vw - 32px));
   animation: login-phone-panel-enter 800ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
+  transition: width 240ms ease, top 240ms ease, transform 240ms ease;
+}
+
+.login-phone-panel.is-account-setup {
+  width: min(360px, calc(100vw - 32px));
+  top: 33%;
 }
 
 .login-country-menu-root {
@@ -2438,6 +2540,13 @@ button:disabled {
   gap: 8px;
 }
 
+.login-country-menu-root.is-account-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
 @keyframes login-phone-panel-enter {
   from {
     opacity: 0;
@@ -2450,21 +2559,8 @@ button:disabled {
   }
 }
 
-@keyframes login-control-enter {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .login-phone-panel,
-  .login-change-phone-button,
   .login-wordmark-row-track {
     animation: none;
   }
@@ -2608,19 +2704,48 @@ button:disabled {
   background: rgba(37, 99, 235, 0.22);
 }
 
+.login-account-setup.account-setup-form {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  gap: 12px;
+}
+
+.login-account-setup-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-height: 54px;
+  padding: 16px 18px 18px;
+  border: 1px solid #e1e5ee;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 24px rgba(20, 29, 46, 0.1);
+}
+
+.login-account-setup.account-setup-form .account-setup-upload-button {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.login-account-setup.account-setup-form .account-setup-upload-button:hover {
+  background: #f3f6fb;
+}
+
 .login-change-phone-button {
   width: 100%;
   margin: 0;
   padding: 10px 16px;
   border: 1px solid #111827;
   border-radius: 999px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 8px 24px rgba(20, 29, 46, 0.08);
   color: #111827;
   font-family: Arial, sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
-  animation: login-control-enter 800ms cubic-bezier(0.16, 1, 0.3, 1) 260ms both;
 }
 
 .login-change-phone-button:hover,
@@ -2816,6 +2941,11 @@ button:disabled {
   .login-phone-panel {
     top: 28%;
     width: min(246px, calc(100vw - 28px));
+  }
+
+  .login-phone-panel.is-account-setup {
+    width: min(360px, calc(100vw - 28px));
+    top: 30.5%;
   }
 
   .login-phone-field {

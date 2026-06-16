@@ -39,7 +39,7 @@ const TopBar = () => {
         if (refreshedUserId != null) {
             navigate(`/users/${refreshedUserId}`);
         } else {
-            navigate('/create-account');
+            navigate('/login');
         }
 
         setShowProfileMenu(false);

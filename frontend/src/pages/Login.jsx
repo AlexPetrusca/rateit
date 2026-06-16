@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AccountSetupForm from '../components/AccountSetupForm.jsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
@@ -45,15 +46,15 @@ const CRITIC_TEXT_ROWS = [
     ['CRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
     ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
     ['CRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
+    ['TICEVERYONESACRITICEVERYONESACRITICEVERYONESACRI'],
+    ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERY'],
     ['ERYONES', 'A', 'CRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
     ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
     ['RYONESA', 'CRITIC', 'EVERYONESACRITICEVERYONESACRITICEVERYONESA'],
     ['CRITICEVERYONESACRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
     ['ACRITICEVERYONESACRITICEVERYONESACRITICEVERYONES'],
     ['VERYONESACRITICEVERYONESACRITICEVERYONESACRITICE'],
-    ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERY'],
     ['EVERYONESACRITICEVERYONESACRITICEVERYONESACRITIC'],
-    ['TICEVERYONESACRITICEVERYONESACRITICEVERYONESACRI'],
     ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERY'],
     ['CRITICEVERYONESACRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
     ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERY'],
@@ -164,15 +165,17 @@ const Login = () => {
     const [countrySearch, setCountrySearch] = useState('');
     const [cyclingRows, setCyclingRows] = useState([]);
     const [cyclingRunId, setCyclingRunId] = useState(0);
+    const [hasVerifiedCurrentOtp, setHasVerifiedCurrentOtp] = useState(false);
     const phoneInputRef = useRef(null);
     const countryMenuRef = useRef(null);
     const caretRef = useRef(null);
     const hasEditedPhoneRef = useRef(false);
     const lastSentPhoneRef = useRef('');
     const lastVerifiedCodeRef = useRef('');
-    const { checkAuthStatus } = useAuth();
+    const { checkAuthStatus, isAuthenticated, user } = useAuth();
     const { notify } = useNotifications();
     const navigate = useNavigate();
+    const needsAccountSetup = hasVerifiedCurrentOtp && isAuthenticated && user == null;
     const selectedCountry = COUNTRY_OPTIONS.find((option) => (
         getCountryValue(option) === countryCode || option.code === countryCode
     )) || COUNTRY_OPTIONS[0];
@@ -236,6 +239,7 @@ const Login = () => {
         const digitsBeforeCaret = digitCountBeforeCaret(event.target.value, caretIndex);
         const parsed = parsePhoneInput(event.target.value, countryCode);
         hasEditedPhoneRef.current = true;
+        setHasVerifiedCurrentOtp(false);
         setCountryCode(parsed.countryCode);
         setPhoneNumber(parsed.phoneNumber);
         persistPhoneState(parsed.countryCode, parsed.phoneNumber);
@@ -261,6 +265,7 @@ const Login = () => {
         event.preventDefault();
         const nextPhoneNumber = `${phoneNumber.slice(0, firstSelectedDigit)}${phoneNumber.slice(lastSelectedDigit)}`;
         hasEditedPhoneRef.current = true;
+        setHasVerifiedCurrentOtp(false);
         setPhoneNumber(nextPhoneNumber);
         persistPhoneState(countryCode, nextPhoneNumber);
         caretRef.current = caretIndexForDigitCount(formatPhoneNumber(nextPhoneNumber), firstSelectedDigit);
@@ -295,6 +300,7 @@ const Login = () => {
             notify({ message: 'Please enter a 10-digit phone number', type: 'warning' });
             return;
         }
+        setHasVerifiedCurrentOtp(false);
         setIsLoading(true);
         try {
             lastSentPhoneRef.current = normalizedPhoneNumber;
@@ -321,14 +327,15 @@ const Login = () => {
         setIsLoading(true);
         try {
             await BackendApiService.verifyOtp(normalizedPhoneNumber, verificationCode);
+            setHasVerifiedCurrentOtp(true);
 
             const user = await checkAuthStatus();
 
             if (!user) {
-                navigate('/create-account');
-            } else {
-                navigate('/');
+                return;
             }
+
+            navigate('/');
         } catch (err) {
             const message = err.message || 'Network error. Please try again.';
             notify({ message, type: 'error' });
@@ -376,6 +383,14 @@ const Login = () => {
         }
     };
 
+    const handleChangePhoneNumber = () => {
+        setVerificationCode('');
+        setHasVerifiedCurrentOtp(false);
+        lastVerifiedCodeRef.current = '';
+        setStep('phone');
+        window.setTimeout(() => phoneInputRef.current?.focus(), 0);
+    };
+
     useEffect(() => {
         if (
             step !== 'otp'
@@ -393,13 +408,6 @@ const Login = () => {
 
         return () => window.clearTimeout(timeoutId);
     }, [step, isLoading, verificationCode]);
-
-    const handleChangePhoneNumber = () => {
-        setVerificationCode('');
-        lastVerifiedCodeRef.current = '';
-        setStep('phone');
-        window.setTimeout(() => phoneInputRef.current?.focus(), 0);
-    };
 
     return (
         <div className="login-fullscreen">
@@ -439,9 +447,9 @@ const Login = () => {
                         </div>
                     ))}
                 </div>
-                <div className="login-phone-panel">
+                <div className={`login-phone-panel${needsAccountSetup ? ' is-account-setup' : ''}`}>
                     <div
-                        className={`login-country-menu-root${step === 'otp' ? ' is-verifying' : ''}`}
+                        className={`login-country-menu-root${step === 'otp' ? ' is-verifying' : ''}${needsAccountSetup ? ' is-account-setup' : ''}`}
                         ref={countryMenuRef}
                     >
                         {step === 'phone' ? (
@@ -472,23 +480,36 @@ const Login = () => {
                                     autoFocus
                                 />
                             </div>
-                        ) : (
-                            <div className="login-phone-field login-verification-field">
-                                <input
-                                    id="verificationCode"
-                                    className="login-verification-input"
-                                    type="text"
-                                    name="verificationCode"
-                                    autoComplete="one-time-code"
-                                    inputMode="numeric"
-                                    value={verificationCode}
-                                    onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                                    onKeyDown={handleVerificationKeyDown}
-                                    placeholder="123456"
-                                    aria-label="Verification code"
-                                    autoFocus
-                                />
+                        ) : needsAccountSetup ? (
+                            <div className="login-account-setup-shell">
+                                <AccountSetupForm className="login-account-setup" />
                             </div>
+                        ) : (
+                            <>
+                                <div className="login-phone-field login-verification-field">
+                                    <input
+                                        id="verificationCode"
+                                        className="login-verification-input"
+                                        type="text"
+                                        name="verificationCode"
+                                        autoComplete="one-time-code"
+                                        inputMode="numeric"
+                                        value={verificationCode}
+                                        onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                                        onKeyDown={handleVerificationKeyDown}
+                                        placeholder="123456"
+                                        aria-label="Verification code"
+                                        autoFocus
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    className="login-change-phone-button"
+                                    onClick={handleChangePhoneNumber}
+                                >
+                                    Change Phone Number
+                                </button>
+                            </>
                         )}
                         {isCountryMenuOpen && step === 'phone' && (
                             <div className="login-country-menu" role="dialog" aria-label="Choose country code">
@@ -522,15 +543,6 @@ const Login = () => {
                                     ))}
                                 </div>
                             </div>
-                        )}
-                        {step === 'otp' && (
-                            <button
-                                type="button"
-                                className="login-change-phone-button"
-                                onClick={handleChangePhoneNumber}
-                            >
-                                Change Phone Number
-                            </button>
                         )}
                     </div>
                 </div>

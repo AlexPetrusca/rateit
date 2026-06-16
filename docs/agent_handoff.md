@@ -10,12 +10,14 @@ Critic is a React + Spring Boot app with phone-number login, JWT cookie auth, a 
 
 - Phone OTP auth, including a test-user bypass where `ROLE_TEST_USER` accounts accept OTP `000000`.
 - Login phone input remembers the last value locally and exposes proper browser autofill hooks.
+- Verified users who still lack a profile now finish username and profile-picture setup inline on the login page instead of being sent to a separate create-account screen.
 - JWT cookie auth with role-based backend security.
 - Admin-only APIs under `/api/admin/**` guarded by `ROLE_ADMIN`.
 - Infinite-scroll home feed with pagination in chunks of 5.
 - Shared feed/post/comment UI components used across home, profile, and topic pages.
 - User profile pages with user info and that user’s posts.
 - Profile editor page at `/profile/edit` for updating the signed-in user's profile picture.
+- The old create-account handoff now reuses the same setup form inline on `/login` after OTP verification, and `/create-account` is now just a redirect back to `/login`.
 - Post editor page at `/posts/:ratingId/edit` for updating the author's topic text, review text, and score, plus soft-deleting the post.
 - Backlog page at `/backlog` for rendering the `To Do` section of `wiki/build-status.md` as an in-app project board.
 - Suggestion submit page at `/backlog/suggest`, plus a suggestions table on the backlog page and admin suggestion deletion.

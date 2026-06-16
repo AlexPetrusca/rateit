@@ -15,7 +15,6 @@ Maintenance rule: keep this page current when features are started, completed, d
 ## To Do
 ### P1
 - Add profile pic sizing to create account page
-- integrate "create account" page into current homepage with "EVERYONES A CRITIC" background
 - Need the ability to @people in posts
 - Pulling down on mobile doesnt always refresh the page. only if finger is in the top bar labeled "home". if the screen is being dragged and grey at the top is exposed, the screen should refresh.
 - Clean up the `users` table so `first_name` and `last_name` are no longer required, and make `username` the required profile field instead. Ensure usernames have to be unique.
@@ -45,6 +44,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 ## Completed
 
 - Local backend startup with Java 25 in WSL.
+- The create-account setup now expands inline on the login page after OTP verification instead of sending verified users to a separate handoff screen.
 - Add a post editor, allowing the author to change rating, text of rating, text of topic, and delete the post with tombstoning.
 - Enable half-star ratings from `0.5` to `5`.
 - Backlog page added at `/backlog`, rendering the `To Do` section of `wiki/build-status.md` as an in-app project board.
