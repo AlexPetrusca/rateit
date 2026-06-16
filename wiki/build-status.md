@@ -14,6 +14,8 @@ Maintenance rule: keep this page current when features are started, completed, d
 
 ## To Do
 ### P1
+- Add profile pic sizing to create account page
+- integrate "create account" page into current homepage with "EVERYONES A CRITIC" background
 - Need the ability to @people in posts
 - Pulling down on mobile doesnt always refresh the page. only if finger is in the top bar labeled "home". if the screen is being dragged and grey at the top is exposed, the screen should refresh.
 - Clean up the `users` table so `first_name` and `last_name` are no longer required, and make `username` the required profile field instead. Ensure usernames have to be unique.
