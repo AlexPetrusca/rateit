@@ -93,4 +93,4 @@ Maintenance rule: keep this page current when features are started, completed, d
 - The top bar now uses a hamburger menu for Home, Backlog, Install, and Login for signed-out users, and Home, Backlog, Install, and Admin for signed-in admins, leaving only Create and the profile avatar visible on the right when signed in.
 - Desktop post cards no longer flash bright blue on hover or click.
 - Desktop topic labels no longer change color, underline, or flash a blue background on hover.
-- The logged-out entry path now sends `/` directly to `/login`, hides the top bar on the login page, and uses a layered full-screen DM Sans `EVERYONES A CRITIC` background with an overlaid phone-entry field, clickable flag/country-code picker, visible phone-field caret, and automatic OTP send after a complete 10-digit number.
+- The logged-out entry path now sends `/` directly to `/login`, hides the top bar on the login page, and uses a layered full-screen DM Sans `EVERYONES A CRITIC` background with an overlaid phone-entry field, clickable flag/country-code picker, visible phone-field caret, automatic OTP send after a complete 10-digit number, and an in-place verification-code field.

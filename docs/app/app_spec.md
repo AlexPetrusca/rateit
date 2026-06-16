@@ -76,7 +76,7 @@ Use the shared components below before creating new copies:
 ## User Behavior Rules
 
 - Unauthenticated users who land on `/` are sent directly to `/login` rather than seeing a guest home placeholder.
-- The login page uses a full-screen DM Sans `EVERYONES A CRITIC` background text treatment with the phone-number entry layered above it; the phone field has a clickable flag that opens a searchable country-code menu, and completing a valid 10-digit number sends the OTP without a visible Send Code button.
+- The login page uses a full-screen DM Sans `EVERYONES A CRITIC` background text treatment with the phone-number entry layered above it; the phone field has a clickable flag that opens a searchable country-code menu, completing a valid 10-digit number sends the OTP without a visible Send Code button, and the verification-code field replaces the phone field in place.
 - Clicking an avatar or username should navigate to the user profile.
 - Clicking a post opens the shared topic page for that rated item.
 - User profiles expose only public-safe profile information: avatar, username, handle, and visible posts.

@@ -147,6 +147,7 @@ const Login = () => {
     const caretRef = useRef(null);
     const hasEditedPhoneRef = useRef(false);
     const lastSentPhoneRef = useRef('');
+    const lastVerifiedCodeRef = useRef('');
     const { checkAuthStatus } = useAuth();
     const { notify } = useNotifications();
     const navigate = useNavigate();
@@ -333,26 +334,54 @@ const Login = () => {
         }
     };
 
+    useEffect(() => {
+        if (
+            step !== 'otp'
+            || isLoading
+            || verificationCode.length !== 6
+            || verificationCode === lastVerifiedCodeRef.current
+        ) {
+            return undefined;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            lastVerifiedCodeRef.current = verificationCode;
+            handleVerifyOtp();
+        }, 350);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [step, isLoading, verificationCode]);
+
+    const handleChangePhoneNumber = () => {
+        setVerificationCode('');
+        lastVerifiedCodeRef.current = '';
+        setStep('phone');
+        window.setTimeout(() => phoneInputRef.current?.focus(), 0);
+    };
+
     return (
         <div className="login-fullscreen">
-            {step === 'phone' ? (
-                <div className="login-entry" aria-label="Enter your phone number to log in to Critic">
-                    <div className="login-wordmark" aria-hidden="true">
-                        {CRITIC_TEXT_ROWS.map((row, index) => (
-                            <div className="login-wordmark-row" key={`${row.join('-')}-${index}`}>
-                                {row.map((segment, segmentIndex) => (
-                                    <span
-                                        key={`${segment}-${segmentIndex}`}
-                                        className={segmentIndex === 1 ? 'login-wordmark-accent' : undefined}
-                                    >
-                                        {segment}
-                                    </span>
-                                ))}
-                            </div>
-                        ))}
-                    </div>
-                    <div className="login-phone-panel">
-                        <div className="login-country-menu-root" ref={countryMenuRef}>
+            <div className="login-entry" aria-label="Log in to Critic">
+                <div className="login-wordmark" aria-hidden="true">
+                    {CRITIC_TEXT_ROWS.map((row, index) => (
+                        <div className="login-wordmark-row" key={`${row.join('-')}-${index}`}>
+                            {row.map((segment, segmentIndex) => (
+                                <span
+                                    key={`${segment}-${segmentIndex}`}
+                                    className={segmentIndex === 1 ? 'login-wordmark-accent' : undefined}
+                                >
+                                    {segment}
+                                </span>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+                <div className="login-phone-panel">
+                    <div
+                        className={`login-country-menu-root${step === 'otp' ? ' is-verifying' : ''}`}
+                        ref={countryMenuRef}
+                    >
+                        {step === 'phone' ? (
                             <div className="login-phone-field">
                                 <button
                                     type="button"
@@ -380,68 +409,72 @@ const Login = () => {
                                     autoFocus
                                 />
                             </div>
-                            {isCountryMenuOpen && (
-                                <div className="login-country-menu" role="dialog" aria-label="Choose country code">
-                                    <div className="login-country-search-row">
-                                        <span className="login-country-search-icon" aria-hidden="true" />
-                                        <input
-                                            className="login-country-search"
-                                            type="search"
-                                            value={countrySearch}
-                                            onChange={(event) => setCountrySearch(event.target.value)}
-                                            placeholder="Search for a country"
-                                            aria-label="Search for a country"
-                                            autoFocus
-                                        />
-                                    </div>
-                                    <div className="login-country-list">
-                                        {!countrySearch.trim() && (
-                                            <div className="login-country-group-label">All countries</div>
-                                        )}
-                                        {filteredCountryOptions.map((option) => (
-                                            <button
-                                                type="button"
-                                                className="login-country-option"
-                                                key={getCountryValue(option)}
-                                                onClick={() => handleCountryCodeSelect(option)}
-                                            >
-                                                <span className="login-country-option-flag" aria-hidden="true">{option.flag}</span>
-                                                <span className="login-country-option-name">{option.country}</span>
-                                                <span className="login-country-option-code">{getCountryDisplayCode(option)}</span>
-                                            </button>
-                                        ))}
-                                    </div>
+                        ) : (
+                            <div className="login-phone-field login-verification-field">
+                                <input
+                                    id="verificationCode"
+                                    className="login-verification-input"
+                                    type="text"
+                                    name="verificationCode"
+                                    autoComplete="one-time-code"
+                                    inputMode="numeric"
+                                    value={verificationCode}
+                                    onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    onKeyDown={handleVerificationKeyDown}
+                                    placeholder="123456"
+                                    aria-label="Verification code"
+                                    autoFocus
+                                />
+                            </div>
+                        )}
+                        {isCountryMenuOpen && step === 'phone' && (
+                            <div className="login-country-menu" role="dialog" aria-label="Choose country code">
+                                <div className="login-country-search-row">
+                                    <span className="login-country-search-icon" aria-hidden="true" />
+                                    <input
+                                        className="login-country-search"
+                                        type="search"
+                                        value={countrySearch}
+                                        onChange={(event) => setCountrySearch(event.target.value)}
+                                        placeholder="Search for a country"
+                                        aria-label="Search for a country"
+                                        autoFocus
+                                    />
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                    <div className="login-status" aria-live="polite">
-                        {isLoading ? 'Sending code' : ''}
+                                <div className="login-country-list">
+                                    {!countrySearch.trim() && (
+                                        <div className="login-country-group-label">All countries</div>
+                                    )}
+                                    {filteredCountryOptions.map((option) => (
+                                        <button
+                                            type="button"
+                                            className="login-country-option"
+                                            key={getCountryValue(option)}
+                                            onClick={() => handleCountryCodeSelect(option)}
+                                        >
+                                            <span className="login-country-option-flag" aria-hidden="true">{option.flag}</span>
+                                            <span className="login-country-option-name">{option.country}</span>
+                                            <span className="login-country-option-code">{getCountryDisplayCode(option)}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {step === 'otp' && (
+                            <button
+                                type="button"
+                                className="login-change-phone-button"
+                                onClick={handleChangePhoneNumber}
+                            >
+                                Change Phone Number
+                            </button>
+                        )}
                     </div>
                 </div>
-            ) : (
-                <div className="login-code-panel">
-                    <input
-                        id="verificationCode"
-                        className="login-code-input"
-                        type="text"
-                        name="verificationCode"
-                        autoComplete="one-time-code"
-                        value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
-                        onKeyDown={handleVerificationKeyDown}
-                        placeholder="123456"
-                        aria-label="Verification code"
-                        autoFocus
-                    />
-                    <button onClick={handleVerifyOtp} disabled={isLoading}>
-                        {isLoading ? 'Verifying...' : 'Verify'}
-                    </button>
-                    <button className="secondary-button" onClick={() => setStep('phone')}>
-                        Change Phone Number
-                    </button>
+                <div className="login-status" aria-live="polite">
+                    {isLoading ? (step === 'phone' ? 'Sending code' : 'Verifying') : ''}
                 </div>
-            )}
+            </div>
         </div>
     );
 };
