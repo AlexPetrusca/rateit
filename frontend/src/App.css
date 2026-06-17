@@ -1818,7 +1818,7 @@ button:disabled {
 }
 
 .topic-photo-feed {
-    width: min(820px, calc(100% - 48px));
+    width: min(360px, calc(100vw - 80px));
     margin: calc(-1 * var(--topic-photo-card-peek)) auto 0;
     padding-bottom: 6px;
     position: relative;
@@ -1884,7 +1884,7 @@ button:disabled {
 }
 
 .topic-photo-thread {
-    width: min(820px, calc(100% - 48px));
+    width: min(360px, calc(100vw - 80px));
     margin: 0 auto 6px;
     display: grid;
     gap: 6px;
@@ -1965,7 +1965,7 @@ button:disabled {
 }
 
 .topic-photo-composer {
-    width: min(820px, calc(100% - 48px));
+    width: min(360px, calc(100vw - 80px));
     margin: -6px auto 6px;
     position: relative;
     z-index: 2;
@@ -1981,6 +1981,19 @@ button:disabled {
     background: #262b3a;
     border: 0;
     color: #f8fbff;
+}
+
+.topic-photo-shell .feed-composer.topic-photo-thread {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.topic-photo-shell .comment-composer.topic-photo-card {
+    background: #262b3a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26);
 }
 
 .feed-composer.topic-photo-composer label,
@@ -2848,12 +2861,10 @@ button:disabled {
     }
 
     .topic-photo-thread {
-        width: min(360px, calc(100vw - 80px));
         margin-bottom: 6px;
     }
 
     .topic-photo-composer {
-        width: min(360px, calc(100vw - 80px));
         margin-top: -6px;
         margin-bottom: 6px;
     }
