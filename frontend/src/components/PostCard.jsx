@@ -16,6 +16,8 @@ const PostCard = ({
     showMedia = true,
     footer,
     actions,
+    expandedContent,
+    onCardClick,
     className = '',
     avatarSize = 'lg',
     postBodyClassName = '',
@@ -101,6 +103,26 @@ const PostCard = ({
         </p>
     );
 
+    const hasClickAction = typeof onCardClick === 'function'
+        || typeof onTopicClick === 'function'
+        || typeof onPostClick === 'function';
+
+    const handleCardClick = () => {
+        if (typeof onCardClick === 'function') {
+            onCardClick(post);
+            return;
+        }
+
+        if (typeof onTopicClick === 'function' && post.rateableItem?.id != null) {
+            onTopicClick(post.rateableItem.id);
+            return;
+        }
+
+        if (typeof onPostClick === 'function') {
+            onPostClick(post.rateableItem?.id ?? post.ratingId);
+        }
+    };
+
     const clickableContent = (
         <>
             {isDeleted ? (
@@ -181,28 +203,17 @@ const PostCard = ({
 
                     {(typeof onPostClick === 'function' || typeof onTopicClick === 'function') && showMedia && mediaContent}
 
-                    {typeof onTopicClick === 'function' || typeof onPostClick === 'function' ? (
+                    {hasClickAction ? (
                         <div
                             className="post-click-target"
                             role="button"
                             tabIndex={0}
-                            onClick={() => {
-                                if (typeof onTopicClick === 'function' && post.rateableItem?.id != null) {
-                                    onTopicClick(post.rateableItem.id);
-                                    return;
-                                }
-
-                                onPostClick(post.rateableItem?.id ?? post.ratingId);
-                            }}
+                            aria-expanded={typeof onCardClick === 'function' ? Boolean(expandedContent) : undefined}
+                            onClick={handleCardClick}
                             onKeyDown={(event) => {
                                 if (event.key === 'Enter' || event.key === ' ') {
                                     event.preventDefault();
-                                    if (typeof onTopicClick === 'function' && post.rateableItem?.id != null) {
-                                        onTopicClick(post.rateableItem.id);
-                                        return;
-                                    }
-
-                                    onPostClick(post.rateableItem?.id ?? post.ratingId);
+                                    handleCardClick();
                                 }
                             }}
                         >
@@ -217,6 +228,11 @@ const PostCard = ({
 
                     {footer ?? actions}
                 </div>
+                {expandedContent && (
+                    <div className="tweet-expanded-content">
+                        {expandedContent}
+                    </div>
+                )}
             </article>
 
             {expandedImageUrl && (

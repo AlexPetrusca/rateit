@@ -24,9 +24,11 @@ const Home = () => {
     const [feedPage, setFeedPage] = useState(0);
     const [hasMoreFeed, setHasMoreFeed] = useState(true);
     const [activeComposer, setActiveComposer] = useState(null);
+    const [expandedCommentRatingIds, setExpandedCommentRatingIds] = useState([]);
     const [commentsByRating, setCommentsByRating] = useState({});
     const [commentDrafts, setCommentDrafts] = useState({});
     const [hoveredCommentScores, setHoveredCommentScores] = useState({});
+    const [expandedCommentReplyKeys, setExpandedCommentReplyKeys] = useState([]);
     const [hoveredRerateScores, setHoveredRerateScores] = useState({});
     const [rerateDrafts, setRerateDrafts] = useState({});
     const feedSentinelRef = useRef(null);
@@ -43,9 +45,11 @@ const Home = () => {
         setFeedPage(0);
         setHasMoreFeed(true);
         setActiveComposer(null);
+        setExpandedCommentRatingIds([]);
         setCommentsByRating({});
         setCommentDrafts({});
         setHoveredCommentScores({});
+        setExpandedCommentReplyKeys([]);
         setHoveredRerateScores({});
         setRerateDrafts({});
     }, [isFullyAuthenticated]);
@@ -211,10 +215,7 @@ const Home = () => {
         }
     };
 
-    const openComments = async (ratingId) => {
-        const key = getComposerKey(ratingId, 'comment');
-        setActiveComposer((current) => (current === key ? null : key));
-
+    const loadComments = async (ratingId) => {
         if (commentsByRating[ratingId]) {
             return;
         }
@@ -228,6 +229,29 @@ const Home = () => {
         } catch (error) {
             notify({ message: error.message || 'Failed to load comments', type: 'error' });
         }
+    };
+
+    const toggleComments = (ratingId) => {
+        setExpandedCommentRatingIds((current) => (
+            current.includes(ratingId)
+                ? current.filter((value) => value !== ratingId)
+                : [...current, ratingId]
+        ));
+        setActiveComposer((current) => (
+            typeof current === 'string' && current.startsWith(`${ratingId}:comment`)
+                ? null
+                : current
+        ));
+        loadComments(ratingId);
+    };
+
+    const openCommentComposer = (ratingId) => {
+        const key = getComposerKey(ratingId, 'comment');
+        setExpandedCommentRatingIds((current) => (
+            current.includes(ratingId) ? current : [...current, ratingId]
+        ));
+        setActiveComposer(key);
+        loadComments(ratingId);
     };
 
     const submitComment = async (item, parentCommentId = null) => {
@@ -261,6 +285,15 @@ const Home = () => {
             setActiveComposer(parentCommentId == null
                 ? getComposerKey(ratingId, 'comment')
                 : getCommentReplyKey(ratingId, parentCommentId));
+            setExpandedCommentRatingIds((current) => (
+                current.includes(ratingId) ? current : [...current, ratingId]
+            ));
+            if (parentCommentId != null) {
+                const replyKey = getCommentReplyKey(ratingId, parentCommentId);
+                setExpandedCommentReplyKeys((current) => (
+                    current.includes(replyKey) ? current : [...current, replyKey]
+                ));
+            }
             updateFeedItem(ratingId, (item) => ({
                 ...item,
                 commentCount: (item.commentCount || 0) + 1
@@ -304,6 +337,14 @@ const Home = () => {
         );
     };
 
+    const toggleCommentReplies = (replyKey) => {
+        setExpandedCommentReplyKeys((current) => (
+            current.includes(replyKey)
+                ? current.filter((key) => key !== replyKey)
+                : [...current, replyKey]
+        ));
+    };
+
     const submitRerate = async (ratingId) => {
         const draft = rerateDrafts[ratingId] || {};
         const score = Number(draft.score);
@@ -333,9 +374,11 @@ const Home = () => {
     const renderComments = (item) => {
         const ratingId = item.ratingId;
         const comments = commentsByRating[ratingId] || [];
+        const composerKey = getComposerKey(ratingId, 'comment');
+        const isComposerOpen = activeComposer === composerKey;
 
         return (
-            <div className="feed-composer comment-panel">
+            <div className="topic-rating-comments comment-panel">
                 <div className="comment-list">
                     {comments.length === 0 ? (
                         <p className="feed-muted">No comments yet.</p>
@@ -354,10 +397,18 @@ const Home = () => {
                             activeReplyKey={activeComposer}
                             getReplyKey={(comment) => getCommentReplyKey(item.ratingId, comment.id)}
                             renderReplyComposer={(comment) => renderCommentComposer(item, comment.id)}
+                            currentUserId={currentUserId}
+                            replyButtonLabel="Reply"
+                            expandedReplyKeys={expandedCommentReplyKeys}
+                            onToggleReplies={(comment, replyKey) => toggleCommentReplies(replyKey)}
+                            onlyShowExpandedReplies
+                            nestRepliesInParentCard
+                            rootThreadClassName="topic-comment-root"
+                            repliesClassName="comment-replies topic-comment-replies"
                         />
                     )}
                 </div>
-                {activeComposer === getComposerKey(ratingId, 'comment') && renderCommentComposer(item)}
+                {isComposerOpen && renderCommentComposer(item)}
             </div>
         );
     };
@@ -423,6 +474,7 @@ const Home = () => {
                             onTopicClick={openTopic}
                             renderFooter={(item) => {
                                 const rerateKey = getComposerKey(item.ratingId, 'rerate');
+                                const isCommentsOpen = expandedCommentRatingIds.includes(item.ratingId);
                                 const canEdit = item.author?.userId != null
                                     && item.author.userId === currentUserId
                                     && !item.deleted
@@ -433,22 +485,26 @@ const Home = () => {
                                         likeCount={item.likeCount}
                                         commentCount={item.commentCount}
                                         onLike={() => toggleLike(item)}
+                                        onReply={() => openCommentComposer(item.ratingId)}
                                         onRerate={() => setActiveComposer((current) => (
                                                 current === rerateKey ? null : rerateKey
                                         ))}
-                                        onComment={() => openComments(item.ratingId)}
+                                        onComment={() => toggleComments(item.ratingId)}
                                         onEdit={canEdit ? () => navigate(`/posts/${item.ratingId}/edit`) : undefined}
+                                        commentLabel={isCommentsOpen ? 'Hide comments' : 'Comments'}
+                                        replyLabel="Reply"
                                     />
                                 );
                             }}
+                            renderExpandedContent={(item) => (
+                                expandedCommentRatingIds.includes(item.ratingId) ? renderComments(item) : null
+                            )}
                             renderAfterItem={(item) => {
                                 const rerateKey = getComposerKey(item.ratingId, 'rerate');
-                                const isCommentThreadActive = activeComposer?.startsWith(`${item.ratingId}:comment`);
 
                                 return (
                                     <>
                                         {activeComposer === rerateKey && renderRerate(item)}
-                                        {isCommentThreadActive && renderComments(item)}
                                     </>
                                 );
                             }}

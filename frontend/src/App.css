@@ -1901,6 +1901,55 @@ button:disabled {
     border-left-color: var(--border-subtle);
 }
 
+.topic-photo-feed .topic-rating-card {
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.topic-photo-feed .topic-rating-card.is-expanded {
+    border-color: var(--border-strong);
+    box-shadow: 0 26px 70px rgba(0, 0, 0, 0.42);
+}
+
+.topic-photo-feed .topic-rating-card .post-click-target {
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.topic-photo-feed .topic-rating-card .post-click-target:hover,
+.topic-photo-feed .topic-rating-card .post-click-target:focus {
+    color: inherit;
+}
+
+.tweet-expanded-content {
+    grid-column: 1 / -1;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.topic-rating-comments {
+    padding: 0;
+    overflow: visible;
+}
+
+.topic-rating-comments .comment-row {
+    padding: 12px 0;
+}
+
+.topic-rating-comments .comment-replies {
+    margin: 0 0 0 18px;
+}
+
+.topic-rating-comments .comment-composer {
+    padding: 12px 0 0;
+    background: transparent;
+}
+
+.topic-rating-comments .comment-composer-nested {
+    margin: 0 0 0 18px;
+    padding-left: 10px;
+}
+
 .topic-photo-thread {
     width: min(360px, calc(100vw - 80px));
     margin: 0 auto 6px;
@@ -2500,7 +2549,7 @@ button:disabled {
 }
 
 .comment-replies {
-    margin: 0 12px 0 40px;
+    margin: 0 12px 0 24px;
     border-left: 2px solid #eff3f4;
 }
 
@@ -2525,7 +2574,7 @@ button:disabled {
 }
 
 .comment-composer-nested {
-    margin: 0 12px 0 40px;
+    margin: 0 12px 0 24px;
     border-left: 2px solid #eff3f4;
 }
 

@@ -88,15 +88,15 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Clicking the topic text on a post now opens a linked topic page at `/topics/:rateableItemId` that shows every rating on the same shared topic.
 - Topic discussion rows now keep only like, comment, and edit actions, and the bottom of the topic page has a single rating + description composer for adding another rating.
 - The topic page now uses a raised summary card for the topic itself, and the summary shows the average star rating plus the raw count of ratings while individual ratings no longer repeat the topic text above each review.
-- Topic page comments now load automatically under each rating, while nested replies stay collapsed until that comment's action button is clicked and render inside the parent comment card when expanded.
+- Topic rating cards now expand inline when clicked or when their comment action is toggled, loading the shared comment thread and comment composer inside the card instead of showing every thread by default.
 - Topics without a photo now reuse the same fixed hero layout as photo-backed topics, with a black background fallback instead of a separate summary card.
 - Topics without a photo now reuse the same dark topic thread and composer card styling as photo-backed topics, so nested replies and the reply box no longer fall back to the white feed-composer look.
 - Topics without a photo now also use the same scroll-driven blur effect, but over an abstract red-tinted gradient background instead of image artwork.
 - Topic pages now reset to the top on entry so the fixed hero starts crisp and only blurs after the user scrolls.
-- Clicking a rating's comment button now moves the topic composer directly under that rating and switches its prompt between `Add your take on this topic` and `Add your take on this take`.
-- Rating-level comment composers now render before the existing comment thread, so the box appears directly under the rating being replied to.
+- Expanded topic rating cards now own their rating-level comment composer, while the bottom topic composer stays focused on adding another rating.
 - Comment composers on threaded replies now anchor to the clicked comment itself, so the box sits directly under the comment being discussed and before that comment's child replies.
 - Comment rows now have like/comment/edit controls too, so replies behave like first-class ratings instead of being limited to a single reply action.
+- Home, profile, and topic pages now render the same expanded comment-card layout, with the comment icon toggling the thread and the arrow icon opening the reply composer.
 - When a topic has a photo, the image now lives in the raised topic summary card instead of repeating inside each rating row.
 - The topic summary stars now render the true average score exactly, rather than snapping the display to a half-star feel.
 - The topic page now renders ratings oldest-to-newest so the newest rating sits at the bottom.

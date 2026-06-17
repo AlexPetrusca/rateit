@@ -55,7 +55,7 @@ Clicking the topic text on a post opens a topic page for that shared rateable it
 
 The topic page is the linked-post view for a shared topic, so the same item can be explored across all of its ratings.
 
-The topic page now keeps the discussion controls compact: each rating row exposes like, comment, and edit actions, while a single composer at the bottom lets the user add another rating to the topic with a score and description.
+The topic page keeps the discussion controls compact: each rating row exposes like, comment, and edit actions, clicking a rating card expands its comments inline, and a single composer at the bottom lets the user add another rating to the topic with a score and description.
 
 When the shared topic has an attached photo, the image is shown in the raised topic summary card and the individual ratings underneath suppress the repeated photo so the list stays focused on the reviews.
 
@@ -75,7 +75,11 @@ The topic summary star row uses the raw average score, so partial averages are s
 
 - Comments are threaded.
 - Comments are also ratings, so they have a score and text.
-- On the topic page, nested replies stay collapsed by default and, when expanded, render inside the parent comment card with just a thin divider between the parent and the reply branch.
+- The comment icon on rating cards toggles the thread open or closed, and the adjacent arrow icon opens the reply composer for that rating.
+- Home, profile, and topic pages render comments through the same expanded-card layout so the thread panel behaves the same everywhere.
+- Comment reply counts represent the total nested replies under that comment, not only its direct children.
+- On the topic page, rating-card comments load inside the expanded card through the shared `CommentThread` and `CommentComposer` components.
+- On the topic page, nested replies stay collapsed by default and, when expanded, reveal a bounded Reddit-style slice of the subtree by depth and visible branch count while deeper replies remain collapsed behind their own reply counts.
 - Opening a nested reply keeps its parent chain visible so the active branch stays readable.
 - The thread view should keep the same author/avatar treatment used in the feed.
 

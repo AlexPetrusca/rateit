@@ -31,6 +31,7 @@ const Profile = () => {
     const [postsError, setPostsError] = useState('');
     const [hasMorePosts, setHasMorePosts] = useState(true);
     const [activeComposer, setActiveComposer] = useState(null);
+    const [expandedCommentRatingIds, setExpandedCommentRatingIds] = useState([]);
     const [commentsByRating, setCommentsByRating] = useState({});
     const [commentDrafts, setCommentDrafts] = useState({});
     const [hoveredCommentScores, setHoveredCommentScores] = useState({});
@@ -234,10 +235,7 @@ const Profile = () => {
         }
     };
 
-    const openComments = async (ratingId) => {
-        const key = getComposerKey(ratingId, 'comment');
-        setActiveComposer((current) => (current === key ? null : key));
-
+    const loadComments = async (ratingId) => {
         if (commentsByRating[ratingId]) {
             return;
         }
@@ -251,6 +249,29 @@ const Profile = () => {
         } catch (error) {
             notify({ message: error.message || 'Failed to load comments', type: 'error' });
         }
+    };
+
+    const toggleComments = (ratingId) => {
+        setExpandedCommentRatingIds((current) => (
+            current.includes(ratingId)
+                ? current.filter((value) => value !== ratingId)
+                : [...current, ratingId]
+        ));
+        setActiveComposer((current) => (
+            typeof current === 'string' && current.startsWith(`${ratingId}:comment`)
+                ? null
+                : current
+        ));
+        loadComments(ratingId);
+    };
+
+    const openCommentComposer = (ratingId) => {
+        const key = getComposerKey(ratingId, 'comment');
+        setExpandedCommentRatingIds((current) => (
+            current.includes(ratingId) ? current : [...current, ratingId]
+        ));
+        setActiveComposer(key);
+        loadComments(ratingId);
     };
 
     const submitComment = async (item, parentCommentId = null) => {
@@ -284,6 +305,9 @@ const Profile = () => {
             setActiveComposer(parentCommentId == null
                 ? getComposerKey(ratingId, 'comment')
                 : getCommentReplyKey(ratingId, parentCommentId));
+            setExpandedCommentRatingIds((current) => (
+                current.includes(ratingId) ? current : [...current, ratingId]
+            ));
             updatePostItem(ratingId, (current) => ({
                 ...current,
                 commentCount: (current.commentCount || 0) + 1
@@ -330,9 +354,11 @@ const Profile = () => {
     const renderComments = (item) => {
         const ratingId = item.ratingId;
         const comments = commentsByRating[ratingId] || [];
+        const composerKey = getComposerKey(ratingId, 'comment');
+        const isComposerOpen = activeComposer === composerKey;
 
         return (
-            <div className="feed-composer comment-panel">
+            <div className="topic-rating-comments comment-panel">
                 <div className="comment-list">
                     {comments.length === 0 ? (
                         <p className="feed-muted">No comments yet.</p>
@@ -351,10 +377,18 @@ const Profile = () => {
                             activeReplyKey={activeComposer}
                             getReplyKey={(comment) => getCommentReplyKey(item.ratingId, comment.id)}
                             renderReplyComposer={(comment) => renderCommentComposer(item, comment.id)}
+                            currentUserId={currentUser?.userId ?? currentUser?.id ?? null}
+                            replyButtonLabel="Reply"
+                            expandedReplyKeys={expandedCommentReplyKeys}
+                            onToggleReplies={(comment, replyKey) => toggleCommentReplies(replyKey)}
+                            onlyShowExpandedReplies
+                            nestRepliesInParentCard
+                            rootThreadClassName="topic-comment-root"
+                            repliesClassName="comment-replies topic-comment-replies"
                         />
                     )}
                 </div>
-                {activeComposer === getComposerKey(ratingId, 'comment') && renderCommentComposer(item)}
+                {isComposerOpen && renderCommentComposer(item)}
             </div>
         );
     };
@@ -452,6 +486,7 @@ const Profile = () => {
         setPosts([]);
         setHasMorePosts(true);
         setActiveComposer(null);
+        setExpandedCommentRatingIds([]);
         setCommentsByRating({});
         setCommentDrafts({});
         setHoveredCommentScores({});
@@ -597,39 +632,43 @@ const Profile = () => {
                             ) : posts.length === 0 ? (
                                 <div className="profile-empty-state">No posts to show.</div>
                             ) : (
-                                    <FeedTimeline
-                                        items={posts}
-                                        onAuthorClick={(userId) => navigate(`/users/${userId}`)}
-                                        onPostClick={openPost}
-                                        onTopicClick={openTopic}
-                                        renderFooter={(item) => {
-                                            const canEdit = item.author?.userId != null
-                                                && item.author.userId === currentUser?.userId
-                                                && !item.deleted
-                                                && !item.deletedAt;
+                                <FeedTimeline
+                                    items={posts}
+                                    onAuthorClick={(userId) => navigate(`/users/${userId}`)}
+                                    onPostClick={openPost}
+                                    onTopicClick={openTopic}
+                                    renderFooter={(item) => {
+                                        const canEdit = item.author?.userId != null
+                                            && item.author.userId === currentUser?.userId
+                                            && !item.deleted
+                                            && !item.deletedAt;
 
-                                            return (
-                                                <PostActions
-                                                    liked={item.likedByCurrentUser}
-                                                    likeCount={item.likeCount}
-                                                    commentCount={item.commentCount}
-                                                    onLike={() => toggleLike(item)}
-                                                    onRerate={() => setActiveComposer((current) => (
-                                                            current === `${item.ratingId}:rerate` ? null : `${item.ratingId}:rerate`
-                                                    ))}
-                                                    onComment={() => openComments(item.ratingId)}
-                                                    onEdit={canEdit ? () => navigate(`/posts/${item.ratingId}/edit`) : undefined}
-                                                />
-                                            );
-                                        }}
+                                        return (
+                                            <PostActions
+                                                liked={item.likedByCurrentUser}
+                                                likeCount={item.likeCount}
+                                                commentCount={item.commentCount}
+                                                onLike={() => toggleLike(item)}
+                                                onReply={() => openCommentComposer(item.ratingId)}
+                                                onRerate={() => setActiveComposer((current) => (
+                                                    current === `${item.ratingId}:rerate` ? null : `${item.ratingId}:rerate`
+                                                ))}
+                                                onComment={() => toggleComments(item.ratingId)}
+                                                onEdit={canEdit ? () => navigate(`/posts/${item.ratingId}/edit`) : undefined}
+                                                commentLabel={expandedCommentRatingIds.includes(item.ratingId) ? 'Hide comments' : 'Comments'}
+                                                replyLabel="Reply"
+                                            />
+                                        );
+                                    }}
+                                    renderExpandedContent={(item) => (
+                                        expandedCommentRatingIds.includes(item.ratingId) ? renderComments(item) : null
+                                    )}
                                     renderAfterItem={(item) => {
                                         const rerateKey = `${item.ratingId}:rerate`;
-                                        const isCommentThreadActive = activeComposer?.startsWith(`${item.ratingId}:comment`);
 
                                         return (
                                             <>
                                                 {activeComposer === rerateKey && renderRerate(item)}
-                                                {isCommentThreadActive && renderComments(item)}
                                             </>
                                         );
                                     }}

@@ -18,12 +18,14 @@ const CommentThread = ({
     renderEditComposer,
     currentUserId,
     avatarSize = 'sm',
-    indentStep = 18,
+    indentStep = 10,
     authorFallback = 'Someone',
     replyButtonLabel = 'Reply',
     expandedReplyKeys = [],
     onToggleReplies,
     onlyShowExpandedReplies = false,
+    autoExpandDepth = 3,
+    autoExpandFlatLimit = 8,
     nestRepliesInParentCard = false,
     threadClassName = 'comment-thread',
     rootThreadClassName = '',
@@ -44,12 +46,44 @@ const CommentThread = ({
         });
     };
 
-    const renderCommentCard = (comment, depth, replyKey, editKey, replies, repliesAreVisible) => {
+    const getReplyDescendantCount = (comment) => {
+        const replies = comment.replies || [];
+
+        return replies.reduce((total, reply) => total + 1 + getReplyDescendantCount(reply), 0);
+    };
+
+    const createAutoExpandState = () => ({
+        depthRemaining: autoExpandDepth,
+        budget: { remaining: autoExpandFlatLimit }
+    });
+
+    const getNextAutoExpandState = (autoExpandState, replies) => {
+        if (!autoExpandState || replies.length === 0) {
+            return null;
+        }
+
+        if (autoExpandState.depthRemaining <= 1 || autoExpandState.budget.remaining <= 0) {
+            return null;
+        }
+
+        autoExpandState.budget.remaining -= 1;
+
+        return {
+            depthRemaining: autoExpandState.depthRemaining - 1,
+            budget: autoExpandState.budget
+        };
+    };
+
+    const renderCommentCard = (comment, depth, replyKey, editKey, replies, repliesAreVisible, replyCount, nextAutoExpandState) => {
         const canReply = typeof onReplyClick === 'function';
         const canLike = typeof onLikeClick === 'function';
         const canEdit = typeof onEditClick === 'function' && comment.author?.userId != null && currentUserId != null && comment.author.userId === currentUserId;
         const authorName = comment.author?.username || authorFallback;
-        const hasReplies = replies.length > 0;
+        const hasReplies = replyCount > 0;
+        const replyCountLabel = `${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`;
+        const toggleLabel = hasReplies
+            ? (repliesAreVisible ? 'Hide replies' : 'Replies')
+            : 'Reply';
         const handleCommentClick = () => {
             if (hasReplies && typeof onToggleReplies === 'function') {
                 onToggleReplies(comment, replyKey);
@@ -61,7 +95,7 @@ const CommentThread = ({
 
         return (
             <>
-                <div className="comment-row" style={{ marginLeft: `${depth * indentStep}px` }}>
+                <div className="comment-row" style={{ marginLeft: `${Math.max(0, depth - 1) * indentStep}px` }}>
                     <div className="comment-avatar-column">
                         {comment.author?.userId != null && typeof onAuthorClick === 'function' ? (
                             <button
@@ -114,13 +148,15 @@ const CommentThread = ({
                         <PostActions
                             liked={Boolean(comment.likedByCurrentUser)}
                             likeCount={comment.likeCount || 0}
-                            commentCount={replies.length}
+                            commentCount={replyCount}
                             onLike={canLike ? () => onLikeClick(comment) : undefined}
                             onComment={canReply ? handleCommentClick : undefined}
+                            onReply={canReply ? () => onReplyClick(comment) : undefined}
                             onEdit={canEdit ? () => onEditClick(comment) : undefined}
-                            commentLabel={replyButtonLabel}
-                            commentAriaLabel={`${replyButtonLabel} on comment. ${replies.length} replies`}
-                            showCommentCount={replies.length > 0}
+                            commentLabel={toggleLabel}
+                            replyLabel={replyButtonLabel}
+                            commentAriaLabel={`${replyButtonLabel} on comment. ${replyCountLabel}`}
+                            showCommentCount={replyCount > 0}
                         />
                     </div>
                 </div>
@@ -132,23 +168,30 @@ const CommentThread = ({
                 )}
                 {repliesAreVisible && (
                     <div className={repliesClassName}>
-                        {renderComments(replies, depth + 1)}
+                        {renderComments(replies, depth + 1, nextAutoExpandState)}
                     </div>
                 )}
             </>
         );
     };
 
-    const renderComments = (threadComments, depth = 0) => {
+    const renderComments = (threadComments, depth = 0, autoExpandState = null) => {
         return threadComments.map((comment) => {
             const replies = comment.replies || [];
             const replyKey = getCommentReplyKey(comment, depth);
             const editKey = typeof getEditKey === 'function' ? getEditKey(comment, depth) : `edit:${comment.id}`;
+            const replyCount = getReplyDescendantCount(comment);
+            const isManuallyExpanded = expandedReplyKeySet.has(replyKey);
+            const nextAutoExpandState = getNextAutoExpandState(autoExpandState, replies);
             const repliesAreVisible = replies.length > 0 && (
-                expandedReplyKeySet.has(replyKey)
+                nextAutoExpandState != null
+                    || isManuallyExpanded
                     || (!onlyShowExpandedReplies && (activeReplyKey === replyKey || hasActiveReplyInTree(replies, depth + 1)))
             );
-            const content = renderCommentCard(comment, depth, replyKey, editKey, replies, repliesAreVisible);
+            const childAutoExpandState = isManuallyExpanded || (!onlyShowExpandedReplies && activeReplyKey === replyKey)
+                ? createAutoExpandState()
+                : nextAutoExpandState;
+            const content = renderCommentCard(comment, depth, replyKey, editKey, replies, repliesAreVisible, replyCount, childAutoExpandState);
 
             if (nestRepliesInParentCard && depth > 0) {
                 return (

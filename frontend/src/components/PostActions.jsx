@@ -19,6 +19,13 @@ const CommentIcon = () => (
     </svg>
 );
 
+const ReplyIcon = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 10h10a4 4 0 0 1 4 4v3" />
+        <path d="m13 13 6 4-6 4" />
+    </svg>
+);
+
 const PencilIcon = () => (
     <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 20h4l10-10-4-4L4 16v4Z" />
@@ -33,8 +40,10 @@ const PostActions = ({
     onLike,
     onRerate,
     onComment,
+    onReply,
     onEdit,
     commentLabel = 'Comment',
+    replyLabel = 'Reply',
     commentAriaLabel,
     showCommentCount = true
 }) => (
@@ -81,6 +90,20 @@ const PostActions = ({
                 </span>
                 <span className="sr-only">{commentLabel}</span>
                 {showCommentCount && <span className="tweet-action-count">{commentCount || 0}</span>}
+            </button>
+        )}
+        {onReply && (
+            <button
+                type="button"
+                className="tweet-action"
+                onClick={onReply}
+                aria-label={`${replyLabel} on post`}
+                title={replyLabel}
+            >
+                <span className="action-icon">
+                    <ReplyIcon />
+                </span>
+                <span className="sr-only">{replyLabel}</span>
             </button>
         )}
         {onEdit && (

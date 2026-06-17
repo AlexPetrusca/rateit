@@ -5,10 +5,13 @@ const FeedTimeline = ({
     onAuthorClick,
     onPostClick,
     onTopicClick,
+    onItemClick,
     showTopicText = true,
     showMedia = true,
     renderFooter,
     renderAfterItem,
+    renderExpandedContent,
+    getItemClassName,
     getItemKey = (item) => item.ratingId,
     sentinelRef,
     hasMore = true,
@@ -31,9 +34,12 @@ const FeedTimeline = ({
                             onAuthorClick={onAuthorClick}
                             onPostClick={onPostClick}
                             onTopicClick={onTopicClick}
+                            onCardClick={typeof onItemClick === 'function' ? () => onItemClick(item) : undefined}
                             showTopicText={showTopicText}
                             showMedia={showMedia}
+                            className={typeof getItemClassName === 'function' ? getItemClassName(item) : ''}
                             footer={typeof renderFooter === 'function' ? renderFooter(item) : null}
+                            expandedContent={typeof renderExpandedContent === 'function' ? renderExpandedContent(item) : null}
                         />
                         {typeof renderAfterItem === 'function' ? renderAfterItem(item) : null}
                     </div>

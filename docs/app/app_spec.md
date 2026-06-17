@@ -89,8 +89,10 @@ Use the shared components below before creating new copies:
 - The backlog page includes a suggestion entry point and a suggestions table below the backlog sections.
 - The suggestion submit page lets signed-in users send new ideas into the shared suggestions list.
 - Clicking the topic text on a post opens a topic page that shows every rating on that shared topic.
-- The topic page expands comment threads automatically under each rating, instead of hiding them behind an extra click.
-- When a comment button is toggled on, the composer moves directly under that rating and switches from `Add your take on this topic` to `Add your take on this take`; toggling the same button again moves it back to the bottom composer.
+- The topic page shows a compact list of rating cards; clicking a rating card or its comment action expands that card inline and loads its comments.
+- Expanded topic rating cards use the shared `CommentThread` and `CommentComposer` path for comments and replies.
+- The comment icon on rating cards toggles the thread open or closed, and the adjacent arrow icon opens the reply composer for that rating.
+- Home, profile, and topic pages now render the same expanded comment-card layout instead of separate page-specific thread blocks.
 - The topic page keeps like/comment/edit controls on each rating row, and comment rows themselves now expose the same like/comment/edit action set.
 - The topic page exposes one bottom composer for adding another rating to the topic.
 - Topic metadata comes from a stable topic lookup, so the topic page can still render the shared item even if a rating row is deleted.

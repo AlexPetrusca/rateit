@@ -77,11 +77,12 @@ const Topic = () => {
     const [feedPage, setFeedPage] = useState(0);
     const [hasMoreFeed, setHasMoreFeed] = useState(true);
     const [activeComposer, setActiveComposer] = useState(null);
-    const [commentComposerTargetRatingId, setCommentComposerTargetRatingId] = useState(null);
+    const [expandedRatingId, setExpandedRatingId] = useState(null);
     const [activeCommentEditKey, setActiveCommentEditKey] = useState(null);
     const [topicComposerDraft, setTopicComposerDraft] = useState({ score: '', reviewText: '' });
     const [hoveredTopicScore, setHoveredTopicScore] = useState(null);
     const [commentsByRating, setCommentsByRating] = useState({});
+    const [loadingCommentsByRating, setLoadingCommentsByRating] = useState({});
     const [commentDrafts, setCommentDrafts] = useState({});
     const [hoveredCommentScores, setHoveredCommentScores] = useState({});
     const [expandedCommentReplyKeys, setExpandedCommentReplyKeys] = useState([]);
@@ -161,11 +162,12 @@ const Topic = () => {
         setFeedPage(0);
         setHasMoreFeed(true);
         setActiveComposer(null);
-        setCommentComposerTargetRatingId(null);
+        setExpandedRatingId(null);
         setActiveCommentEditKey(null);
         setTopicComposerDraft({ score: '', reviewText: '' });
         setHoveredTopicScore(null);
         setCommentsByRating({});
+        setLoadingCommentsByRating({});
         setCommentDrafts({});
         setHoveredCommentScores({});
         setExpandedCommentReplyKeys([]);
@@ -183,6 +185,7 @@ const Topic = () => {
             setHasMoreFeed(true);
             setIsFeedLoading(false);
             setIsFeedLoadingMore(false);
+            setExpandedRatingId(null);
             setExpandedCommentReplyKeys([]);
             return;
         }
@@ -305,43 +308,46 @@ const Topic = () => {
     }, [topicRateableItemId]);
 
     useEffect(() => {
-        if (!isFullyAuthenticated || feedItems.length === 0) {
-            return;
-        }
-
-        const missingCommentIds = feedItems
-            .map((item) => item.ratingId)
-            .filter((ratingId) => ratingId != null && commentsByRating[ratingId] == null);
-
-        if (missingCommentIds.length === 0) {
+        if (!isFullyAuthenticated || expandedRatingId == null || commentsByRating[expandedRatingId] != null) {
             return;
         }
 
         let isMounted = true;
 
-        Promise.all(
-            missingCommentIds.map(async (ratingId) => [ratingId, await BackendApiService.getRatingComments(ratingId)])
-        )
-            .then((commentEntries) => {
+        setLoadingCommentsByRating((current) => ({
+            ...current,
+            [expandedRatingId]: true
+        }));
+
+        BackendApiService.getRatingComments(expandedRatingId)
+            .then((comments) => {
                 if (!isMounted) {
                     return;
                 }
 
                 setCommentsByRating((current) => ({
                     ...current,
-                    ...Object.fromEntries(commentEntries)
+                    [expandedRatingId]: comments
                 }));
             })
             .catch((error) => {
                 if (isMounted) {
                     notify({ message: error.message || 'Failed to load comments', type: 'error' });
                 }
+            })
+            .finally(() => {
+                if (isMounted) {
+                    setLoadingCommentsByRating((current) => ({
+                        ...current,
+                        [expandedRatingId]: false
+                    }));
+                }
             });
 
         return () => {
             isMounted = false;
         };
-    }, [commentsByRating, feedItems, isFullyAuthenticated, notify]);
+    }, [commentsByRating, expandedRatingId, isFullyAuthenticated, notify]);
 
     const updateFeedItem = (ratingId, updater) => {
         setFeedItems((items) => items.map((item) => (
@@ -481,22 +487,6 @@ const Topic = () => {
         navigate(`/users/${userId}`);
     };
 
-    const openPost = (rateableItemId) => {
-        if (rateableItemId == null) {
-            return;
-        }
-
-        navigate(`/topics/${rateableItemId}`);
-    };
-
-    const openTopic = (rateableItemId) => {
-        if (rateableItemId == null) {
-            return;
-        }
-
-        navigate(`/topics/${rateableItemId}`);
-    };
-
     const toggleLike = async (item) => {
         const wasLiked = Boolean(item.likedByCurrentUser);
 
@@ -528,22 +518,16 @@ const Topic = () => {
         }
     };
 
-    const openComments = async (ratingId) => {
-        setCommentComposerTargetRatingId((current) => (current === ratingId ? null : ratingId));
+    const toggleRatingExpansion = (ratingId) => {
+        setExpandedRatingId((current) => (current === ratingId ? null : ratingId));
+        setActiveComposer(null);
+        setActiveCommentEditKey(null);
+        setExpandedCommentReplyKeys([]);
+    };
 
-        if (commentsByRating[ratingId]) {
-            return;
-        }
-
-        try {
-            const comments = await BackendApiService.getRatingComments(ratingId);
-            setCommentsByRating((current) => ({
-                ...current,
-                [ratingId]: comments
-            }));
-        } catch (error) {
-            notify({ message: error.message || 'Failed to load comments', type: 'error' });
-        }
+    const openRatingComposer = (ratingId) => {
+        setExpandedRatingId(ratingId);
+        setActiveComposer(getComposerKey(ratingId, 'comment'));
     };
 
     const openEditComment = (item, comment) => {
@@ -660,7 +644,7 @@ const Topic = () => {
 
         return (
             <CommentComposer
-                className="comment-composer topic-photo-card"
+                className="comment-composer topic-comment-composer"
                 nested={isNestedComposer}
                 title={composerTitle}
                 score={commentScore}
@@ -696,12 +680,21 @@ const Topic = () => {
 
     const renderComments = (item) => {
         const ratingId = item.ratingId;
-        const comments = commentsByRating[ratingId] || [];
+        const comments = commentsByRating[ratingId];
+        const isLoadingComments = Boolean(loadingCommentsByRating[ratingId]);
+        const composerKey = getComposerKey(ratingId, 'comment');
+        const isComposerOpen = activeComposer === composerKey;
 
         return (
-            <div className="feed-composer topic-photo-thread">
+            <div className="topic-rating-comments comment-panel">
                 <div className="comment-list">
-                    {comments.length > 0 && (
+                    {isLoadingComments && comments == null && (
+                        <p className="feed-muted">Loading comments...</p>
+                    )}
+                    {!isLoadingComments && comments != null && comments.length === 0 && (
+                        <p className="feed-muted">No comments yet.</p>
+                    )}
+                    {comments != null && comments.length > 0 && (
                         <CommentThread
                             comments={comments}
                             onAuthorClick={openProfile}
@@ -722,16 +715,17 @@ const Topic = () => {
                             renderReplyComposer={(comment) => renderCommentComposer(item, comment.id)}
                             renderEditComposer={(comment) => renderCommentComposer(item, null, comment)}
                             currentUserId={currentUserId}
-                            replyButtonLabel="Comment"
+                            replyButtonLabel="Reply"
                             expandedReplyKeys={expandedCommentReplyKeys}
                             onToggleReplies={(comment, replyKey) => toggleTopicCommentReplies(replyKey)}
                             onlyShowExpandedReplies
                             nestRepliesInParentCard
-                            rootThreadClassName="topic-photo-card topic-photo-root-comment"
-                            repliesClassName="topic-comment-replies"
+                            rootThreadClassName="topic-comment-root"
+                            repliesClassName="comment-replies topic-comment-replies"
                         />
                     )}
                 </div>
+                {isComposerOpen && renderCommentComposer(item)}
             </div>
         );
     };
@@ -752,8 +746,8 @@ const Topic = () => {
                 ...current,
                 reviewText: value
             }))}
-            placeholder={commentComposerTargetRatingId != null ? 'Add your take on this take' : 'Add your take on this topic'}
-            submitLabel={commentComposerTargetRatingId != null ? 'Reply' : 'Add rating'}
+            placeholder="Add your take on this topic"
+            submitLabel="Add rating"
             onSubmit={submitTopicRating}
         />
     );
@@ -762,41 +756,6 @@ const Topic = () => {
         const sourceRatingId = feedItems.find((item) => !item.deleted && !item.deletedAt)?.ratingId ?? null;
         const score = Number(topicComposerDraft.score);
         const reviewText = topicComposerDraft.reviewText || '';
-
-        if (commentComposerTargetRatingId != null) {
-            if (!isFiveStarScoreInRange(score)) {
-                notify({ message: 'Add a score before posting a comment.', type: 'warning' });
-                return;
-            }
-
-            const targetItem = feedItems.find((item) => item.ratingId === commentComposerTargetRatingId);
-
-            if (!targetItem) {
-                notify({ message: 'Could not find the selected rating.', type: 'error' });
-                return;
-            }
-
-            try {
-                await BackendApiService.createRatingComment(commentComposerTargetRatingId, reviewText || '', score, null);
-                setTopicComposerDraft({ score: '', reviewText: '' });
-                setHoveredTopicScore(null);
-                setCommentComposerTargetRatingId(null);
-
-                const comments = await BackendApiService.getRatingComments(commentComposerTargetRatingId);
-                setCommentsByRating((current) => ({
-                    ...current,
-                    [commentComposerTargetRatingId]: comments
-                }));
-                updateFeedItem(commentComposerTargetRatingId, (item) => ({
-                    ...item,
-                    commentCount: (item.commentCount || 0) + 1
-                }));
-            } catch (error) {
-                notify({ message: error.message || 'Failed to comment', type: 'error' });
-            }
-
-            return;
-        }
 
         if (sourceRatingId == null) {
             notify({ message: 'Add a rating before posting another one to this topic.', type: 'warning' });
@@ -890,10 +849,16 @@ const Topic = () => {
                             className="topic-feed topic-photo-feed"
                             items={displayedFeedItems}
                             onAuthorClick={openProfile}
-                            onPostClick={openPost}
+                            onItemClick={(item) => toggleRatingExpansion(item.ratingId)}
+                            getItemClassName={(item) => (
+                                item.ratingId === expandedRatingId
+                                    ? 'topic-rating-card is-expanded'
+                                    : 'topic-rating-card'
+                            )}
                             showTopicText={false}
                             showMedia={false}
                             renderFooter={(item) => {
+                                const isExpanded = item.ratingId === expandedRatingId;
                                 const canEdit = item.author?.userId != null
                                     && item.author.userId === currentUserId
                                     && !item.deleted
@@ -904,25 +869,24 @@ const Topic = () => {
                                         likeCount={item.likeCount}
                                         commentCount={item.commentCount}
                                         onLike={() => toggleLike(item)}
-                                        onComment={() => openComments(item.ratingId)}
+                                        onReply={() => openRatingComposer(item.ratingId)}
+                                        onComment={() => toggleRatingExpansion(item.ratingId)}
                                         onEdit={canEdit ? () => navigate(`/posts/${item.ratingId}/edit`) : undefined}
+                                        commentLabel={isExpanded ? 'Hide comments' : 'Comments'}
+                                        replyLabel="Reply"
                                     />
                                 );
                             }}
-                            renderAfterItem={(item) => (
-                                <>
-                                    {commentComposerTargetRatingId === item.ratingId && renderTopicComposer()}
-                                    {renderComments(item)}
-                                </>
+                            renderExpandedContent={(item) => (
+                                item.ratingId === expandedRatingId ? renderComments(item) : null
                             )}
                             sentinelRef={feedSentinelRef}
                             hasMore={hasMoreFeed}
                             isLoadingMore={isFeedLoadingMore}
                             loadingMoreMessage="Loading more ratings..."
-                            onTopicClick={openTopic}
                         />
 
-                        {!!feedItems.length && !commentComposerTargetRatingId && renderTopicComposer()}
+                        {!!feedItems.length && renderTopicComposer()}
 
                         {!isFeedLoading && feedError && (
                             <div className="inline-error">{feedError}</div>
