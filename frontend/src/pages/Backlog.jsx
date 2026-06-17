@@ -91,12 +91,12 @@ const Backlog = () => {
                         <p>Rendered from the To Do section of build-status.</p>
                     </div>
                     <div className="backlog-header-actions">
-                        <button type="button" className="nav-pill-button" onClick={() => navigate('/')}>
+                        <button type="button" className="nav-pill-button backlog-nav-pill-button" onClick={() => navigate('/')}>
                             Home
                         </button>
                         <button
                             type="button"
-                            className="nav-pill-button backlog-suggest-button"
+                            className="nav-pill-button backlog-nav-pill-button backlog-suggest-button"
                             onClick={() => navigate('/backlog/suggest')}
                             aria-label="Submit a suggestion"
                         >
@@ -140,17 +140,38 @@ const Backlog = () => {
 
                     {suggestionsError && <Alert severity="error">{suggestionsError}</Alert>}
 
-                    <Paper variant="outlined" className="backlog-suggestions-table">
+                    <Paper
+                        variant="outlined"
+                        className="backlog-suggestions-table"
+                        sx={{
+                            backgroundColor: 'var(--surface)',
+                            color: 'var(--text-primary)',
+                            borderColor: 'var(--border-subtle)'
+                        }}
+                    >
                         {suggestionsLoading ? (
                             <Box sx={{ p: 2.5 }}>
-                                <Typography color="text.secondary">Loading suggestions...</Typography>
+                                <Typography sx={{ color: 'var(--text-secondary)' }}>Loading suggestions...</Typography>
                             </Box>
                         ) : suggestions.length === 0 ? (
                             <Box sx={{ p: 2.5 }}>
-                                <Typography color="text.secondary">No suggestions yet.</Typography>
+                                <Typography sx={{ color: 'var(--text-secondary)' }}>No suggestions yet.</Typography>
                             </Box>
                         ) : (
-                            <Table size="small" aria-label="Suggestions table">
+                            <Table
+                                size="small"
+                                aria-label="Suggestions table"
+                                sx={{
+                                    color: 'var(--text-primary)',
+                                    '& .MuiTableCell-root': {
+                                        color: 'var(--text-primary)',
+                                        borderBottomColor: 'var(--border-subtle)'
+                                    },
+                                    '& .MuiTableCell-head': {
+                                        color: 'var(--text-primary)'
+                                    }
+                                }}
+                            >
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>Title</TableCell>
