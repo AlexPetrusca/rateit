@@ -286,7 +286,9 @@ const Home = () => {
                 ...current,
                 [draftKey]: { text: '', score: '' }
             }));
-            setActiveComposer(getComposerKey(ratingId, 'comment'));
+            setActiveComposer(parentCommentId == null
+                ? getComposerKey(ratingId, 'comment')
+                : getCommentReplyKey(ratingId, parentCommentId));
             updateFeedItem(ratingId, (item) => ({
                 ...item,
                 commentCount: (item.commentCount || 0) + 1

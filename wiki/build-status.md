@@ -14,6 +14,11 @@ Maintenance rule: keep this page current when features are started, completed, d
 
 ## To Do
 ### P1
+- Dark mode
+- Add filter for profile pages to order by date or review
+- make topic page full image, scroll to see ratings and comments
+- make topic stick to the top when you scroll (when no image)
+- everyones a critic as refresh indicator
 - Hitting return twice on a post or comment creates it multiple times. need to make sure its only created once.
 - Add profile pic sizing to create account page
 - Need the ability to @people in posts
@@ -28,6 +33,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Add a notifications pane for likes, comments, follows, and other activity.
 - Resolve the container registry namespace mismatch so Critic backend and mocker images can live under the right owner/repo instead of depending on legacy RateIt image names.
 ### P2
+- have enter button on home page live in the bottom left
 - There is a delay when loading things that seems unnecessary (alex item)
 - Add the ability to tag your own ratings.
 - Add videos.
@@ -81,7 +87,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Clicking the topic text on a post now opens a linked topic page at `/topics/:rateableItemId` that shows every rating on the same shared topic.
 - Topic discussion rows now keep only like, comment, and edit actions, and the bottom of the topic page has a single rating + description composer for adding another rating.
 - The topic page now uses a raised summary card for the topic itself, and the summary shows the average star rating plus the raw count of ratings while individual ratings no longer repeat the topic text above each review.
-- Topic page comments now load and expand automatically under each rating instead of waiting for a click.
+- Topic page comments now load automatically under each rating, while nested replies stay collapsed until that comment's action button is clicked and render inside the parent comment card when expanded.
 - Clicking a rating's comment button now moves the topic composer directly under that rating and switches its prompt between `Add your take on this topic` and `Add your take on this take`.
 - Rating-level comment composers now render before the existing comment thread, so the box appears directly under the rating being replied to.
 - Comment composers on threaded replies now anchor to the clicked comment itself, so the box sits directly under the comment being discussed and before that comment's child replies.

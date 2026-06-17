@@ -303,7 +303,9 @@ const Profile = () => {
                 ...current,
                 [draftKey]: { text: '', score: '' }
             }));
-            setActiveComposer(getComposerKey(ratingId, 'comment'));
+            setActiveComposer(parentCommentId == null
+                ? getComposerKey(ratingId, 'comment')
+                : getCommentReplyKey(ratingId, parentCommentId));
             updatePostItem(ratingId, (current) => ({
                 ...current,
                 commentCount: (current.commentCount || 0) + 1

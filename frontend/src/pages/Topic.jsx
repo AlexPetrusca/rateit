@@ -3,10 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Paper, Stack, Typography } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
-import CommentThread from '../components/CommentThread.jsx';
 import FeedTimeline from '../components/FeedTimeline.jsx';
 import PostActions from '../components/PostActions.jsx';
 import StarRating from '../components/StarRating.jsx';
+import UserAvatar from '../components/UserAvatar.jsx';
 import BackendApiService from '../services/BackendApiService';
 import '../App.css';
 
@@ -99,6 +99,7 @@ const Topic = () => {
     const [commentsByRating, setCommentsByRating] = useState({});
     const [commentDrafts, setCommentDrafts] = useState({});
     const [hoveredCommentScores, setHoveredCommentScores] = useState({});
+    const [expandedCommentReplyKeys, setExpandedCommentReplyKeys] = useState([]);
     const [expandedTopicImageUrl, setExpandedTopicImageUrl] = useState(null);
     const feedSentinelRef = useRef(null);
 
@@ -129,6 +130,24 @@ const Topic = () => {
         const mediaObjectKey = topicDetails?.mediaObjectKey || feedItems[0]?.rateableItem?.mediaObjectKey;
         return mediaObjectKey ? `/api/s3/images/${mediaObjectKey}` : null;
     }, [feedItems, topicDetails]);
+    const hasTopicPhoto = Boolean(topicMediaUrl);
+    const topicTitleStyle = useMemo(() => {
+        const titleLength = topicLabel.trim().length;
+
+        if (titleLength <= 12) {
+            return { '--topic-photo-title-size': 'clamp(2.6rem, 7.5vw, 5.2rem)' };
+        }
+
+        if (titleLength <= 24) {
+            return { '--topic-photo-title-size': 'clamp(2.35rem, 6.8vw, 4.8rem)' };
+        }
+
+        if (titleLength <= 40) {
+            return { '--topic-photo-title-size': 'clamp(2.1rem, 6vw, 4.2rem)' };
+        }
+
+        return { '--topic-photo-title-size': 'clamp(1.9rem, 5.2vw, 3.7rem)' };
+    }, [topicLabel]);
     const topicComposerScore = hoveredTopicScore ?? Number(topicComposerDraft.score);
 
     const isFullyAuthenticated = isAuthenticated && user != null;
@@ -150,6 +169,7 @@ const Topic = () => {
         setCommentsByRating({});
         setCommentDrafts({});
         setHoveredCommentScores({});
+        setExpandedCommentReplyKeys([]);
     }, [isFullyAuthenticated, topicRateableItemId]);
 
     useEffect(() => {
@@ -160,6 +180,7 @@ const Topic = () => {
             setHasMoreFeed(true);
             setIsFeedLoading(false);
             setIsFeedLoadingMore(false);
+            setExpandedCommentReplyKeys([]);
             return;
         }
 
@@ -578,7 +599,15 @@ const Topic = () => {
                     ...current,
                     [draftKey]: { text: '', score: '' }
                 }));
-                setActiveComposer(getComposerKey(ratingId, 'comment'));
+                setActiveComposer(parentCommentId == null
+                    ? getComposerKey(ratingId, 'comment')
+                    : getCommentReplyKey(ratingId, parentCommentId));
+                if (parentCommentId != null) {
+                    const replyKey = getCommentReplyKey(ratingId, parentCommentId);
+                    setExpandedCommentReplyKeys((current) => (
+                        current.includes(replyKey) ? current : [...current, replyKey]
+                    ));
+                }
                 updateFeedItem(ratingId, (item) => ({
                     ...item,
                     commentCount: (item.commentCount || 0) + 1
@@ -604,7 +633,11 @@ const Topic = () => {
         const isNestedComposer = parentCommentId != null || (editingComment?.parentCommentId != null);
 
         return (
-            <div className={isNestedComposer ? 'comment-composer comment-composer-nested' : 'comment-composer'}>
+            <div className={[
+                'comment-composer',
+                isNestedComposer ? 'comment-composer-nested' : '',
+                hasTopicPhoto ? 'topic-photo-card' : ''
+            ].filter(Boolean).join(' ')}>
                 <div className="comment-rating-control">
                     <label id={`${scoreInputId}-label`}>{composerTitle}</label>
                     <output aria-live="polite">
@@ -644,47 +677,152 @@ const Topic = () => {
         );
     };
 
+    const toggleTopicCommentReplies = (replyKey) => {
+        setExpandedCommentReplyKeys((current) => (
+            current.includes(replyKey)
+                ? current.filter((key) => key !== replyKey)
+                : [...current, replyKey]
+        ));
+    };
+
+    const renderTopicCommentNode = (item, comment, depth = 0) => {
+        const ratingId = item.ratingId;
+        const replies = comment.replies || [];
+        const replyKey = getCommentReplyKey(ratingId, comment.id);
+        const editKey = getCommentEditDraftKey(comment.id);
+        const hasReplies = replies.length > 0;
+        const isExpanded = expandedCommentReplyKeys.includes(replyKey);
+        const authorName = comment.author?.username || 'Someone';
+        const canLike = true;
+        const canEdit = comment.author?.userId != null && currentUserId != null && comment.author.userId === currentUserId;
+
+        const handleCommentClick = () => {
+            if (hasReplies) {
+                toggleTopicCommentReplies(replyKey);
+                return;
+            }
+
+            setActiveComposer((current) => (
+                current === replyKey
+                    ? getComposerKey(ratingId, 'comment')
+                    : replyKey
+            ));
+        };
+
+        const row = (
+            <>
+                <div className="comment-row" style={{ marginLeft: `${depth * 18}px` }}>
+                    <div className="comment-avatar-column">
+                        {comment.author?.userId != null ? (
+                            <button
+                                type="button"
+                                className="profile-link profile-link-avatar"
+                                onClick={() => openProfile(comment.author.userId)}
+                                aria-label={`Open profile for ${authorName}`}
+                            >
+                                <UserAvatar
+                                    username={comment.author?.username}
+                                    profilePicUrl={comment.author?.profilePicUrl}
+                                    alt=""
+                                    size="sm"
+                                />
+                            </button>
+                        ) : (
+                            <UserAvatar
+                                username={comment.author?.username}
+                                profilePicUrl={comment.author?.profilePicUrl}
+                                alt=""
+                                size="sm"
+                            />
+                        )}
+                    </div>
+
+                    <div className="comment-body">
+                        <div className="comment-meta">
+                            {comment.author?.userId != null ? (
+                                <button
+                                    type="button"
+                                    className="profile-link profile-link-text"
+                                    onClick={() => openProfile(comment.author.userId)}
+                                >
+                                    <div className="comment-author">{authorName}</div>
+                                </button>
+                            ) : (
+                                <div className="comment-author">{authorName}</div>
+                            )}
+                            {comment.score != null && (
+                                <div className="comment-score">
+                                    <StarRating
+                                        value={comment.score}
+                                        label={formatScoreValue(comment.score, FIVE_STAR_SCALE)}
+                                        size="sm"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        <div className="comment-text">{comment.text}</div>
+                        <PostActions
+                            liked={Boolean(comment.likedByCurrentUser)}
+                            likeCount={comment.likeCount || 0}
+                            commentCount={replies.length}
+                            onLike={canLike ? () => toggleCommentLike(item, comment) : undefined}
+                            onComment={handleCommentClick}
+                            onEdit={canEdit ? () => openEditComment(item, comment) : undefined}
+                            commentLabel="Comment"
+                            commentAriaLabel={`Comment on comment. ${replies.length} replies`}
+                            showCommentCount={replies.length > 0}
+                        />
+                    </div>
+                </div>
+                {activeComposer === replyKey && renderCommentComposer(item, comment.id)}
+                {activeCommentEditKey === editKey && renderCommentComposer(item, null, comment)}
+            </>
+        );
+
+        if (depth === 0) {
+            return (
+                <div className="comment-thread topic-photo-card topic-photo-root-comment" key={comment.id}>
+                    {row}
+                    {hasReplies && isExpanded && (
+                        <div className="topic-comment-replies">
+                            {replies.map((reply) => renderTopicCommentNode(item, reply, depth + 1))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <div className="topic-comment-reply" key={comment.id}>
+                {row}
+                {hasReplies && isExpanded && (
+                    <div className="topic-comment-replies">
+                        {replies.map((reply) => renderTopicCommentNode(item, reply, depth + 1))}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     const renderComments = (item) => {
         const ratingId = item.ratingId;
         const comments = commentsByRating[ratingId] || [];
 
         return (
-            <div className="feed-composer">
+            <div className={hasTopicPhoto ? 'feed-composer topic-photo-thread' : 'feed-composer'}>
                 <div className="comment-list">
-                    {comments.length > 0 && (
-                        <CommentThread
-                            comments={comments}
-                            onAuthorClick={openProfile}
-                            onLikeClick={(comment) => toggleCommentLike(item, comment)}
-                            onEditClick={(comment) => openEditComment(item, comment)}
-                            onReplyClick={(comment) => {
-                                const replyKey = getCommentReplyKey(item.ratingId, comment.id);
-                                setActiveComposer((current) => (
-                                    current === replyKey
-                                        ? getComposerKey(item.ratingId, 'comment')
-                                        : replyKey
-                                ));
-                            }}
-                            activeReplyKey={activeComposer}
-                            activeEditKey={activeCommentEditKey}
-                            getReplyKey={(comment) => getCommentReplyKey(item.ratingId, comment.id)}
-                            getEditKey={(comment) => getCommentEditDraftKey(comment.id)}
-                            renderReplyComposer={(comment) => renderCommentComposer(item, comment.id)}
-                            renderEditComposer={(comment) => renderCommentComposer(item, null, comment)}
-                            currentUserId={currentUserId}
-                            replyButtonLabel="Comment"
-                        />
-                    )}
+                    {comments.length > 0 && comments.map((comment) => renderTopicCommentNode(item, comment))}
                 </div>
             </div>
         );
     };
 
     const renderTopicComposer = () => (
-        <div className="feed-composer topic-rating-composer">
-            <label id="topic-rating-label">
-                {commentComposerTargetRatingId != null ? 'Add your take on this take' : 'Add your take on this topic'}
-            </label>
+        <div className={[
+            'feed-composer',
+            'topic-rating-composer',
+            hasTopicPhoto ? 'topic-photo-card topic-photo-composer' : ''
+        ].filter(Boolean).join(' ')}>
             <div className="score-row">
                 <output className="score-value">
                     {Number.isFinite(topicComposerScore)
@@ -793,40 +931,81 @@ const Topic = () => {
     return (
         <div className="feed-page">
             {isFullyAuthenticated ? (
-                <main className="twitter-shell">
+                <main className={hasTopicPhoto ? 'twitter-shell topic-shell topic-photo-shell' : 'twitter-shell'}>
                     <>
-                        <Paper elevation={2} className="topic-summary-card">
-                            <Stack spacing={1}>
-                                {topicMediaUrl && (
-                                    <button
-                                        type="button"
-                                        className="topic-summary-media-button"
-                                        onClick={() => setExpandedTopicImageUrl(topicMediaUrl)}
-                                        aria-label="Open topic photo"
-                                    >
-                                        <img
-                                            src={topicMediaUrl}
-                                            alt={topicLabel}
-                                            className="topic-summary-media"
+                        {hasTopicPhoto ? (
+                            <section
+                                className="topic-photo-hero"
+                                style={{ '--topic-photo-url': `url(${topicMediaUrl})` }}
+                                aria-label={topicLabel ? `${topicLabel} topic photo` : 'Topic photo'}
+                            >
+                                <button
+                                    type="button"
+                                    className="topic-photo-hero-button"
+                                    onClick={() => setExpandedTopicImageUrl(topicMediaUrl)}
+                                    aria-label="Open topic photo"
+                                />
+                                <div className="topic-photo-hero-overlay" />
+                                <div className="topic-photo-hero-content">
+                                    {topicLabel && (
+                                        <Typography
+                                            variant="h3"
+                                            component="h1"
+                                            fontWeight={800}
+                                            className="topic-photo-title"
+                                            style={topicTitleStyle}
+                                        >
+                                            {topicLabel}
+                                        </Typography>
+                                    )}
+                                    <div className="topic-photo-meta">
+                                        <Typography variant="body1" className="topic-photo-average">
+                                            {formatAverageRating(topicAverageRating)}
+                                        </Typography>
+                                        <AverageStarRating
+                                            value={topicAverageRating}
+                                            label={`Average rating: ${formatAverageRating(topicAverageRating)} out of 5`}
                                         />
-                                    </button>
-                                )}
-                                {topicLabel && (
-                                    <Typography variant="h5" component="div" fontWeight={700}>
-                                        {topicLabel}
-                                    </Typography>
-                                )}
-                                <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <Typography variant="body2" color="text.secondary" fontWeight={700}>
-                                        {topicRatingCount}
-                                    </Typography>
-                                    <AverageStarRating
-                                        value={topicAverageRating}
-                                        label={`Average rating: ${formatAverageRating(topicAverageRating)} out of 5`}
-                                    />
+                                        <Typography variant="body2" className="topic-photo-count">
+                                            {topicRatingCount} ratings
+                                        </Typography>
+                                    </div>
+                                </div>
+                            </section>
+                        ) : (
+                            <Paper elevation={2} className="topic-summary-card">
+                                <Stack spacing={1}>
+                                    {topicMediaUrl && (
+                                        <button
+                                            type="button"
+                                            className="topic-summary-media-button"
+                                            onClick={() => setExpandedTopicImageUrl(topicMediaUrl)}
+                                            aria-label="Open topic photo"
+                                        >
+                                            <img
+                                                src={topicMediaUrl}
+                                                alt={topicLabel}
+                                                className="topic-summary-media"
+                                            />
+                                        </button>
+                                    )}
+                                    {topicLabel && (
+                                        <Typography variant="h5" component="div" fontWeight={700}>
+                                            {topicLabel}
+                                        </Typography>
+                                    )}
+                                    <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                                        <Typography variant="body2" color="text.secondary" fontWeight={700}>
+                                            {topicRatingCount}
+                                        </Typography>
+                                        <AverageStarRating
+                                            value={topicAverageRating}
+                                            label={`Average rating: ${formatAverageRating(topicAverageRating)} out of 5`}
+                                        />
+                                    </Stack>
                                 </Stack>
-                            </Stack>
-                        </Paper>
+                            </Paper>
+                        )}
 
                         {isFeedLoading && <p className="feed-status">Loading ratings...</p>}
                         {!isFeedLoading && !feedError && feedItems.length === 0 && (
@@ -834,7 +1013,7 @@ const Topic = () => {
                         )}
 
                         <FeedTimeline
-                            className="topic-feed"
+                            className={hasTopicPhoto ? 'topic-feed topic-photo-feed' : 'topic-feed'}
                             items={displayedFeedItems}
                             onAuthorClick={openProfile}
                             onPostClick={openPost}

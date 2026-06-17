@@ -63,6 +63,8 @@ The topic summary star row uses the raw average score, so partial averages are s
 
 - Comments are threaded.
 - Comments are also ratings, so they have a score and text.
+- On the topic page, nested replies stay collapsed by default and, when expanded, render inside the parent comment card with just a thin divider between the parent and the reply branch.
+- Opening a nested reply keeps its parent chain visible so the active branch stays readable.
 - The thread view should keep the same author/avatar treatment used in the feed.
 
 ## Re-rate behavior
