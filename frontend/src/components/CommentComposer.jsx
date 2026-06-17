@@ -1,3 +1,4 @@
+import RichTextarea from './RichTextarea.jsx';
 import StarRating from './StarRating.jsx';
 import { FIVE_STAR_SCALE, formatScoreValue } from '../utils/ratingDisplay.js';
 
@@ -38,9 +39,9 @@ const CommentComposer = ({
                     onHoverChange={onHoverChange}
                 />
             </div>
-            <textarea
+            <RichTextarea
                 value={text}
-                onChange={(event) => onTextChange?.(event.target.value)}
+                onChange={onTextChange}
                 placeholder={placeholder}
                 rows={rows}
             />

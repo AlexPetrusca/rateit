@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { parseRichText } from '../components/RichText.jsx';
+import RichTextarea from '../components/RichTextarea.jsx';
 import StarRating from '../components/StarRating.jsx';
 import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
@@ -113,23 +115,23 @@ const Create = () => {
 
                             <div className="form-group">
                                 <label htmlFor="create-body">{selectedFile ? 'Title' : 'Topic'}</label>
-                                <textarea
+                                <RichTextarea
                                     id="create-body"
                                     value={body}
-                                    onChange={(event) => setBody(event.target.value)}
+                                    onChange={setBody}
                                     placeholder="Write the thing you want to rate, or add a caption for your photo"
-                                    rows="5"
+                                    rows={5}
                                 />
                             </div>
 
                             <div className="form-group">
                                 <label htmlFor="create-review">Your review</label>
-                                <textarea
+                                <RichTextarea
                                     id="create-review"
                                     value={reviewText}
-                                    onChange={(event) => setReviewText(event.target.value)}
+                                    onChange={setReviewText}
                                     placeholder="Add your rating context"
-                                    rows="4"
+                                    rows={4}
                                 />
                             </div>
 
@@ -166,7 +168,7 @@ const Create = () => {
                                 )}
                             </div>
                             <div className="create-preview-meta">
-                                <p>{body.trim() || 'Add text to describe the thing you are rating.'}</p>
+                                <p>{body.trim() ? parseRichText(body.trim()) : 'Add text to describe the thing you are rating.'}</p>
                             </div>
                         </aside>
                     </div>

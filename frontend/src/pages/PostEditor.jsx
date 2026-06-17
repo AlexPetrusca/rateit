@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import Modal from '../components/Modal.jsx';
 import PostCard from '../components/PostCard.jsx';
+import { parseRichText } from '../components/RichText.jsx';
+import RichTextarea from '../components/RichTextarea.jsx';
 import StarRating from '../components/StarRating.jsx';
 import BackendApiService from '../services/BackendApiService';
 import { FIVE_STAR_SCALE, formatScoreValue } from '../utils/ratingDisplay.js';
@@ -167,23 +169,23 @@ const PostEditor = () => {
                             <div className="create-fields">
                                 <div className="form-group">
                                     <label htmlFor="edit-topic">Topic</label>
-                                    <textarea
+                                    <RichTextarea
                                         id="edit-topic"
                                         value={body}
-                                        onChange={(event) => setBody(event.target.value)}
+                                        onChange={setBody}
                                         placeholder="Write the thing you want to rate"
-                                        rows="5"
+                                        rows={5}
                                     />
                                 </div>
 
                                 <div className="form-group">
                                     <label htmlFor="edit-review">Your review</label>
-                                    <textarea
+                                    <RichTextarea
                                         id="edit-review"
                                         value={reviewText}
-                                        onChange={(event) => setReviewText(event.target.value)}
+                                        onChange={setReviewText}
                                         placeholder="Add your rating context"
-                                        rows="4"
+                                        rows={4}
                                     />
                                 </div>
 
@@ -233,7 +235,7 @@ const PostEditor = () => {
                                     )}
                                 </div>
                                 <div className="create-preview-meta">
-                                    <p>{body.trim() || 'Add text to describe the thing you are rating.'}</p>
+                                    <p>{body.trim() ? parseRichText(body.trim()) : 'Add text to describe the thing you are rating.'}</p>
                                 </div>
                             </aside>
                         </div>

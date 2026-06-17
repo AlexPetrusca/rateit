@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { parseRichText } from './RichText.jsx';
 import StarRating from './StarRating.jsx';
 import UserAvatar from './UserAvatar.jsx';
 import { formatScoreValue } from '../utils/ratingDisplay.js';
@@ -76,11 +77,11 @@ const PostCard = ({
                             onTopicClick(post.rateableItem.id);
                         }}
                     >
-                        {topicLabel}
+                        {parseRichText(topicLabel)}
                     </button>
                 ) : (
                     <p className={['text-post-body', bodyClassName].filter(Boolean).join(' ')}>
-                        {topicLabel}
+                        {parseRichText(topicLabel)}
                     </p>
                 )
             )}
@@ -99,7 +100,7 @@ const PostCard = ({
 
     const reviewContent = !isDeleted && post.reviewText && (
         <p className={['tweet-review', postBodyClassName].filter(Boolean).join(' ')}>
-            {post.reviewText}
+            {parseRichText(post.reviewText)}
         </p>
     );
 
