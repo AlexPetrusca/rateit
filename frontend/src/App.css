@@ -1716,6 +1716,8 @@ button:disabled {
     display: grid;
     gap: 12px;
     text-shadow: 0 10px 32px rgba(0, 0, 0, 0.36);
+    filter: blur(var(--topic-photo-blur, 0px));
+    will-change: filter;
 }
 
 .topic-photo-title {

@@ -57,6 +57,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Backlog page added at `/backlog`, rendering the `To Do` section of `wiki/build-status.md` as an in-app project board.
 - Docker Desktop Kubernetes dependency flow.
 - Photo topic hero image blur now increases as the page scrolls down and relaxes again when scrolling back up.
+- Photo topic title and rating metadata now blur along with the hero image during scroll.
 - Port-forward setup for Postgres, Redis, MinIO, mocker, and nginx.
 - Phone simulator connectivity using the extra mocker API bridge on `localhost:8090`.
 - Local troubleshooting wiki.
