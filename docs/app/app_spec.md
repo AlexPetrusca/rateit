@@ -92,6 +92,8 @@ Use the shared components below before creating new copies:
 - The topic page keeps like/comment/edit controls on each rating row, and comment rows themselves now expose the same like/comment/edit action set.
 - The topic page exposes one bottom composer for adding another rating to the topic.
 - Topic metadata comes from a stable topic lookup, so the topic page can still render the shared item even if a rating row is deleted.
+- Topics without media now use the same fixed hero layout as photo-backed topics, but with a black background instead of image artwork so the title and rating summary stay in the same spot.
+- The no-photo topic hero also follows the same scroll-driven blur behavior, using a blurred red-tinted gradient background when there is no image.
 - User profiles expose the current viewer's follow relation to that profile user, plus follower/following counts.
 - Follower and following counts are clickable and open public-safe list pages.
 - User search is public-safe and supports finding people by username so users can follow them.

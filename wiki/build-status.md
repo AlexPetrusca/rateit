@@ -17,7 +17,6 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Dark mode
 - Add filter for profile pages to order by date or review
 - make topic page full image, scroll to see ratings and comments
-- make topic stick to the top when you scroll (when no image)
 - everyones a critic as refresh indicator
 - Hitting return twice on a post or comment creates it multiple times. need to make sure its only created once.
 - Add profile pic sizing to create account page
@@ -90,6 +89,9 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Topic discussion rows now keep only like, comment, and edit actions, and the bottom of the topic page has a single rating + description composer for adding another rating.
 - The topic page now uses a raised summary card for the topic itself, and the summary shows the average star rating plus the raw count of ratings while individual ratings no longer repeat the topic text above each review.
 - Topic page comments now load automatically under each rating, while nested replies stay collapsed until that comment's action button is clicked and render inside the parent comment card when expanded.
+- Topics without a photo now reuse the same fixed hero layout as photo-backed topics, with a black background fallback instead of a separate summary card.
+- Topics without a photo now reuse the same dark topic thread and composer card styling as photo-backed topics, so nested replies and the reply box no longer fall back to the white feed-composer look.
+- Topics without a photo now also use the same scroll-driven blur effect, but over an abstract red-tinted gradient background instead of image artwork.
 - Clicking a rating's comment button now moves the topic composer directly under that rating and switches its prompt between `Add your take on this topic` and `Add your take on this take`.
 - Rating-level comment composers now render before the existing comment thread, so the box appears directly under the rating being replied to.
 - Comment composers on threaded replies now anchor to the clicked comment itself, so the box sits directly under the comment being discussed and before that comment's child replies.

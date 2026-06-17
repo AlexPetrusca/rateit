@@ -57,6 +57,12 @@ The topic page now keeps the discussion controls compact: each rating row expose
 
 When the shared topic has an attached photo, the image is shown in the raised topic summary card and the individual ratings underneath suppress the repeated photo so the list stays focused on the reviews.
 
+When the shared topic does not have a photo, the page keeps the same fixed hero layout but uses a black background instead of image artwork, so the title, average stars, and rating count still sit in the same place above the rating stack.
+
+The no-photo topic layout now also reuses the same dark thread and composer card treatment as photo-backed topics, so nested replies and the reply box keep the same visual structure in both cases.
+
+The no-photo hero also uses the same scroll-driven blur effect, but blurs an abstract red-tinted gradient background instead of an actual image.
+
 On feed cards, clicking the attached photo now opens the shared topic page instead of only expanding the image in place.
 
 The topic summary star row uses the raw average score, so partial averages are shown precisely instead of being rounded to the nearest half star in the display.

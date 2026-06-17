@@ -441,7 +441,7 @@ button:disabled {
     width: 100%;
     text-align: left;
     background: none;
-    color: #333;
+    color: var(--text-primary);
     border: none;
     padding: 5px 10px;
     margin: 0;
@@ -1643,6 +1643,10 @@ button:disabled {
     --topic-photo-card-peek: 100px;
 }
 
+.topic-photo-shell--no-photo {
+    background: #000000;
+}
+
 .topic-photo-hero {
     position: relative;
     display: flex;
@@ -1661,12 +1665,32 @@ button:disabled {
     z-index: 0;
 }
 
+.topic-photo-hero--no-photo {
+    background: #000000;
+    box-shadow: inset 0 -140px 180px rgba(0, 0, 0, 0.68);
+}
+
 .topic-photo-hero::before {
     content: '';
     position: absolute;
     inset: 0;
     z-index: 0;
     background: var(--topic-photo-url) center / cover no-repeat;
+    filter: blur(var(--topic-photo-blur, 0px));
+    transform: scale(1.08);
+    will-change: filter;
+}
+
+.topic-photo-hero--no-photo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.06), transparent 30%),
+        radial-gradient(circle at 82% 78%, rgba(255, 48, 58, 0.42), transparent 30%),
+        radial-gradient(circle at 50% 52%, rgba(255, 48, 58, 0.12), transparent 42%),
+        linear-gradient(180deg, #090d16 0%, #000000 100%);
     filter: blur(var(--topic-photo-blur, 0px));
     transform: scale(1.08);
     will-change: filter;
@@ -1701,12 +1725,24 @@ button:disabled {
     pointer-events: none;
 }
 
+.topic-photo-hero--no-photo::after {
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(255, 48, 58, 0.24), transparent 34%);
+}
+
 .topic-photo-hero-overlay {
     position: absolute;
     inset: 0;
     z-index: 0;
     background: linear-gradient(180deg, rgba(9, 13, 22, 0.08) 0%, rgba(9, 13, 22, 0.26) 42%, rgba(9, 13, 22, 0.86) 100%);
     pointer-events: none;
+}
+
+.topic-photo-hero--no-photo .topic-photo-hero-overlay {
+    background:
+        radial-gradient(circle at bottom right, rgba(255, 48, 58, 0.16), transparent 28%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0%, rgba(0, 0, 0, 0.36) 42%, rgba(0, 0, 0, 0.92) 100%);
 }
 
 .topic-photo-hero-content {
@@ -1856,8 +1892,8 @@ button:disabled {
 }
 
 .topic-photo-thread .comment-replies {
-    margin: 0 14px 14px;
-    padding: 12px 0 0;
+    margin: 0;
+    padding: 12px 14px 14px;
     border-top: 1px solid rgba(248, 251, 255, 0.14);
 }
 

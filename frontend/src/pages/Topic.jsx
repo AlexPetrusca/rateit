@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Paper, Stack, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import FeedTimeline from '../components/FeedTimeline.jsx';
@@ -152,6 +152,13 @@ const Topic = () => {
     const topicComposerScore = hoveredTopicScore ?? Number(topicComposerDraft.score);
 
     const isFullyAuthenticated = isAuthenticated && user != null;
+    const topicShellClassName = hasTopicPhoto
+        ? 'twitter-shell topic-shell topic-photo-shell'
+        : 'twitter-shell topic-shell topic-photo-shell topic-photo-shell--no-photo';
+    const topicHeroClassName = hasTopicPhoto
+        ? 'topic-photo-hero'
+        : 'topic-photo-hero topic-photo-hero--no-photo';
+    const topicHeroAriaLabel = topicLabel ? `${topicLabel} topic header` : 'Topic header';
 
     useEffect(() => {
         if (!isFullyAuthenticated) {
@@ -275,11 +282,6 @@ const Topic = () => {
     }, [isFullyAuthenticated, feedError, isFeedLoading, isFeedLoadingMore, hasMoreFeed]);
 
     useEffect(() => {
-        if (!hasTopicPhoto) {
-            setTopicPhotoBlur(0);
-            return undefined;
-        }
-
         let rafId = 0;
 
         const updateBlur = () => {
@@ -305,7 +307,7 @@ const Topic = () => {
 
             window.removeEventListener('scroll', onScroll);
         };
-    }, [hasTopicPhoto, topicRateableItemId]);
+    }, [topicRateableItemId]);
 
     useEffect(() => {
         if (!isFullyAuthenticated || feedItems.length === 0) {
@@ -670,7 +672,7 @@ const Topic = () => {
             <div className={[
                 'comment-composer',
                 isNestedComposer ? 'comment-composer-nested' : '',
-                hasTopicPhoto ? 'topic-photo-card' : ''
+                'topic-photo-card'
             ].filter(Boolean).join(' ')}>
                 <div className="comment-rating-control">
                     <label id={`${scoreInputId}-label`}>{composerTitle}</label>
@@ -827,14 +829,14 @@ const Topic = () => {
         }
 
         return (
-            <div className="topic-comment-reply" key={comment.id}>
+            <Fragment key={comment.id}>
                 {row}
                 {hasReplies && isExpanded && (
                     <div className="topic-comment-replies">
                         {replies.map((reply) => renderTopicCommentNode(item, reply, depth + 1))}
                     </div>
                 )}
-            </div>
+            </Fragment>
         );
     };
 
@@ -843,7 +845,7 @@ const Topic = () => {
         const comments = commentsByRating[ratingId] || [];
 
         return (
-            <div className={hasTopicPhoto ? 'feed-composer topic-photo-thread' : 'feed-composer'}>
+            <div className="feed-composer topic-photo-thread">
                 <div className="comment-list">
                     {comments.length > 0 && comments.map((comment) => renderTopicCommentNode(item, comment))}
                 </div>
@@ -855,7 +857,7 @@ const Topic = () => {
         <div className={[
             'feed-composer',
             'topic-rating-composer',
-            hasTopicPhoto ? 'topic-photo-card topic-photo-composer' : ''
+            'topic-photo-card topic-photo-composer'
         ].filter(Boolean).join(' ')}>
             <div className="score-row">
                 <output className="score-value">
@@ -965,84 +967,55 @@ const Topic = () => {
     return (
         <div className="feed-page">
             {isFullyAuthenticated ? (
-                <main className={hasTopicPhoto ? 'twitter-shell topic-shell topic-photo-shell' : 'twitter-shell'}>
+                <main className={topicShellClassName}>
                     <>
-                        {hasTopicPhoto ? (
-                            <section
-                                className="topic-photo-hero"
-                                style={{
+                        <section
+                            className={topicHeroClassName}
+                            style={{
+                                ...(hasTopicPhoto ? {
                                     '--topic-photo-url': `url(${topicMediaUrl})`,
                                     '--topic-photo-blur': `${topicPhotoBlur}px`
-                                }}
-                                aria-label={topicLabel ? `${topicLabel} topic photo` : 'Topic photo'}
-                            >
+                                } : {
+                                    '--topic-photo-blur': `${topicPhotoBlur}px`
+                                })
+                            }}
+                            aria-label={topicHeroAriaLabel}
+                        >
+                            {hasTopicPhoto && (
                                 <button
                                     type="button"
                                     className="topic-photo-hero-button"
                                     onClick={() => setExpandedTopicImageUrl(topicMediaUrl)}
                                     aria-label="Open topic photo"
                                 />
-                                <div className="topic-photo-hero-overlay" />
-                                <div className="topic-photo-hero-content">
-                                    {topicLabel && (
-                                        <Typography
-                                            variant="h3"
-                                            component="h1"
-                                            fontWeight={800}
-                                            className="topic-photo-title"
-                                            style={topicTitleStyle}
-                                        >
-                                            {topicLabel}
-                                        </Typography>
-                                    )}
-                                    <div className="topic-photo-meta">
-                                        <Typography variant="body1" className="topic-photo-average">
-                                            {formatAverageRating(topicAverageRating)}
-                                        </Typography>
-                                        <AverageStarRating
-                                            value={topicAverageRating}
-                                            label={`Average rating: ${formatAverageRating(topicAverageRating)} out of 5`}
-                                        />
-                                        <Typography variant="body2" className="topic-photo-count">
-                                            {topicRatingCount} ratings
-                                        </Typography>
-                                    </div>
+                            )}
+                            <div className="topic-photo-hero-overlay" />
+                            <div className="topic-photo-hero-content">
+                                {topicLabel && (
+                                    <Typography
+                                        variant="h3"
+                                        component="h1"
+                                        fontWeight={800}
+                                        className="topic-photo-title"
+                                        style={topicTitleStyle}
+                                    >
+                                        {topicLabel}
+                                    </Typography>
+                                )}
+                                <div className="topic-photo-meta">
+                                    <Typography variant="body1" className="topic-photo-average">
+                                        {formatAverageRating(topicAverageRating)}
+                                    </Typography>
+                                    <AverageStarRating
+                                        value={topicAverageRating}
+                                        label={`Average rating: ${formatAverageRating(topicAverageRating)} out of 5`}
+                                    />
+                                    <Typography variant="body2" className="topic-photo-count">
+                                        {topicRatingCount} ratings
+                                    </Typography>
                                 </div>
-                            </section>
-                        ) : (
-                            <Paper elevation={2} className="topic-summary-card">
-                                <Stack spacing={1}>
-                                    {topicMediaUrl && (
-                                        <button
-                                            type="button"
-                                            className="topic-summary-media-button"
-                                            onClick={() => setExpandedTopicImageUrl(topicMediaUrl)}
-                                            aria-label="Open topic photo"
-                                        >
-                                            <img
-                                                src={topicMediaUrl}
-                                                alt={topicLabel}
-                                                className="topic-summary-media"
-                                            />
-                                        </button>
-                                    )}
-                                    {topicLabel && (
-                                        <Typography variant="h5" component="div" fontWeight={700}>
-                                            {topicLabel}
-                                        </Typography>
-                                    )}
-                                    <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
-                                        <Typography variant="body2" color="text.secondary" fontWeight={700}>
-                                            {topicRatingCount}
-                                        </Typography>
-                                        <AverageStarRating
-                                            value={topicAverageRating}
-                                            label={`Average rating: ${formatAverageRating(topicAverageRating)} out of 5`}
-                                        />
-                                    </Stack>
-                                </Stack>
-                            </Paper>
-                        )}
+                            </div>
+                        </section>
 
                         {isFeedLoading && <p className="feed-status">Loading ratings...</p>}
                         {!isFeedLoading && !feedError && feedItems.length === 0 && (
@@ -1050,7 +1023,7 @@ const Topic = () => {
                         )}
 
                         <FeedTimeline
-                            className={hasTopicPhoto ? 'topic-feed topic-photo-feed' : 'topic-feed'}
+                            className="topic-feed topic-photo-feed"
                             items={displayedFeedItems}
                             onAuthorClick={openProfile}
                             onPostClick={openPost}
