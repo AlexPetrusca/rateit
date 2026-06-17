@@ -10,6 +10,7 @@ LOCAL_MINIO_PORT="${LOCAL_MINIO_PORT:-9100}"
 ENDPOINT="http://localhost:${LOCAL_MINIO_PORT}"
 NAMESPACE="critic"
 MINIO_SERVICE="critic-minio"
+MINIO_SECRET="${MINIO_SECRET:-critic-minio-secret}"
 TEMP_TUNNEL=false
 
 cleanup() {
@@ -20,9 +21,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Set credentials for the sub-shell/commands
-export AWS_ACCESS_KEY_ID="critic"
-export AWS_SECRET_ACCESS_KEY="critic-minio-password"
+if [ -z "${AWS_ACCESS_KEY_ID:-}" ]; then
+  export AWS_ACCESS_KEY_ID
+  AWS_ACCESS_KEY_ID="$(kubectl get secret -n "$NAMESPACE" "$MINIO_SECRET" -o 'go-template={{ index .data "rootUser" | base64decode }}')"
+fi
+
+if [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
+  export AWS_SECRET_ACCESS_KEY
+  AWS_SECRET_ACCESS_KEY="$(kubectl get secret -n "$NAMESPACE" "$MINIO_SECRET" -o 'go-template={{ index .data "rootPassword" | base64decode }}')"
+fi
 
 # 0. Package Frontend
 npm install >/dev/null
