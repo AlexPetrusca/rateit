@@ -8,6 +8,7 @@ import CommentThread from '../components/CommentThread.jsx';
 import FeedTimeline from '../components/FeedTimeline.jsx';
 import PostActions from '../components/PostActions.jsx';
 import RatingComposer from '../components/RatingComposer.jsx';
+import { parseRichText } from '../components/RichText.jsx';
 import BackendApiService from '../services/BackendApiService';
 import {
     DEFAULT_COMMENT_SCORE,
@@ -822,19 +823,21 @@ const Topic = () => {
                                         className="topic-photo-title"
                                         style={topicTitleStyle}
                                     >
-                                        {topicLabel}
+                                        {parseRichText(topicLabel)}
                                     </Typography>
                                 )}
                                 <div className="topic-photo-meta">
-                                    <Typography variant="body1" className="topic-photo-average">
-                                        {formatAverageRating(topicAverageRating)}
-                                    </Typography>
-                                    <AverageStarRating
-                                        value={topicAverageRating}
-                                        label={`Average rating: ${formatAverageRating(topicAverageRating)} out of 5`}
-                                    />
+                                    <div className="topic-photo-rating-row">
+                                        <Typography variant="body1" className="topic-photo-average">
+                                            {formatAverageRating(topicAverageRating)}
+                                        </Typography>
+                                        <AverageStarRating
+                                            value={topicAverageRating}
+                                            label={`Average rating: ${formatAverageRating(topicAverageRating)} out of 5`}
+                                        />
+                                    </div>
                                     <Typography variant="body2" className="topic-photo-count">
-                                        {topicRatingCount} ratings
+                                        {topicRatingCount} {topicRatingCount === 1 ? 'rating' : 'ratings'}
                                     </Typography>
                                 </div>
                             </div>

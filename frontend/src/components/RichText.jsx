@@ -1,4 +1,6 @@
-const RICH_REGEX = /\*\*(.+?)\*\*|_(.+?)_|~(.+?)~/g;
+const RICH_REGEX = /\[([^\]]+)\]\(([^)]+)\)|\*\*(.+?)\*\*|_(.+?)_|~(.+?)~/g;
+
+const safeHref = (url) => /^https?:\/\//i.test(url) ? url : `https://${url}`;
 
 export const parseRichText = (text) => {
     if (!text) return null;
@@ -15,11 +17,13 @@ export const parseRichText = (text) => {
         }
 
         if (match[1] !== undefined) {
-            segments.push(<strong key={key++}>{match[1]}</strong>);
-        } else if (match[2] !== undefined) {
-            segments.push(<em key={key++}>{match[2]}</em>);
+            segments.push(<a key={key++} href={safeHref(match[2])} target="_blank" rel="noopener noreferrer" className="rich-link">{match[1]}</a>);
         } else if (match[3] !== undefined) {
-            segments.push(<u key={key++}>{match[3]}</u>);
+            segments.push(<strong key={key++}>{match[3]}</strong>);
+        } else if (match[4] !== undefined) {
+            segments.push(<em key={key++}>{match[4]}</em>);
+        } else if (match[5] !== undefined) {
+            segments.push(<u key={key++}>{match[5]}</u>);
         }
 
         lastIndex = regex.lastIndex;

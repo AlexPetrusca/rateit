@@ -14,6 +14,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 
 ## To Do
 ### P1
+- Loading is ugly everywhere, will need to do a visual overhaul
 - Dark mode
 - Add filter for profile pages to order by date or review
 - make topic page full image, scroll to see ratings and comments

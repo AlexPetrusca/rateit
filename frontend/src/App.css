@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,800;9..40,900&display=swap');
 
-:root {
+/* ponytail: variables are dark-only for now; add :root light defaults here when adding a theme toggle */
+[data-theme="dark"] {
     color-scheme: dark;
     --page-bg: #000000;
     --surface: #242424;
@@ -151,18 +152,18 @@ body.login-scroll-lock {
 }
 
 .create-button {
-    background-color: #ff303a;
-    color: white;
-    border: none;
+    background: transparent;
+    color: #0f1419;
+    border: 1.5px solid currentColor;
     padding: 0.5rem 1.25rem;
     font-size: 1rem;
-    border-radius: 20px;
+    border-radius: 12px;
     cursor: pointer;
     font-weight: 500;
 }
 
 .create-button:hover {
-    background-color: #c81e27;
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .hamburger-button {
@@ -231,57 +232,39 @@ body.login-scroll-lock {
     min-height: calc(100vh - 60px);
 }
 
-.refresh-banner {
+.refresh-indicator {
     position: fixed;
-    top: 74px;
     left: 50%;
+    transform: translateX(-50%);
     z-index: 1400;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.65rem;
-    padding: 0.7rem 0.95rem;
-    border: 1px solid rgba(29, 78, 216, 0.18);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-    color: #14315d;
-    transform: translate(-50%, calc(-140% + (var(--refresh-progress, 0) * 140%)));
-    opacity: 0;
-    pointer-events: none;
-    transition: transform 120ms ease, opacity 120ms ease;
-}
-
-.refresh-banner.is-visible {
-    opacity: 1;
-}
-
-.refresh-banner-icon {
-    width: 1.1rem;
-    height: 1.1rem;
-    border: 2px solid currentColor;
+    width: 26px;
+    height: 26px;
+    border: 2.5px solid rgba(255, 255, 255, 0.75);
     border-right-color: transparent;
     border-radius: 50%;
-    position: relative;
-    flex: 0 0 auto;
+    pointer-events: none;
+    transition: opacity 120ms ease;
 }
 
-.refresh-banner-icon::after {
+.refresh-indicator::after {
     content: '';
     position: absolute;
     top: -0.12rem;
     right: -0.05rem;
-    width: 0.36rem;
-    height: 0.36rem;
-    border-top: 2px solid currentColor;
-    border-right: 2px solid currentColor;
+    width: 0.3rem;
+    height: 0.3rem;
+    border-top: 2.5px solid rgba(255, 255, 255, 0.75);
+    border-right: 2.5px solid rgba(255, 255, 255, 0.75);
     transform: rotate(45deg);
 }
 
-.refresh-banner-text {
-    font-size: 0.9rem;
-    font-weight: 700;
-    letter-spacing: 0;
-    white-space: nowrap;
+.refresh-indicator.is-refreshing {
+    animation: refresh-spin 0.8s linear infinite;
+}
+
+@keyframes refresh-spin {
+    from { transform: translateX(-50%) rotate(0deg); }
+    to { transform: translateX(-50%) rotate(360deg); }
 }
 
 .container {
@@ -328,19 +311,25 @@ label {
     font-family: inherit;
 }
 
-.rich-textarea-wrapper {
+.rich-editor {
     display: flex;
     flex-direction: column;
     width: 100%;
+    gap: 4px;
+}
+
+.rich-textarea-wrapper {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
 }
 
 .rich-toolbar {
     display: flex;
     gap: 2px;
     padding: 4px 6px 0;
-    border: 1px solid #ddd;
-    border-bottom: none;
-    border-radius: 4px 4px 0 0;
+    border: none;
     background: #f1f3f5;
     box-sizing: border-box;
 }
@@ -348,6 +337,7 @@ label {
 .rich-toolbar-btn {
     background: none;
     border: none;
+    outline: none;
     padding: 2px 7px;
     border-radius: 3px;
     cursor: pointer;
@@ -376,9 +366,20 @@ label {
     text-decoration: underline;
 }
 
+.rich-toolbar-btn-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rich-link {
+    color: inherit;
+    text-decoration: underline;
+}
+
 .rich-textarea-wrapper textarea {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
+    border: none;
+    border-radius: 4px;
 }
 
 .rich-textarea-wrapper textarea:focus {
@@ -1842,9 +1843,16 @@ button:disabled {
 }
 
 .topic-photo-meta {
-    display: grid;
-    justify-items: start;
-    gap: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.topic-photo-rating-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .topic-photo-average {
@@ -1862,7 +1870,6 @@ button:disabled {
 .topic-photo-feed {
     width: min(360px, calc(100vw - 80px));
     margin: calc(-1 * var(--topic-photo-card-peek)) auto 0;
-    padding-bottom: 6px;
     position: relative;
     z-index: 2;
 }
@@ -2075,7 +2082,7 @@ button:disabled {
 
 .topic-photo-composer {
     width: min(360px, calc(100vw - 80px));
-    margin: 0 auto 6px;
+    margin: 0 auto;
     position: relative;
     z-index: 2;
     padding: 16px;
@@ -2087,7 +2094,7 @@ button:disabled {
 }
 
 .feed-composer.topic-photo-composer {
-    padding: 16px;
+    padding: 16px 16px 8px;
     background: var(--surface);
     border: 0;
     margin-top: 1px;
@@ -2121,19 +2128,9 @@ button:disabled {
     color: var(--text-primary);
 }
 
-.feed-composer.topic-photo-composer .composer-actions {
-    justify-content: stretch;
-}
-
 .feed-composer.topic-photo-composer .composer-actions button {
-    width: 100%;
-    background: transparent;
     color: #ffffff;
-    border: 1.5px solid rgba(255, 255, 255, 0.7);
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    padding: 12px 16px;
+    border-color: rgba(255, 255, 255, 0.7);
 }
 
 .feed-composer.topic-photo-composer .composer-actions button:hover {
@@ -2143,7 +2140,7 @@ button:disabled {
 
 .topic-photo-composer textarea,
 .topic-photo-composer input {
-    background: var(--surface-soft);
+    background: transparent;
     border-color: var(--border-subtle);
     color: var(--text-primary);
 }
@@ -2499,16 +2496,24 @@ button:disabled {
 
 .composer-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: stretch;
+    margin-top: 8px;
 }
 
 .composer-actions button {
+    width: 100%;
     margin: 0;
-    padding: 8px 16px;
-    border-radius: 999px;
-    background: #0f1419;
-    font-size: 0.9rem;
-    font-weight: 700;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: transparent;
+    color: #0f1419;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.composer-actions button:hover {
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .comment-list {
@@ -2862,15 +2867,6 @@ button:disabled {
         min-height: calc(100vh - 56px);
     }
 
-    .refresh-banner {
-        top: 64px;
-        padding: 0.6rem 0.8rem;
-    }
-
-    .refresh-banner-text {
-        font-size: 0.82rem;
-    }
-
     .feed-page,
     .guest-shell {
         min-height: calc(100vh - 56px);
@@ -2924,13 +2920,6 @@ button:disabled {
         margin-bottom: 8px;
     }
 
-    .composer-actions {
-        justify-content: stretch;
-    }
-
-    .composer-actions button {
-        width: 100%;
-    }
 
     .create-layout {
         grid-template-columns: 1fr;
@@ -2973,13 +2962,12 @@ button:disabled {
     .tweet-actions {
         gap: 4px;
         max-width: none;
-        flex-wrap: wrap;
+        padding-right: 16px;
     }
 
     .tweet-action {
         font-size: 0.82rem;
         padding: 7px 5px;
-        flex: 1 1 calc(33.333% - 4px);
         justify-content: center;
     }
 
@@ -3650,8 +3638,17 @@ button:disabled {
 }
 
 .rich-toolbar {
-    background: var(--surface-3);
-    border-color: var(--border-subtle);
+    background: transparent;
+}
+
+.rich-textarea-wrapper {
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.comment-composer .rich-textarea-wrapper textarea {
+    background: transparent;
 }
 
 .rich-toolbar-btn {
@@ -3717,6 +3714,14 @@ label {
     background: var(--surface);
     border-color: var(--border-subtle);
     box-shadow: var(--shadow-elevated);
+}
+
+.create-button {
+    color: var(--text-primary);
+}
+
+.create-button:hover {
+    background: var(--surface-hover);
 }
 
 .notification,
@@ -3911,6 +3916,10 @@ label {
     color: var(--text-primary);
 }
 
+.topic-photo-composer .rich-textarea-wrapper textarea {
+    background: transparent;
+}
+
 .comment-composer textarea::placeholder,
 .feed-composer textarea::placeholder,
 .feed-composer input::placeholder {
@@ -3918,13 +3927,13 @@ label {
 }
 
 .composer-actions button {
-    background: var(--accent);
+    background: transparent;
     color: #ffffff;
 }
 
 .composer-actions button:hover,
 .composer-actions button:focus {
-    background: var(--accent-hover);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .topic-photo-feed .comment-author {

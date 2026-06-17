@@ -10,23 +10,13 @@ const Layout = ({ children }) => {
     const location = useLocation();
     const [pullDistance, setPullDistance] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const gestureRef = useRef({
-        active: false,
-        startY: 0,
-        distance: 0
-    });
+    const gestureRef = useRef({ active: false, startY: 0, distance: 0 });
 
     useEffect(() => {
-        if (location.pathname === '/login') {
-            return undefined;
-        }
+        if (location.pathname === '/login') return undefined;
 
         const resetGesture = () => {
-            gestureRef.current = {
-                active: false,
-                startY: 0,
-                distance: 0
-            };
+            gestureRef.current = { active: false, startY: 0, distance: 0 };
             setPullDistance(0);
         };
 
@@ -37,56 +27,32 @@ const Layout = ({ children }) => {
         };
 
         const handleTouchStart = (event) => {
-            if (isRefreshing || window.scrollY > EDGE_THRESHOLD) {
-                return;
-            }
-
+            if (isRefreshing || window.scrollY > EDGE_THRESHOLD) return;
             const target = event.target;
-            if (target instanceof Element && target.closest('input, textarea, select, button, a, [role="button"]')) {
-                return;
-            }
-
+            if (target instanceof Element && target.closest('input, textarea, select')) return;
             const touch = event.touches[0];
-            if (!touch) {
-                return;
-            }
-
-            gestureRef.current = {
-                active: true,
-                startY: touch.clientY,
-                distance: 0
-            };
+            if (!touch) return;
+            gestureRef.current = { active: true, startY: touch.clientY, distance: 0 };
         };
 
         const handleTouchMove = (event) => {
-            if (!gestureRef.current.active || isRefreshing) {
-                return;
-            }
-
+            if (!gestureRef.current.active || isRefreshing) return;
             const touch = event.touches[0];
-            if (!touch) {
-                return;
-            }
-
+            if (!touch) return;
             const nextDistance = Math.min(Math.max(touch.clientY - gestureRef.current.startY, 0), MAX_PULL_DISTANCE);
-
             if (nextDistance <= 0) {
                 setPullDistance(0);
                 gestureRef.current.distance = 0;
                 return;
             }
-
             event.preventDefault();
             gestureRef.current.distance = nextDistance;
             setPullDistance(nextDistance);
         };
 
         const handleTouchEnd = () => {
-            if (gestureRef.current.distance >= PULL_THRESHOLD) {
-                startRefresh();
-            } else {
-                resetGesture();
-            }
+            if (gestureRef.current.distance >= PULL_THRESHOLD) startRefresh();
+            else resetGesture();
         };
 
         window.addEventListener('touchstart', handleTouchStart, { passive: true });
@@ -102,32 +68,33 @@ const Layout = ({ children }) => {
         };
     }, [isRefreshing, location.pathname]);
 
-    const refreshProgress = Math.min(1, pullDistance / PULL_THRESHOLD);
-    const refreshMessage = isRefreshing
-        ? 'Refreshing...'
-        : pullDistance >= PULL_THRESHOLD
-            ? 'Release to refresh'
-            : 'Pull down to refresh';
     const isLoginPage = location.pathname === '/login';
+    const indicatorTop = isRefreshing ? PULL_THRESHOLD / 2 : pullDistance / 2;
 
     return (
         <>
             {!isLoginPage && (
-                <>
-                    <div
-                        className={`refresh-banner ${pullDistance > 0 || isRefreshing ? 'is-visible' : ''}`}
-                        style={{ '--refresh-progress': refreshProgress }}
-                        aria-hidden="true"
-                    >
-                        <span className="refresh-banner-icon" />
-                        <span className="refresh-banner-text">{refreshMessage}</span>
-                    </div>
-                    <TopBar />
-                </>
+                <div
+                    className={`refresh-indicator${isRefreshing ? ' is-refreshing' : ''}`}
+                    aria-hidden="true"
+                    style={{
+                        top: indicatorTop,
+                        opacity: pullDistance > 8 || isRefreshing ? 1 : 0,
+                    }}
+                />
             )}
-            <main className={isLoginPage ? 'page-content page-content-login' : 'page-content'}>
-                {children}
-            </main>
+            <div
+                style={!isLoginPage ? {
+                    position: 'relative',
+                    top: pullDistance,
+                    transition: pullDistance === 0 && !isRefreshing ? 'top 200ms ease' : 'none',
+                } : undefined}
+            >
+                {!isLoginPage && <TopBar />}
+                <main className={isLoginPage ? 'page-content page-content-login' : 'page-content'}>
+                    {children}
+                </main>
+            </div>
         </>
     );
 };
