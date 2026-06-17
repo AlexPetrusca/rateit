@@ -1901,16 +1901,6 @@ button:disabled {
     margin-bottom: 0;
 }
 
-.topic-photo-thread .comment-thread {
-    padding: 0;
-    border-radius: 20px;
-    background: #262b3a;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26);
-    overflow: hidden;
-    color: #f8fbff;
-}
-
 .topic-photo-thread .comment-row {
     border: 0;
     padding: 14px 14px 12px;

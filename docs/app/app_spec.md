@@ -94,6 +94,7 @@ Use the shared components below before creating new copies:
 - Topic metadata comes from a stable topic lookup, so the topic page can still render the shared item even if a rating row is deleted.
 - Topics without media now use the same fixed hero layout as photo-backed topics, but with a black background instead of image artwork so the title and rating summary stay in the same spot.
 - The no-photo topic hero also follows the same scroll-driven blur behavior, using a blurred red-tinted gradient background when there is no image.
+- Entering a topic page resets the scroll position to the top so the fixed hero always starts unblurred and only fades once the user scrolls.
 - User profiles expose the current viewer's follow relation to that profile user, plus follower/following counts.
 - Follower and following counts are clickable and open public-safe list pages.
 - User search is public-safe and supports finding people by username so users can follow them.

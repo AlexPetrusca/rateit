@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Typography } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
@@ -160,11 +160,17 @@ const Topic = () => {
         : 'topic-photo-hero topic-photo-hero--no-photo';
     const topicHeroAriaLabel = topicLabel ? `${topicLabel} topic header` : 'Topic header';
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!isFullyAuthenticated) {
             return;
         }
 
+        const previousScrollRestoration = window.history.scrollRestoration;
+        window.history.scrollRestoration = 'manual';
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        setTopicPhotoBlur(0);
         setFeedItems([]);
         setTopicDetails(null);
         setFeedPage(0);
@@ -178,6 +184,10 @@ const Topic = () => {
         setCommentDrafts({});
         setHoveredCommentScores({});
         setExpandedCommentReplyKeys([]);
+
+        return () => {
+            window.history.scrollRestoration = previousScrollRestoration;
+        };
     }, [isFullyAuthenticated, topicRateableItemId]);
 
     useEffect(() => {
@@ -817,14 +827,14 @@ const Topic = () => {
 
         if (depth === 0) {
             return (
-                <div className="comment-thread topic-photo-card topic-photo-root-comment" key={comment.id}>
+                <Fragment key={comment.id}>
                     {row}
                     {hasReplies && isExpanded && (
                         <div className="topic-comment-replies">
                             {replies.map((reply) => renderTopicCommentNode(item, reply, depth + 1))}
                         </div>
                     )}
-                </div>
+                </Fragment>
             );
         }
 

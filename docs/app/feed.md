@@ -63,6 +63,8 @@ The no-photo topic layout now also reuses the same dark thread and composer card
 
 The no-photo hero also uses the same scroll-driven blur effect, but blurs an abstract red-tinted gradient background instead of an actual image.
 
+The topic page now resets scroll to the top on entry so the hero starts crisp and only begins blurring once the user actually scrolls the page.
+
 On feed cards, clicking the attached photo now opens the shared topic page instead of only expanding the image in place.
 
 The topic summary star row uses the raw average score, so partial averages are shown precisely instead of being rounded to the nearest half star in the display.
