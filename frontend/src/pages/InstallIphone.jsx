@@ -6,7 +6,7 @@ const InstallIphone = () => {
 
     return (
         <div className="feed-page">
-            <main className="guest-shell">
+            <main className="guest-shell install-page">
                 <section className="guest-card">
                     <h2>Add Critic to iPhone Home Screen</h2>
                     <p>Use Safari on your iPhone so the site can be saved like an app icon.</p>

@@ -971,6 +971,10 @@ button:disabled {
     line-height: 1.2;
 }
 
+.install-page .guest-card h2 {
+    color: #ffffff;
+}
+
 .guest-card p {
     margin: 0;
     color: #536471;
@@ -1275,6 +1279,12 @@ button:disabled {
     gap: 16px;
 }
 
+.backlog-header h1,
+.backlog-section h2,
+.backlog-suggestions-header h2 {
+    color: var(--text-primary);
+}
+
 .backlog-header-actions {
     display: flex;
     align-items: center;
@@ -1304,7 +1314,7 @@ button:disabled {
 
 .backlog-header p {
     margin: 6px 0 0;
-    color: #536471;
+    color: var(--text-secondary);
     font-size: 0.95rem;
 }
 
@@ -1316,7 +1326,6 @@ button:disabled {
 
 .backlog-section h2 {
     margin: 0 0 10px;
-    color: #0f1419;
     font-size: 1.05rem;
 }
 
@@ -1325,7 +1334,7 @@ button:disabled {
     padding-left: 20px;
     display: grid;
     gap: 8px;
-    color: #0f1419;
+    color: var(--text-primary);
 }
 
 .backlog-section li {
@@ -1334,14 +1343,14 @@ button:disabled {
 
 .backlog-empty {
     margin: 0;
-    color: #536471;
+    color: var(--text-secondary);
 }
 
 .backlog-section code {
     padding: 0.08rem 0.28rem;
     border-radius: 4px;
-    background: #eef3f8;
-    color: #0b5cad;
+    background: var(--surface-2);
+    color: var(--link);
     font-size: 0.95em;
 }
 
@@ -1359,16 +1368,25 @@ button:disabled {
 
 .backlog-suggestions-header p {
     margin: 4px 0 0;
-    color: #536471;
+    color: var(--text-secondary);
     font-size: 0.95rem;
 }
 
 .backlog-suggestions-table {
     overflow-x: auto;
+    background: var(--surface);
+    border-color: var(--border-subtle);
+    color: var(--text-primary);
 }
 
 .backlog-suggestions-table .MuiTableCell-head {
     font-weight: 700;
+    color: var(--text-primary);
+}
+
+.backlog-suggestions-table .MuiTableCell-root {
+    color: var(--text-primary);
+    border-bottom-color: var(--border-subtle);
 }
 
 .backlog-suggestion-title,
