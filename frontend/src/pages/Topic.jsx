@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Typography } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
@@ -145,11 +145,17 @@ const Topic = () => {
         : 'topic-photo-hero topic-photo-hero--no-photo';
     const topicHeroAriaLabel = topicLabel ? `${topicLabel} topic header` : 'Topic header';
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!isFullyAuthenticated) {
             return;
         }
 
+        const previousScrollRestoration = window.history.scrollRestoration;
+        window.history.scrollRestoration = 'manual';
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        setTopicPhotoBlur(0);
         setFeedItems([]);
         setTopicDetails(null);
         setFeedPage(0);
@@ -163,6 +169,10 @@ const Topic = () => {
         setCommentDrafts({});
         setHoveredCommentScores({});
         setExpandedCommentReplyKeys([]);
+
+        return () => {
+            window.history.scrollRestoration = previousScrollRestoration;
+        };
     }, [isFullyAuthenticated, topicRateableItemId]);
 
     useEffect(() => {

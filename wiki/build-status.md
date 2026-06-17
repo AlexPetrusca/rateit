@@ -92,6 +92,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Topics without a photo now reuse the same fixed hero layout as photo-backed topics, with a black background fallback instead of a separate summary card.
 - Topics without a photo now reuse the same dark topic thread and composer card styling as photo-backed topics, so nested replies and the reply box no longer fall back to the white feed-composer look.
 - Topics without a photo now also use the same scroll-driven blur effect, but over an abstract red-tinted gradient background instead of image artwork.
+- Topic pages now reset to the top on entry so the fixed hero starts crisp and only blurs after the user scrolls.
 - Clicking a rating's comment button now moves the topic composer directly under that rating and switches its prompt between `Add your take on this topic` and `Add your take on this take`.
 - Rating-level comment composers now render before the existing comment thread, so the box appears directly under the rating being replied to.
 - Comment composers on threaded replies now anchor to the clicked comment itself, so the box sits directly under the comment being discussed and before that comment's child replies.
