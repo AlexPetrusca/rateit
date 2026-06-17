@@ -15,6 +15,9 @@ Maintenance rule: keep this page current when features are started, completed, d
 ## To Do
 ### P1
 - Loading is ugly everywhere, will need to do a visual overhaul
+- Nav bar needs love. not sure what the plan is.
+- composition boxes look good, need to figure out where they should spawn on topic pages
+- instead of showing ratings with no text, those should just be accessible by tapping the avg star rating on the topic. no need to create cards for every empty rating
 - Dark mode
 - Add filter for profile pages to order by date or review
 - make topic page full image, scroll to see ratings and comments
