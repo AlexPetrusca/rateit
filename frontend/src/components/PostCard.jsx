@@ -60,8 +60,17 @@ const PostCard = ({
         <button
             type="button"
             className="rating-object rating-object-button"
-            onClick={() => setExpandedImageUrl(mediaUrl)}
-            aria-label="Open photo"
+            onClick={(event) => {
+                event.stopPropagation();
+
+                if (typeof onTopicClick === 'function' && post.rateableItem?.id != null) {
+                    onTopicClick(post.rateableItem.id);
+                    return;
+                }
+
+                setExpandedImageUrl(mediaUrl);
+            }}
+            aria-label={typeof onTopicClick === 'function' ? 'Open topic' : 'Open photo'}
         >
             <img
                 src={mediaUrl}

@@ -57,6 +57,8 @@ The topic page now keeps the discussion controls compact: each rating row expose
 
 When the shared topic has an attached photo, the image is shown in the raised topic summary card and the individual ratings underneath suppress the repeated photo so the list stays focused on the reviews.
 
+On feed cards, clicking the attached photo now opens the shared topic page instead of only expanding the image in place.
+
 The topic summary star row uses the raw average score, so partial averages are shown precisely instead of being rounded to the nearest half star in the display.
 
 ## Comment behavior
