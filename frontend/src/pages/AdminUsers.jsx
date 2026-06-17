@@ -14,32 +14,15 @@ import {
     Typography
 } from '@mui/material';
 import AdminDataGrid from '../components/AdminDataGrid.jsx';
+import AdminSelectionToolbar from '../components/AdminSelectionToolbar.jsx';
 import Modal from '../components/Modal.jsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
+import { emptySelectionModel, getSelectedRowIds } from '../utils/adminSelection.js';
 
 const DEFAULT_PAGE_SIZE = 10;
 const ROLE_OPTIONS = ['ROLE_USER', 'ROLE_TEST_USER', 'ROLE_ADMIN'];
-
-const emptySelectionModel = {
-    type: 'include',
-    ids: new Set()
-};
-
-const getSelectedRowIds = (selectionModel, rows, getRowId) => {
-    if (!selectionModel) {
-        return [];
-    }
-
-    const rowIds = rows.map(getRowId);
-
-    if (selectionModel.type === 'exclude') {
-        return rowIds.filter((rowId) => !selectionModel.ids.has(rowId));
-    }
-
-    return rowIds.filter((rowId) => selectionModel.ids.has(rowId));
-};
 
 const AdminUsers = () => {
     const { user: currentUser } = useAuth();
@@ -389,31 +372,12 @@ const AdminUsers = () => {
                         </Button>
                     </Box>
 
-                    {selectedUsers.length > 0 && (
-                        <Paper variant="outlined" sx={{ p: 1.5, backgroundColor: '#f7f9f9' }}>
-                            <Stack
-                                direction={{ xs: 'column', sm: 'row' }}
-                                spacing={1}
-                                sx={{ justifyContent: 'space-between', alignItems: 'center' }}
-                            >
-                                <Typography variant="body2" color="text.secondary">
-                                    {selectedUsers.length} user{selectedUsers.length === 1 ? '' : 's'} selected
-                                </Typography>
-                                <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
-                                    <Button
-                                        variant="outlined"
-                                        color="error"
-                                        onClick={() => setIsBulkDeleteUsersOpen(true)}
-                                    >
-                                        Delete selected
-                                    </Button>
-                                    <Button variant="text" onClick={() => setSelectedUserIds([])}>
-                                        Clear selection
-                                    </Button>
-                                </Stack>
-                            </Stack>
-                        </Paper>
-                    )}
+                    <AdminSelectionToolbar
+                        count={selectedUsers.length}
+                        itemName="user"
+                        onAction={() => setIsBulkDeleteUsersOpen(true)}
+                        onClear={() => setSelectedUserSelectionModel(emptySelectionModel)}
+                    />
 
                     {loadError && <Alert severity="error">{loadError}</Alert>}
 

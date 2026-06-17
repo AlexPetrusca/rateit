@@ -4,35 +4,10 @@ import AdminDataGrid from '../components/AdminDataGrid.jsx';
 import Modal from '../components/Modal.jsx';
 import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
+import { formatTimestamp } from '../utils/dateTime.js';
+import { truncateText } from '../utils/textDisplay.js';
 
 const DEFAULT_PAGE_SIZE = 10;
-
-const formatTimestamp = (value) => {
-    if (!value) {
-        return '-';
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        second: '2-digit'
-    }).format(new Date(value));
-};
-
-const truncateText = (value, maxLength = 140) => {
-    if (typeof value !== 'string') {
-        return '—';
-    }
-
-    const trimmed = value.trim();
-    if (!trimmed) {
-        return '—';
-    }
-
-    return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength - 1)}…` : trimmed;
-};
 
 const AdminSuggestions = () => {
     const { notify } = useNotifications();

@@ -1842,11 +1842,11 @@ button:disabled {
 .topic-photo-feed .tweet-card {
     margin: 0;
     padding: 20px 18px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-subtle);
     border-radius: 22px;
-    background: #212634;
+    background: var(--surface);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
-    color: #f8fbff;
+    color: var(--text-primary);
 }
 
 .topic-photo-feed .tweet-card:hover {
@@ -1866,7 +1866,7 @@ button:disabled {
 .topic-photo-feed .text-rating-score span,
 .topic-photo-feed .rating-summary span,
 .topic-photo-feed .profile-social-counts button {
-    color: #f8fbff;
+    color: var(--text-primary);
 }
 
 .topic-photo-feed .tweet-handle,
@@ -1876,11 +1876,29 @@ button:disabled {
 .topic-photo-feed .text-rating-score span,
 .topic-photo-feed .rating-summary span,
 .topic-photo-feed .profile-social-counts button {
-    color: #f8fbff;
+    color: var(--text-secondary);
+}
+
+.topic-photo-feed .tweet-action {
+    color: var(--text-secondary);
+}
+
+.topic-photo-feed .tweet-action:hover {
+    background: var(--surface-hover);
+    color: var(--link-hover);
+}
+
+.topic-photo-feed .tweet-action.is-liked {
+    color: var(--accent);
+}
+
+.topic-photo-feed .tweet-action.is-liked:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
 }
 
 .topic-photo-feed .tweet-review {
-    border-left-color: rgba(255, 255, 255, 0.12);
+    border-left-color: var(--border-subtle);
 }
 
 .topic-photo-thread {
@@ -1904,11 +1922,11 @@ button:disabled {
 .topic-photo-thread .comment-thread {
     padding: 0;
     border-radius: 20px;
-    background: #262b3a;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
     box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26);
     overflow: hidden;
-    color: #f8fbff;
+    color: var(--text-primary);
 }
 
 .topic-photo-thread .comment-row {
@@ -1928,7 +1946,7 @@ button:disabled {
 .topic-photo-thread .comment-replies {
     margin: 0;
     padding: 12px 14px 14px;
-    border-top: 1px solid rgba(248, 251, 255, 0.14);
+    border-top: 1px solid var(--border-subtle);
 }
 
 .topic-photo-thread .topic-comment-reply {
@@ -1948,7 +1966,7 @@ button:disabled {
 .topic-photo-thread .topic-comment-reply .topic-comment-replies {
     margin: 0;
     padding: 12px 0 0;
-    border-top: 1px solid rgba(248, 251, 255, 0.14);
+    border-top: 1px solid var(--border-subtle);
 }
 
 .topic-photo-thread .comment-composer {
@@ -1958,10 +1976,10 @@ button:disabled {
 .topic-photo-card {
     padding: 16px;
     border-radius: 20px;
-    background: #262b3a;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
     box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26);
-    color: #f8fbff;
+    color: var(--text-primary);
 }
 
 .topic-photo-composer {
@@ -1971,16 +1989,17 @@ button:disabled {
     z-index: 2;
     padding: 16px;
     border-radius: 20px;
-    background: #262b3a;
+    background: var(--surface);
     border: 0;
     box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26);
-    color: #f8fbff;
+    color: var(--text-primary);
 }
 
 .feed-composer.topic-photo-composer {
-    background: #262b3a;
+    padding: 16px;
+    background: var(--surface);
     border: 0;
-    color: #f8fbff;
+    color: var(--text-primary);
 }
 
 .topic-photo-shell .feed-composer.topic-photo-thread {
@@ -1991,9 +2010,15 @@ button:disabled {
 }
 
 .topic-photo-shell .comment-composer.topic-photo-card {
-    background: #262b3a;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
     box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26);
+}
+
+.topic-photo-shell .comment-composer.topic-photo-card label,
+.topic-photo-shell .comment-composer.topic-photo-card .comment-rating-control output {
+    color: var(--text-primary);
 }
 
 .feed-composer.topic-photo-composer label,
@@ -2001,7 +2026,7 @@ button:disabled {
 .feed-composer.topic-photo-composer .comment-rating-control output,
 .feed-composer.topic-photo-composer .score-value,
 .feed-composer.topic-photo-composer .feed-composer label {
-    color: #f8fbff;
+    color: var(--text-primary);
 }
 
 .feed-composer.topic-photo-composer .composer-actions button {
@@ -2010,26 +2035,26 @@ button:disabled {
 
 .topic-photo-composer textarea,
 .topic-photo-composer input {
-    background: rgba(15, 20, 25, 0.42);
-    border: 0;
-    color: #f8fbff;
+    background: var(--surface-soft);
+    border-color: var(--border-subtle);
+    color: var(--text-primary);
 }
 
 .topic-photo-composer textarea::placeholder,
 .topic-photo-composer input::placeholder {
-    color: rgba(248, 251, 255, 0.52);
+    color: var(--text-muted);
 }
 
 .topic-photo-card textarea,
 .topic-photo-card input {
-    background: rgba(15, 20, 25, 0.42);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #f8fbff;
+    background: var(--surface-soft);
+    border-color: var(--border-subtle);
+    color: var(--text-primary);
 }
 
 .topic-photo-card textarea::placeholder,
 .topic-photo-card input::placeholder {
-    color: rgba(248, 251, 255, 0.52);
+    color: var(--text-muted);
 }
 
 .topic-photo-feed .tweet-meta,
@@ -2051,7 +2076,7 @@ button:disabled {
 .topic-photo-feed .rating-summary *,
 .topic-photo-feed .profile-social-counts button,
 .topic-photo-feed .profile-social-counts button * {
-    color: #f8fbff !important;
+    color: inherit !important;
 }
 
 .text-rating-score {
@@ -2262,6 +2287,11 @@ button:disabled {
     background: #ffffff;
 }
 
+.comment-panel {
+    padding: 12px 0 0;
+    overflow: hidden;
+}
+
 .feed-composer label {
     margin-bottom: 6px;
     color: #536471;
@@ -2362,6 +2392,7 @@ button:disabled {
 
 .feed-composer input,
 .feed-composer textarea {
+    display: block;
     margin-bottom: 10px;
     border-color: #cfd9de;
     border-radius: 10px;
@@ -2385,21 +2416,25 @@ button:disabled {
 .comment-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 0;
+    margin-bottom: 0;
 }
 
 .comment-thread {
     min-width: 0;
+    border-top: 1px solid #eff3f4;
+}
+
+.comment-panel .comment-list > .comment-thread:first-child {
+    border-top: 0;
 }
 
 .comment-row {
     display: grid;
     grid-template-columns: 28px minmax(0, 1fr);
     gap: 10px;
-    padding: 8px 0 8px 12px;
-    border-bottom: 1px solid #eff3f4;
-    border-left: 2px solid #eff3f4;
+    padding: 12px;
+    border: 0;
 }
 
 .comment-avatar-column {
@@ -2416,8 +2451,9 @@ button:disabled {
 .comment-meta {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 3px;
 }
 
 .comment-author {
@@ -2431,6 +2467,22 @@ button:disabled {
     color: #536471;
     font-size: 0.85rem;
     font-weight: 700;
+}
+
+.comment-body > .tweet-actions {
+    max-width: 260px;
+    margin-top: 6px;
+}
+
+.comment-body .tweet-action {
+    padding: 6px;
+    font-size: 0.82rem;
+}
+
+.comment-body .action-icon,
+.comment-body .action-icon svg {
+    width: 18px;
+    height: 18px;
 }
 
 .comment-reply-button {
@@ -2448,7 +2500,8 @@ button:disabled {
 }
 
 .comment-replies {
-    margin-top: 4px;
+    margin: 0 12px 0 40px;
+    border-left: 2px solid #eff3f4;
 }
 
 .feed-sentinel {
@@ -2465,17 +2518,26 @@ button:disabled {
 }
 
 .comment-composer {
-    margin-top: 8px;
+    margin: 0;
+    padding: 12px;
+    border-top: 1px solid #eff3f4;
+    background: #ffffff;
 }
 
 .comment-composer-nested {
-    margin-left: 18px;
-    padding-left: 12px;
+    margin: 0 12px 0 40px;
     border-left: 2px solid #eff3f4;
 }
 
-.comment-text,
+.comment-text {
+    color: #0f1419;
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
 .feed-muted {
+    margin: 0;
+    padding: 12px;
     color: #536471;
 }
 
@@ -2753,6 +2815,10 @@ button:disabled {
 
     .feed-composer {
         padding: 10px;
+    }
+
+    .comment-panel {
+        padding: 10px 0 0;
     }
 
     .feed-composer input,
@@ -3523,6 +3589,7 @@ label {
 .account-setup-form,
 .create-preview,
 .tweet-card,
+.feed-composer,
 .rating-object,
 .topic-summary-card,
 .deleted-post-placeholder,
@@ -3583,6 +3650,10 @@ label {
 .tweet-meta,
 .tweet-dot,
 .tweet-review,
+.comment-text,
+.comment-score,
+.comment-rating-control label,
+.feed-muted,
 .rating-summary span,
 .text-rating-score span,
 .text-post-body,
@@ -3611,7 +3682,8 @@ label {
 .create-preview,
 .rating-object,
 .topic-summary-card,
-.deleted-post-placeholder {
+.deleted-post-placeholder,
+.feed-composer {
     border: 1px solid var(--border-subtle);
 }
 
@@ -3665,6 +3737,97 @@ label {
 
 .tweet-card-deleted {
     background: var(--surface-soft);
+}
+
+.comment-thread {
+    border-top-color: var(--border-subtle);
+}
+
+.comment-panel .comment-list > .comment-thread:first-child {
+    border-top-color: transparent;
+}
+
+.comment-author,
+.comment-rating-control output {
+    color: var(--text-primary);
+}
+
+.comment-composer {
+    background: var(--surface);
+    border-top-color: var(--border-subtle);
+}
+
+.comment-composer-nested,
+.comment-replies {
+    border-left-color: var(--border-subtle);
+}
+
+.comment-body .tweet-action {
+    color: var(--text-secondary);
+}
+
+.comment-body .tweet-action:hover {
+    background: var(--surface-hover);
+    color: var(--link-hover);
+}
+
+.comment-body .tweet-action.is-liked {
+    color: var(--accent);
+}
+
+.comment-body .tweet-action.is-liked:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.comment-rating-control input[type="range"] {
+    accent-color: var(--accent);
+}
+
+.comment-composer textarea,
+.feed-composer textarea,
+.feed-composer input {
+    background: var(--surface-soft);
+    border-color: var(--border-subtle);
+    color: var(--text-primary);
+}
+
+.comment-composer textarea::placeholder,
+.feed-composer textarea::placeholder,
+.feed-composer input::placeholder {
+    color: var(--text-muted);
+}
+
+.composer-actions button {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+.composer-actions button:hover,
+.composer-actions button:focus {
+    background: var(--accent-hover);
+}
+
+.topic-photo-feed .comment-author {
+    color: var(--text-primary) !important;
+}
+
+.topic-photo-feed .comment-text,
+.topic-photo-feed .comment-score {
+    color: var(--text-secondary) !important;
+}
+
+.topic-photo-feed .comment-body .tweet-action {
+    color: var(--text-secondary) !important;
+}
+
+.topic-photo-feed .comment-body .tweet-action:hover {
+    color: var(--link-hover) !important;
+}
+
+.topic-photo-feed .comment-body .tweet-action.is-liked,
+.topic-photo-feed .comment-body .tweet-action.is-liked:hover {
+    color: var(--accent) !important;
 }
 
 .deleted-post-placeholder {

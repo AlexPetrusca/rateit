@@ -43,6 +43,8 @@ Use the shared components below before creating new copies:
 - `PostCard`
 - `PostActions`
 - `CommentThread`
+- `CommentComposer`
+- `RatingComposer`
 - `StarRating`
 - `UserAvatar`
 - `Modal`
@@ -129,6 +131,8 @@ If you are changing the main app surface, these are the first files to inspect:
 - shared feed rendering: `frontend/src/components/FeedTimeline.jsx`
 - shared post rendering: `frontend/src/components/PostCard.jsx`
 - shared comment rendering: `frontend/src/components/CommentThread.jsx`
+- shared comment composer: `frontend/src/components/CommentComposer.jsx`
+- shared rating/re-rate composer: `frontend/src/components/RatingComposer.jsx`
 - shared stars: `frontend/src/components/StarRating.jsx`
 - backend feed and actions: `backend/src/main/java/com/rateit/backend/controller/FeedController.java`
 - backend feed queries: `backend/src/main/java/com/rateit/backend/service/FeedService.java`

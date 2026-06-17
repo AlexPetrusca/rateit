@@ -15,10 +15,12 @@ The main admin entry point should land on the user management page, with a top-l
 ## Shared Admin UI Components
 
 - `AdminDataGrid`
+- `AdminSelectionToolbar`
 - `Modal`
 - `Notification`
 
 Use the shared admin grid wrapper for every table-like admin screen so alignment and selection behavior stay consistent.
+Use the shared selection toolbar for bulk-selection banners and actions on admin tables.
 
 ## User Management
 

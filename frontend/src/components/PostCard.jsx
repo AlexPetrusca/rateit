@@ -1,25 +1,7 @@
 import { useState } from 'react';
 import StarRating from './StarRating.jsx';
 import UserAvatar from './UserAvatar.jsx';
-
-const formatScoreValue = (scoreValue, ratingScale) => {
-    const score = Number(scoreValue);
-    const max = Number(ratingScale?.max);
-    const symbol = ratingScale?.symbol === 'star'
-        ? 'stars'
-        : ratingScale?.symbol;
-
-    if (!Number.isFinite(score)) {
-        return '';
-    }
-
-    const displayScore = Number.isInteger(score) ? score.toString() : score.toFixed(1);
-    const displayMax = Number.isFinite(max)
-        ? (Number.isInteger(max) ? max.toString() : max.toFixed(1))
-        : '';
-
-    return `${displayScore}${Number.isFinite(max) ? ` / ${displayMax}` : ''}${symbol ? ` ${symbol}` : ''}`;
-};
+import { formatScoreValue } from '../utils/ratingDisplay.js';
 
 const formatPostDate = (createdAt, options) => {
     return new Intl.DateTimeFormat(undefined, options).format(new Date(createdAt));

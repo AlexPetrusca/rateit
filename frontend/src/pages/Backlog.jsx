@@ -4,6 +4,7 @@ import { Alert, Box, Button, Paper, Table, TableBody, TableCell, TableHead, Tabl
 import { backlogData } from '../generated/backlogData.js';
 import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
+import { formatShortTimestamp } from '../utils/dateTime.js';
 import '../App.css';
 
 const renderInlineText = (text) => {
@@ -16,19 +17,6 @@ const renderInlineText = (text) => {
 
         return <span key={`${part}-${index}`}>{part}</span>;
     });
-};
-
-const formatTimestamp = (value) => {
-    if (!value) {
-        return '-';
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit'
-    }).format(new Date(value));
 };
 
 const CommentBubbleIcon = () => (
@@ -190,7 +178,7 @@ const Backlog = () => {
                                                 {suggestion.body}
                                             </TableCell>
                                             <TableCell>{suggestion.authorUsername}</TableCell>
-                                            <TableCell>{formatTimestamp(suggestion.createdAt)}</TableCell>
+                                            <TableCell>{formatShortTimestamp(suggestion.createdAt)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

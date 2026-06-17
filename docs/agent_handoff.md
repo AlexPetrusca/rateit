@@ -132,11 +132,14 @@ Use these instead of recreating the same UI:
 - `FeedTimeline`
 - `PostCard`
 - `CommentThread`
+- `CommentComposer`
+- `RatingComposer`
 - `StarRating`
 - `UserAvatar`
 - `Modal`
 - `Notification`
 - `AdminDataGrid`
+- `AdminSelectionToolbar`
 
 ## Current Behavior Constraints
 

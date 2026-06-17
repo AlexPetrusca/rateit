@@ -6,28 +6,8 @@ import Modal from '../components/Modal.jsx';
 import PostCard from '../components/PostCard.jsx';
 import StarRating from '../components/StarRating.jsx';
 import BackendApiService from '../services/BackendApiService';
+import { FIVE_STAR_SCALE, formatScoreValue } from '../utils/ratingDisplay.js';
 import '../App.css';
-
-const FIVE_STAR_SCALE = { max: 5, symbol: 'star' };
-
-const formatScoreValue = (scoreValue, ratingScale) => {
-    const score = Number(scoreValue);
-    const max = Number(ratingScale?.max);
-    const symbol = ratingScale?.symbol === 'star'
-        ? 'stars'
-        : ratingScale?.symbol;
-
-    if (!Number.isFinite(score)) {
-        return '';
-    }
-
-    const displayScore = Number.isInteger(score) ? score.toString() : score.toFixed(1);
-    const displayMax = Number.isFinite(max)
-        ? (Number.isInteger(max) ? max.toString() : max.toFixed(1))
-        : '';
-
-    return `${displayScore}${Number.isFinite(max) ? ` / ${displayMax}` : ''}${symbol ? ` ${symbol}` : ''}`;
-};
 
 const PostEditor = () => {
     const navigate = useNavigate();

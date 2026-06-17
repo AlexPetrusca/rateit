@@ -14,27 +14,18 @@ import {
     Typography
 } from '@mui/material';
 import AdminDataGrid from '../components/AdminDataGrid.jsx';
+import AdminSelectionToolbar from '../components/AdminSelectionToolbar.jsx';
 import Modal from '../components/Modal.jsx';
 import UserAvatar from '../components/UserAvatar.jsx';
 import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
+import { emptySelectionModel, getSelectedRowIds } from '../utils/adminSelection.js';
+import { formatTimestamp as formatDateTime } from '../utils/dateTime.js';
+import { truncateText } from '../utils/textDisplay.js';
 
 const DEFAULT_PAGE_SIZE = 10;
 const VISIBILITY_OPTIONS = ['PUBLIC', 'FRIENDS', 'PRIVATE'];
-
-const formatTimestamp = (value) => {
-    if (!value) {
-        return '—';
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        second: '2-digit'
-    }).format(new Date(value));
-};
+const formatTimestamp = (value) => formatDateTime(value, '—');
 
 const visibilityChipColor = (visibility) => {
     switch (visibility) {
@@ -56,40 +47,6 @@ const normalizeOptional = (value) => {
 
     const trimmed = value.trim();
     return trimmed.length === 0 ? null : trimmed;
-};
-
-const truncateText = (value, maxLength = 120) => {
-    if (typeof value !== 'string') {
-        return '—';
-    }
-
-    const trimmed = value.trim();
-    if (!trimmed) {
-        return '—';
-    }
-
-    return trimmed.length > maxLength
-        ? `${trimmed.slice(0, maxLength - 1)}…`
-        : trimmed;
-};
-
-const emptySelectionModel = {
-    type: 'include',
-    ids: new Set()
-};
-
-const getSelectedRowIds = (selectionModel, rows, getRowId) => {
-    if (!selectionModel) {
-        return [];
-    }
-
-    const rowIds = rows.map(getRowId);
-
-    if (selectionModel.type === 'exclude') {
-        return rowIds.filter((rowId) => !selectionModel.ids.has(rowId));
-    }
-
-    return rowIds.filter((rowId) => selectionModel.ids.has(rowId));
 };
 
 const AdminPosts = () => {
@@ -469,31 +426,13 @@ const AdminPosts = () => {
 
                     {loadError && <Alert severity="error">{loadError}</Alert>}
 
-                    {selectedPosts.length > 0 && (
-                        <Paper variant="outlined" sx={{ p: 1.5, backgroundColor: '#f7f9f9' }}>
-                            <Stack
-                                direction={{ xs: 'column', sm: 'row' }}
-                                spacing={1}
-                                sx={{ justifyContent: 'space-between', alignItems: 'center' }}
-                            >
-                                <Typography variant="body2" color="text.secondary">
-                                    {selectedPosts.length} post{selectedPosts.length === 1 ? '' : 's'} selected
-                                </Typography>
-                                <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
-                                    <Button
-                                        variant="outlined"
-                                        color="error"
-                                        onClick={() => setIsBulkDeletePostsOpen(true)}
-                                    >
-                                        Remove selected
-                                    </Button>
-                                    <Button variant="text" onClick={() => setSelectedPostIds([])}>
-                                        Clear selection
-                                    </Button>
-                                </Stack>
-                            </Stack>
-                        </Paper>
-                    )}
+                    <AdminSelectionToolbar
+                        count={selectedPosts.length}
+                        itemName="post"
+                        actionLabel="Remove selected"
+                        onAction={() => setIsBulkDeletePostsOpen(true)}
+                        onClear={() => setSelectedPostSelectionModel(emptySelectionModel)}
+                    />
 
                     {isLoading ? (
                         <Typography color="text.secondary">Loading posts...</Typography>

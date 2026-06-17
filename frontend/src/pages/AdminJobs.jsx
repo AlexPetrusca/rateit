@@ -13,22 +13,10 @@ import AdminDataGrid from '../components/AdminDataGrid.jsx';
 import Modal from '../components/Modal.jsx';
 import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
+import { formatTimestamp as formatDateTime } from '../utils/dateTime.js';
 
 const JOB_REFRESH_MS = 2000;
-
-const formatTimestamp = (value) => {
-    if (!value) {
-        return '—';
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        second: '2-digit'
-    }).format(new Date(value));
-};
+const formatTimestamp = (value) => formatDateTime(value, '—');
 
 const statusChipColor = (status) => {
     switch (status) {

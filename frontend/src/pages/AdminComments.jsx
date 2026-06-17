@@ -9,61 +9,17 @@ import {
     Typography
 } from '@mui/material';
 import AdminDataGrid from '../components/AdminDataGrid.jsx';
+import AdminSelectionToolbar from '../components/AdminSelectionToolbar.jsx';
 import Modal from '../components/Modal.jsx';
 import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
+import { emptySelectionModel, getSelectedRowIds } from '../utils/adminSelection.js';
+import { formatTimestamp } from '../utils/dateTime.js';
+import { truncateText } from '../utils/textDisplay.js';
 
 const DEFAULT_PAGE_SIZE = 10;
 
-const emptySelectionModel = {
-    type: 'include',
-    ids: new Set()
-};
-
-const formatTimestamp = (value) => {
-    if (!value) {
-        return '-';
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        second: '2-digit'
-    }).format(new Date(value));
-};
-
-const truncateText = (value, maxLength = 140) => {
-    if (typeof value !== 'string') {
-        return '—';
-    }
-
-    const trimmed = value.trim();
-    if (!trimmed) {
-        return '—';
-    }
-
-    return trimmed.length > maxLength
-        ? `${trimmed.slice(0, maxLength - 1)}…`
-        : trimmed;
-};
-
 const getCommentId = (comment) => comment.commentId ?? comment.id;
-
-const getSelectedRowIds = (selectionModel, rows) => {
-    if (!selectionModel) {
-        return [];
-    }
-
-    const rowIds = rows.map(getCommentId);
-
-    if (selectionModel.type === 'exclude') {
-        return rowIds.filter((rowId) => !selectionModel.ids.has(rowId));
-    }
-
-    return rowIds.filter((rowId) => selectionModel.ids.has(rowId));
-};
 
 const AdminComments = () => {
     const { notify } = useNotifications();
@@ -179,7 +135,7 @@ const AdminComments = () => {
     };
 
     const selectedComments = useMemo(
-        () => getSelectedRowIds(selectedCommentSelectionModel, comments)
+        () => getSelectedRowIds(selectedCommentSelectionModel, comments, getCommentId)
             .map((commentId) => comments.find((comment) => getCommentId(comment) === commentId))
             .filter(Boolean),
         [comments, selectedCommentSelectionModel]
@@ -335,31 +291,12 @@ const AdminComments = () => {
 
                     {loadError && <Alert severity="error">{loadError}</Alert>}
 
-                    {selectedComments.length > 0 && (
-                        <Paper variant="outlined" sx={{ p: 1.5, backgroundColor: '#f7f9f9' }}>
-                            <Stack
-                                direction={{ xs: 'column', sm: 'row' }}
-                                spacing={1}
-                                sx={{ justifyContent: 'space-between', alignItems: 'center' }}
-                            >
-                                <Typography variant="body2" color="text.secondary">
-                                    {selectedComments.length} comment{selectedComments.length === 1 ? '' : 's'} selected
-                                </Typography>
-                                <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
-                                    <Button
-                                        variant="outlined"
-                                        color="error"
-                                        onClick={() => setIsBulkDeleteCommentsOpen(true)}
-                                    >
-                                        Delete selected
-                                    </Button>
-                                    <Button variant="text" onClick={() => setSelectedCommentSelectionModel(emptySelectionModel)}>
-                                        Clear selection
-                                    </Button>
-                                </Stack>
-                            </Stack>
-                        </Paper>
-                    )}
+                    <AdminSelectionToolbar
+                        count={selectedComments.length}
+                        itemName="comment"
+                        onAction={() => setIsBulkDeleteCommentsOpen(true)}
+                        onClear={() => setSelectedCommentSelectionModel(emptySelectionModel)}
+                    />
 
                     <AdminDataGrid
                         autoHeight

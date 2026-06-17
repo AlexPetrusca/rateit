@@ -26,6 +26,8 @@ The feed, profile feed, and topic page should all use the same underlying post a
 - `FeedTimeline` for list loading and pagination
 - `PostCard` for the post shell and action row
 - `CommentThread` for threaded comments
+- `CommentComposer` for comment and reply composer UI
+- `RatingComposer` for re-rate and topic rating composer UI
 - `PostActions` for like, re-rate, and comment action controls
 - `StarRating` for all star displays and pickers
 - `UserAvatar` for avatars and fallback initials

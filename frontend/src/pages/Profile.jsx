@@ -2,16 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import CommentComposer from '../components/CommentComposer.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import FeedTimeline from '../components/FeedTimeline.jsx';
 import PostActions from '../components/PostActions.jsx';
-import StarRating from '../components/StarRating.jsx';
+import RatingComposer from '../components/RatingComposer.jsx';
 import UserAvatar from '../components/UserAvatar.jsx';
 import BackendApiService from '../services/BackendApiService';
+import { DEFAULT_COMMENT_SCORE, isFiveStarScoreInRange } from '../utils/ratingDisplay.js';
 import '../App.css';
 
 const PROFILE_POST_PAGE_SIZE = 5;
-const FIVE_STAR_SCALE = { max: 5, symbol: 'star' };
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -169,25 +170,6 @@ const Profile = () => {
         )));
     };
 
-    const formatScoreValue = (scoreValue, ratingScale) => {
-        const score = Number(scoreValue);
-        const max = Number(ratingScale?.max);
-        const symbol = ratingScale?.symbol === 'star'
-            ? 'stars'
-            : ratingScale?.symbol;
-
-        if (!Number.isFinite(score)) {
-            return '';
-        }
-
-        const displayScore = Number.isInteger(score) ? score.toString() : score.toFixed(1);
-        const displayMax = Number.isFinite(max)
-            ? (Number.isInteger(max) ? max.toString() : max.toFixed(1))
-            : '';
-
-        return `${displayScore}${Number.isFinite(max) ? ` / ${displayMax}` : ''}${symbol ? ` ${symbol}` : ''}`;
-    };
-
     const getCommentDraftKey = (ratingId, parentCommentId = null) => (
         parentCommentId == null ? `${ratingId}:root` : `${ratingId}:${parentCommentId}`
     );
@@ -215,10 +197,6 @@ const Profile = () => {
             }
         }));
     };
-
-    const getDefaultCommentScore = () => 2.5;
-
-    const isScoreInRange = (score) => Number.isFinite(score) && score >= 0.5 && score <= 5;
 
     const getComposerKey = (ratingId, type) => `${ratingId}:${type}`;
     const getCommentReplyKey = (ratingId, parentCommentId = null) => (
@@ -280,14 +258,14 @@ const Profile = () => {
         const draft = getCommentDraft(ratingId, parentCommentId);
         const draftKey = getCommentDraftKey(ratingId, parentCommentId);
         const text = draft.text?.trim();
-        const score = Number(draft.score || getDefaultCommentScore(item));
+        const score = Number(draft.score || DEFAULT_COMMENT_SCORE);
 
         if (!text) {
             notify({ message: 'Add a comment before replying.', type: 'warning' });
             return;
         }
 
-        if (!isScoreInRange(score)) {
+        if (!isFiveStarScoreInRange(score)) {
             notify({ message: 'Add a rating before replying.', type: 'warning' });
             return;
         }
@@ -318,48 +296,34 @@ const Profile = () => {
     const renderCommentComposer = (item, parentCommentId = null) => {
         const ratingId = item.ratingId;
         const draft = getCommentDraft(ratingId, parentCommentId);
-        const commentScore = draft.score || getDefaultCommentScore(item);
+        const commentScore = draft.score || DEFAULT_COMMENT_SCORE;
         const draftKey = getCommentDraftKey(ratingId, parentCommentId);
         const previewScore = hoveredCommentScores[draftKey] || commentScore;
 
         return (
-            <div className={parentCommentId == null ? 'comment-composer' : 'comment-composer comment-composer-nested'}>
-                <div className="comment-rating-control">
-                    <label>Your rating</label>
-                    <output aria-live="polite">
-                        {formatScoreValue(previewScore, FIVE_STAR_SCALE)}
-                    </output>
-                    <StarRating
-                        value={previewScore}
-                        label={`Selected rating: ${formatScoreValue(commentScore, FIVE_STAR_SCALE)}`}
-                        size="sm"
-                        interactive
-                        onChange={(nextScore) => updateCommentDraft(ratingId, parentCommentId, 'score', nextScore.toString())}
-                        onHoverChange={(nextScore) => setHoveredCommentScores((current) => {
-                            const next = { ...current };
+            <CommentComposer
+                nested={parentCommentId != null}
+                title="Your rating"
+                score={commentScore}
+                previewScore={previewScore}
+                onScoreChange={(nextScore) => updateCommentDraft(ratingId, parentCommentId, 'score', nextScore.toString())}
+                onHoverChange={(nextScore) => setHoveredCommentScores((current) => {
+                    const next = { ...current };
 
-                            if (nextScore == null) {
-                                delete next[draftKey];
-                            } else {
-                                next[draftKey] = nextScore;
-                            }
+                    if (nextScore == null) {
+                        delete next[draftKey];
+                    } else {
+                        next[draftKey] = nextScore;
+                    }
 
-                            return next;
-                        })}
-                    />
-                </div>
-                <textarea
-                    value={draft.text}
-                    onChange={(event) => updateCommentDraft(ratingId, parentCommentId, 'text', event.target.value)}
-                    placeholder={parentCommentId == null ? 'Add your take on this take' : 'Reply in thread'}
-                    rows="3"
-                />
-                <div className="composer-actions">
-                    <button type="button" onClick={() => submitComment(item, parentCommentId)}>
-                        Reply
-                    </button>
-                </div>
-            </div>
+                    return next;
+                })}
+                text={draft.text}
+                onTextChange={(value) => updateCommentDraft(ratingId, parentCommentId, 'text', value)}
+                placeholder={parentCommentId == null ? 'Add your take on this take' : 'Reply in thread'}
+                submitLabel="Reply"
+                onSubmit={() => submitComment(item, parentCommentId)}
+            />
         );
     };
 
@@ -368,7 +332,7 @@ const Profile = () => {
         const comments = commentsByRating[ratingId] || [];
 
         return (
-            <div className="feed-composer">
+            <div className="feed-composer comment-panel">
                 <div className="comment-list">
                     {comments.length === 0 ? (
                         <p className="feed-muted">No comments yet.</p>
@@ -427,58 +391,42 @@ const Profile = () => {
         const draft = rerateDrafts[ratingId] || {};
         const currentScore = draft.score ? Number(draft.score) : null;
         const previewScore = hoveredRerateScores[ratingId] ?? currentScore;
-        const scoreLabel = Number.isFinite(Number(previewScore))
-            ? `${Number(previewScore).toFixed(1)} / 5`
-            : '0.0 / 5';
 
         return (
-            <div className="feed-composer">
-                <label>Your rating</label>
-                <div className="score-row">
-                    <output className="score-value">{scoreLabel}</output>
-                    <StarRating
-                        value={previewScore ?? 0}
-                        label={`Selected rating: ${scoreLabel}`}
-                        size="lg"
-                        interactive
-                        onChange={(nextScore) => setRerateDrafts((current) => ({
-                            ...current,
-                            [ratingId]: {
-                                ...current[ratingId],
-                                score: nextScore.toString()
-                            }
-                        }))}
-                        onHoverChange={(nextScore) => setHoveredRerateScores((current) => {
-                            const next = { ...current };
+            <RatingComposer
+                label="Your rating"
+                score={currentScore}
+                previewScore={previewScore}
+                onScoreChange={(nextScore) => setRerateDrafts((current) => ({
+                    ...current,
+                    [ratingId]: {
+                        ...current[ratingId],
+                        score: nextScore.toString()
+                    }
+                }))}
+                onHoverChange={(nextScore) => setHoveredRerateScores((current) => {
+                    const next = { ...current };
 
-                            if (nextScore == null) {
-                                delete next[ratingId];
-                            } else {
-                                next[ratingId] = nextScore;
-                            }
+                    if (nextScore == null) {
+                        delete next[ratingId];
+                    } else {
+                        next[ratingId] = nextScore;
+                    }
 
-                            return next;
-                        })}
-                    />
-                </div>
-                <textarea
-                    value={draft.reviewText || ''}
-                    onChange={(event) => setRerateDrafts((current) => ({
-                        ...current,
-                        [ratingId]: {
-                            ...current[ratingId],
-                            reviewText: event.target.value
-                        }
-                    }))}
-                    placeholder="Add your take on this topic"
-                    rows="3"
-                />
-                <div className="composer-actions">
-                    <button type="button" onClick={() => submitRerate(ratingId)}>
-                        Re-rate
-                    </button>
-                </div>
-            </div>
+                    return next;
+                })}
+                text={draft.reviewText || ''}
+                onTextChange={(value) => setRerateDrafts((current) => ({
+                    ...current,
+                    [ratingId]: {
+                        ...current[ratingId],
+                        reviewText: value
+                    }
+                }))}
+                placeholder="Add your take on this topic"
+                submitLabel="Re-rate"
+                onSubmit={() => submitRerate(ratingId)}
+            />
         );
     };
 

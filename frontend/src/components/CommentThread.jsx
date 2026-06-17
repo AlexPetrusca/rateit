@@ -2,27 +2,7 @@ import { Fragment } from 'react';
 import StarRating from './StarRating.jsx';
 import UserAvatar from './UserAvatar.jsx';
 import PostActions from './PostActions.jsx';
-
-const FIVE_STAR_SCALE = { max: 5, symbol: 'star' };
-
-const formatScoreValue = (scoreValue, ratingScale) => {
-    const score = Number(scoreValue);
-    const max = Number(ratingScale?.max);
-    const symbol = ratingScale?.symbol === 'star'
-        ? 'stars'
-        : ratingScale?.symbol;
-
-    if (!Number.isFinite(score)) {
-        return '';
-    }
-
-    const displayScore = Number.isInteger(score) ? score.toString() : score.toFixed(1);
-    const displayMax = Number.isFinite(max)
-        ? (Number.isInteger(max) ? max.toString() : max.toFixed(1))
-        : '';
-
-    return `${displayScore}${Number.isFinite(max) ? ` / ${displayMax}` : ''}${symbol ? ` ${symbol}` : ''}`;
-};
+import { FIVE_STAR_SCALE, formatScoreValue } from '../utils/ratingDisplay.js';
 
 const CommentThread = ({
     comments = [],
@@ -44,7 +24,10 @@ const CommentThread = ({
     expandedReplyKeys = [],
     onToggleReplies,
     onlyShowExpandedReplies = false,
-    nestRepliesInParentCard = false
+    nestRepliesInParentCard = false,
+    threadClassName = 'comment-thread',
+    rootThreadClassName = '',
+    repliesClassName = 'comment-replies'
 }) => {
     const expandedReplyKeySet = new Set(expandedReplyKeys);
 
@@ -148,7 +131,7 @@ const CommentThread = ({
                     renderEditComposer(comment, depth)
                 )}
                 {repliesAreVisible && (
-                    <div className="comment-replies">
+                    <div className={repliesClassName}>
                         {renderComments(replies, depth + 1)}
                     </div>
                 )}
@@ -176,7 +159,14 @@ const CommentThread = ({
             }
 
             return (
-                <div className="comment-thread" key={comment.id} data-depth={depth}>
+                <div
+                    className={[
+                        threadClassName,
+                        depth === 0 ? rootThreadClassName : ''
+                    ].filter(Boolean).join(' ')}
+                    key={comment.id}
+                    data-depth={depth}
+                >
                     {content}
                 </div>
             );

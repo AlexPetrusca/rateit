@@ -7,6 +7,7 @@ import {
     buildCreateRatingRequest,
     validateCreateRatingDraft
 } from '../utils/createRating.js';
+import { formatFiveStarScore } from '../utils/ratingDisplay.js';
 import '../App.css';
 
 const Create = () => {
@@ -83,7 +84,7 @@ const Create = () => {
 
     const currentScore = Number(score);
     const previewScore = hoveredScore ?? currentScore;
-    const scoreLabel = Number.isFinite(previewScore) ? `${previewScore.toFixed(1)} / 5` : '0.0 / 5';
+    const scoreLabel = formatFiveStarScore(previewScore);
 
     return (
         <div className="feed-page">
