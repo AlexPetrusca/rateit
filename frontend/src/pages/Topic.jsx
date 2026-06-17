@@ -101,6 +101,7 @@ const Topic = () => {
     const [hoveredCommentScores, setHoveredCommentScores] = useState({});
     const [expandedCommentReplyKeys, setExpandedCommentReplyKeys] = useState([]);
     const [expandedTopicImageUrl, setExpandedTopicImageUrl] = useState(null);
+    const [topicPhotoBlur, setTopicPhotoBlur] = useState(0);
     const feedSentinelRef = useRef(null);
 
     const topicRateableItemId = useMemo(() => {
@@ -272,6 +273,39 @@ const Topic = () => {
         observer.observe(sentinel);
         return () => observer.disconnect();
     }, [isFullyAuthenticated, feedError, isFeedLoading, isFeedLoadingMore, hasMoreFeed]);
+
+    useEffect(() => {
+        if (!hasTopicPhoto) {
+            setTopicPhotoBlur(0);
+            return undefined;
+        }
+
+        let rafId = 0;
+
+        const updateBlur = () => {
+            rafId = 0;
+            setTopicPhotoBlur(Math.min(14, window.scrollY / 70));
+        };
+
+        const onScroll = () => {
+            if (rafId !== 0) {
+                return;
+            }
+
+            rafId = window.requestAnimationFrame(updateBlur);
+        };
+
+        updateBlur();
+        window.addEventListener('scroll', onScroll, { passive: true });
+
+        return () => {
+            if (rafId !== 0) {
+                window.cancelAnimationFrame(rafId);
+            }
+
+            window.removeEventListener('scroll', onScroll);
+        };
+    }, [hasTopicPhoto, topicRateableItemId]);
 
     useEffect(() => {
         if (!isFullyAuthenticated || feedItems.length === 0) {
@@ -936,7 +970,10 @@ const Topic = () => {
                         {hasTopicPhoto ? (
                             <section
                                 className="topic-photo-hero"
-                                style={{ '--topic-photo-url': `url(${topicMediaUrl})` }}
+                                style={{
+                                    '--topic-photo-url': `url(${topicMediaUrl})`,
+                                    '--topic-photo-blur': `${topicPhotoBlur}px`
+                                }}
                                 aria-label={topicLabel ? `${topicLabel} topic photo` : 'Topic photo'}
                             >
                                 <button
