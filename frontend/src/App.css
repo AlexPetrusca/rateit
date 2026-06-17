@@ -1277,6 +1277,13 @@ button:disabled {
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
+    position: sticky;
+    top: 64px;
+    z-index: 30;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(17, 24, 39, 0.96);
+    backdrop-filter: blur(10px);
 }
 
 .backlog-header h1,
@@ -1416,6 +1423,7 @@ button:disabled {
 @media (max-width: 720px) {
     .backlog-header {
         flex-direction: column;
+        top: 56px;
     }
 
     .backlog-header-actions {
