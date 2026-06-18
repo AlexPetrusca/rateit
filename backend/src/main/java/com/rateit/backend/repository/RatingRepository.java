@@ -94,6 +94,27 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         join fetch r.rateableItem item
         join fetch r.ratingScale
         left join fetch item.mediaAsset
+        where r.authorUser in (
+            select f.followedUser from Follow f where f.followerUser = :user
+        )
+          and r.visibility = :visibility
+          and item.visibility = :visibility
+          and r.deletedAt is null
+        order by r.createdAt desc
+        """)
+    List<Rating> findRecentByFollowedUsersAndVisibility(
+        @Param("user") User user,
+        @Param("visibility") Visibility visibility,
+        Pageable pageable
+    );
+
+    @Query("""
+        select r
+        from Rating r
+        join fetch r.authorUser
+        join fetch r.rateableItem item
+        join fetch r.ratingScale
+        left join fetch item.mediaAsset
         where item.id = :rateableItemId
           and r.visibility = :visibility
           and item.visibility = :visibility

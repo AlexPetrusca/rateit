@@ -103,6 +103,17 @@ public class FeedService {
     }
 
     @Transactional(readOnly = true)
+    public List<FeedItemDto> getFollowingFeed(Integer requestedLimit, Integer requestedPage, String currentUserPhoneNumber) {
+        int limit = normalizeLimit(requestedLimit);
+        int page = requestedPage == null || requestedPage < 0 ? 0 : requestedPage;
+        var currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+        List<Rating> ratings = ratingRepository.findRecentByFollowedUsersAndVisibility(
+            currentUser, Visibility.PUBLIC, PageRequest.of(page, limit)
+        );
+        return toFeedItems(ratings, currentUser);
+    }
+
+    @Transactional(readOnly = true)
     public List<FeedItemDto> getTopicRatings(
         long rateableItemId,
         Integer requestedLimit,

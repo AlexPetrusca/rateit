@@ -39,6 +39,15 @@ public class FeedController {
         return ResponseEntity.ok(feedService.getRecentRatings(limit, page, token.getToken().getSubject()));
     }
 
+    @GetMapping("/following")
+    public ResponseEntity<List<FeedItemDto>> getFollowingFeed(
+        @RequestParam(required = false) Integer limit,
+        @RequestParam(required = false) Integer page,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.ok(feedService.getFollowingFeed(limit, page, token.getToken().getSubject()));
+    }
+
     @GetMapping("/ratings/{ratingId}")
     public ResponseEntity<FeedItemDto> getRating(
         @PathVariable Long ratingId,

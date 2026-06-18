@@ -13,7 +13,7 @@ import '../App.css';
 
 const FEED_PAGE_SIZE = 5;
 
-const Home = () => {
+const Home = ({ fetchFeed = BackendApiService.getFeed }) => {
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
     const currentUserId = user?.userId ?? user?.id ?? null;
@@ -70,7 +70,7 @@ const Home = () => {
         setIsFeedLoadingMore(!isInitialLoad);
         setFeedError(null);
 
-        BackendApiService.getFeed({ page: feedPage, size: FEED_PAGE_SIZE })
+        fetchFeed({ page: feedPage, size: FEED_PAGE_SIZE })
             .then((items) => {
                 if (isMounted) {
                     setFeedItems((current) => (feedPage === 0 ? items : [...current, ...items]));
@@ -361,7 +361,7 @@ const Home = () => {
                 [ratingId]: { score: '', reviewText: '' }
             }));
             setActiveComposer(null);
-            const items = await BackendApiService.getFeed({
+            const items = await fetchFeed({
                 page: 0,
                 size: Math.max(feedItems.length, FEED_PAGE_SIZE)
             });

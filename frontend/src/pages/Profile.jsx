@@ -563,9 +563,6 @@ const Profile = () => {
     return (
         <div className="feed-page">
             <main className="twitter-shell profile-shell">
-                <div className="timeline-header">
-                    <h1>{profileTitle}</h1>
-                </div>
 
                 {isAuthLoading || isProfileLoading ? (
                     <div className="profile-loading">Loading profile...</div>
@@ -587,11 +584,7 @@ const Profile = () => {
                                     {!isOwnProfile && canUseFollowAction && (
                                         <button
                                             type="button"
-                                            className={
-                                                profile.followRelation === 'FOLLOWING'
-                                                    ? 'profile-action-button secondary-action-button'
-                                                    : 'profile-action-button'
-                                            }
+                                            className="profile-action-button"
                                             disabled={isFollowActionLoading}
                                             onClick={handleFollowAction}
                                         >

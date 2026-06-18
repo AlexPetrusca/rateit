@@ -19,6 +19,7 @@ import Topic from './pages/Topic';
 import SuggestionSubmit from './pages/SuggestionSubmit';
 import PostRedirect from './pages/PostRedirect';
 import SearchUsers from './pages/SearchUsers';
+import FollowingFeed from './pages/FollowingFeed';
 import FollowList from './pages/FollowList';
 import GuardedRoute from './components/GuardedRoute.jsx';
 import UnguardedRoute from "./components/UnguardedRoute.jsx";
@@ -168,6 +169,12 @@ function App() {
                                     <Route path="jobs" element={<AdminJobs />} />
                                 </Route>
                             </Route>
+
+                            <Route path="/following" element={
+                                <GuardedRoute>
+                                    <FollowingFeed />
+                                </GuardedRoute>
+                            } />
 
                             <Route path="/" element={
                                 <GuardedRoute>

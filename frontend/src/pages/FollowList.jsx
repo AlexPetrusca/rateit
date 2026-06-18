@@ -90,9 +90,6 @@ const FollowList = ({ type }) => {
     return (
         <div className="feed-page">
             <main className="twitter-shell search-shell">
-                <div className="timeline-header">
-                    <h1>{title}</h1>
-                </div>
 
                 {isLoading ? (
                     <div className="profile-loading">Loading {title.toLowerCase()}...</div>
@@ -129,7 +126,7 @@ const FollowList = ({ type }) => {
                                     ) : followActionLabel ? (
                                         <button
                                             type="button"
-                                            className={user.followRelation === 'FOLLOWING' ? 'secondary-action-button' : ''}
+                                            className="profile-action-button"
                                             disabled={isActive}
                                             onClick={() => handleFollowAction(user)}
                                         >

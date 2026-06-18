@@ -83,9 +83,6 @@ const SearchUsers = () => {
     return (
         <div className="feed-page">
             <main className="twitter-shell search-shell">
-                <div className="timeline-header">
-                    <h1>Find People</h1>
-                </div>
 
                 <form className="user-search-form" onSubmit={runSearch}>
                     <input

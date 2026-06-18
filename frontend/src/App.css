@@ -69,7 +69,7 @@ body.login-scroll-lock {
 
 .notification-stack {
     position: fixed;
-    top: 76px;
+    top: 16px;
     right: 16px;
     z-index: 1200;
     display: flex;
@@ -229,7 +229,56 @@ body.login-scroll-lock {
 }
 
 .page-content {
-    min-height: calc(100vh - 60px);
+    min-height: 100vh;
+    padding-bottom: 96px;
+}
+
+.bottom-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 4px 6px;
+    background: rgba(28, 28, 30, 0.72);
+    backdrop-filter: blur(32px) saturate(2);
+    -webkit-backdrop-filter: blur(32px) saturate(2);
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 40px;
+    box-shadow: 0 4px 28px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    z-index: 1000;
+    transition: transform 300ms ease;
+}
+
+.bottom-bar--hidden {
+    transform: translateX(-50%) translateY(calc(100% + 0px));
+}
+
+.bottom-bar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 34px;
+    background: transparent;
+    border: 0;
+    border-radius: 28px;
+    color: rgba(255, 255, 255, 0.72);
+    cursor: pointer;
+    padding: 0;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+.bottom-bar-btn.active {
+    background: rgba(255, 255, 255, 0.17);
+    color: #ffffff;
+}
+
+.bottom-bar-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
 }
 
 .refresh-indicator {
@@ -561,9 +610,16 @@ button:disabled {
 .profile-action-button {
     margin: 0;
     padding: 0.5rem 1rem;
-    border-radius: 20px;
+    border-radius: 6px;
     font-size: 0.95rem;
     font-weight: 700;
+    background: transparent;
+    border: 1px solid #ffffff;
+    color: var(--text-primary, #0f1419);
+}
+
+.profile-action-button:hover {
+    background: var(--surface-hover, #f7f9f9);
 }
 
 .profile-social-counts {
@@ -578,7 +634,7 @@ button:disabled {
     align-items: baseline;
     margin: 0;
     padding: 0;
-    color: #536471;
+    color: var(--text-secondary, #536471);
     background: transparent;
     border: 0;
     font-size: 0.95rem;
@@ -591,7 +647,11 @@ button:disabled {
 }
 
 .profile-social-counts strong {
-    color: #0f1419;
+    color: #ffffff;
+}
+
+.profile-social-counts span {
+    color: var(--text-secondary, #536471);
 }
 
 .secondary-action-button {
@@ -913,6 +973,10 @@ button:disabled {
     overflow-wrap: anywhere;
 }
 
+.notification-person strong {
+    color: #ffffff;
+}
+
 .notification-person span span {
     color: #536471;
 }
@@ -957,7 +1021,7 @@ button:disabled {
 .user-search-result > button:not(.notification-person) {
     margin: 0;
     padding: 0.55rem 1rem;
-    border-radius: 20px;
+    border-radius: 6px;
     font-weight: 700;
 }
 
@@ -1300,7 +1364,7 @@ button:disabled {
 
 .timeline-header {
     position: sticky;
-    top: 64px;
+    top: 0;
     z-index: 20;
     padding: 14px 16px;
     border-bottom: 1px solid #eff3f4;
@@ -1709,7 +1773,7 @@ button:disabled {
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: calc(100vh - 64px) 0 0;
+    padding: 100vh 0 0;
     border: 0;
     background: #090d16;
     position: relative;
@@ -1725,16 +1789,16 @@ button:disabled {
     position: relative;
     display: flex;
     align-items: flex-end;
-    min-height: calc(100vh - 64px);
-    padding: 28px 24px calc(var(--topic-photo-card-peek) + 18px);
+    min-height: 100vh;
+    padding: 0 24px calc(var(--topic-photo-card-peek) + 18px);
     overflow: hidden;
     box-shadow: inset 0 -140px 180px rgba(0, 0, 0, 0.42);
     position: fixed;
-    top: 64px;
+    top: 0;
     left: 0;
     right: 0;
     width: 100%;
-    height: calc(100vh - 64px);
+    height: 100vh;
     min-height: 0;
     z-index: 0;
 }
@@ -2291,6 +2355,7 @@ button:disabled {
     color: #0f1419;
     line-height: 1.45;
     overflow-wrap: anywhere;
+    white-space: pre-wrap;
 }
 
 .tweet-review {
@@ -2874,7 +2939,7 @@ button:disabled {
     }
 
     .timeline-header {
-        top: 56px;
+        top: 0;
         padding: 12px 12px;
     }
 
@@ -2972,15 +3037,15 @@ button:disabled {
     }
 
     .topic-photo-shell {
-        padding-top: calc(100vh - 56px);
+        padding-top: 100vh;
     }
 
     .topic-photo-hero {
-        min-height: calc(100vh - 56px);
+        min-height: 100vh;
         align-items: flex-end;
-        padding: 56px 16px calc(var(--topic-photo-card-peek) + 18px);
-        top: 56px;
-        height: calc(100vh - 56px);
+        padding: 0 16px calc(var(--topic-photo-card-peek) + 18px);
+        top: 0;
+        height: 100vh;
     }
 
     .topic-photo-hero-content {

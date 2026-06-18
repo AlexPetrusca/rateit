@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import TopBar from './TopBar';
+import BottomBar from './BottomBar';
 
 const PULL_THRESHOLD = 72;
 const MAX_PULL_DISTANCE = 140;
@@ -69,6 +69,7 @@ const Layout = ({ children }) => {
     }, [isRefreshing, location.pathname]);
 
     const isLoginPage = location.pathname === '/login';
+    const isTopicPage = location.pathname.startsWith('/topics/');
     const indicatorTop = isRefreshing ? PULL_THRESHOLD / 2 : pullDistance / 2;
 
     return (
@@ -90,11 +91,11 @@ const Layout = ({ children }) => {
                     transition: pullDistance === 0 && !isRefreshing ? 'top 200ms ease' : 'none',
                 } : undefined}
             >
-                {!isLoginPage && <TopBar />}
                 <main className={isLoginPage ? 'page-content page-content-login' : 'page-content'}>
                     {children}
                 </main>
             </div>
+            {!isLoginPage && !isTopicPage && <BottomBar />}
         </>
     );
 };
