@@ -25,6 +25,7 @@ import GuardedRoute from './components/GuardedRoute.jsx';
 import UnguardedRoute from "./components/UnguardedRoute.jsx";
 import Layout from './components/Layout.jsx';
 import { useAuth } from './contexts/AuthContext';
+import { IconPackProvider } from './contexts/IconPackContext.jsx';
 import './App.css';
 
 const OwnProfileRedirect = () => {
@@ -41,6 +42,7 @@ const OwnProfileRedirect = () => {
 function App() {
     return (
         <AuthProvider>
+            <IconPackProvider>
             <NotificationProvider>
                 <Router>
                     <Layout>
@@ -185,6 +187,7 @@ function App() {
                     </Layout>
                 </Router>
             </NotificationProvider>
+            </IconPackProvider>
         </AuthProvider>
     );
 }

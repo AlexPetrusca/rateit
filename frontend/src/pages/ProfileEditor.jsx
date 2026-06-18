@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
+import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
+import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
+import CameraIconHD from '../assets/icons/hand_drawn/camera.svg?react';
+import UploadIconHD from '../assets/icons/hand_drawn/upload.svg?react';
 import { useNavigate } from 'react-router-dom';
 import UserAvatar from '../components/UserAvatar.jsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useIconPack } from '../contexts/IconPackContext.jsx';
 import BackendApiService from '../services/BackendApiService';
 
 const OUTPUT_SIZE = 512;
@@ -62,6 +67,8 @@ const createCroppedProfileImage = async ({ imageUrl, imageSize, zoom, cropX, cro
 const ProfileEditor = () => {
     const { user, updateUser } = useAuth();
     const { notify } = useNotifications();
+    const { iconPack, setIconPack } = useIconPack();
+    const hd = iconPack === 'hand_drawn';
     const navigate = useNavigate();
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -138,36 +145,33 @@ const ProfileEditor = () => {
             return;
         }
 
-        if (!selectedFile) {
-            notify({ message: 'Choose a new profile picture first.', type: 'warning' });
-            return;
-        }
-
-        setIsSaving(true);
-
-        try {
-            const uploadFile = await createCroppedProfileImage({
-                imageUrl: previewUrl,
-                imageSize,
-                zoom,
-                cropX,
-                cropY
-            });
-            const { uploadUrl, key } = await BackendApiService.getUploadUrl(uploadFile.name, uploadFile.type);
-            await BackendApiService.uploadFileToS3(uploadUrl, uploadFile);
-            const updatedUser = await BackendApiService.updateCurrentUser({
-                username,
-                profilePicUrl: key
-            });
-
-            updateUser(updatedUser);
-            notify({ message: 'Profile picture updated.', type: 'info' });
-            navigate(currentUserId != null ? `/users/${currentUserId}` : '/profile');
-        } catch (error) {
-            notify({ message: error.message || 'Failed to update profile picture', type: 'error' });
-        } finally {
+        if (selectedFile) {
+            setIsSaving(true);
+            try {
+                const uploadFile = await createCroppedProfileImage({
+                    imageUrl: previewUrl,
+                    imageSize,
+                    zoom,
+                    cropX,
+                    cropY
+                });
+                const { uploadUrl, key } = await BackendApiService.getUploadUrl(uploadFile.name, uploadFile.type);
+                await BackendApiService.uploadFileToS3(uploadUrl, uploadFile);
+                const updatedUser = await BackendApiService.updateCurrentUser({
+                    username,
+                    profilePicUrl: key
+                });
+                updateUser(updatedUser);
+                notify({ message: 'Profile updated.', type: 'info' });
+            } catch (error) {
+                notify({ message: error.message || 'Failed to update profile picture', type: 'error' });
+                setIsSaving(false);
+                return;
+            }
             setIsSaving(false);
         }
+
+        navigate(currentUserId != null ? `/users/${currentUserId}` : '/profile');
     };
 
     return (
@@ -248,19 +252,40 @@ const ProfileEditor = () => {
                 )}
 
                 <div className="profile-editor-controls">
-                    <label htmlFor="profile-picture-upload">Profile Picture</label>
-                    <input
-                        id="profile-picture-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                    />
+                    <label>Profile Picture</label>
+                    <div className="file-input-buttons">
+                        <input id="profile-picture-upload" type="file" accept="image/*" onChange={handleFileSelect} style={{ display: 'none' }} />
+                        <input id="profile-picture-camera" type="file" accept="image/*" capture="environment" onChange={handleFileSelect} style={{ display: 'none' }} />
+                        <button type="button" className="file-input-btn" aria-label="Take photo" onClick={() => document.getElementById('profile-picture-camera').click()}>
+                            {hd ? <CameraIconHD /> : <PhotoCameraOutlinedIcon />}
+                        </button>
+                        <button type="button" className="file-input-btn" aria-label="Upload photo" onClick={() => document.getElementById('profile-picture-upload').click()}>
+                            {hd ? <UploadIconHD /> : <FileUploadOutlinedIcon />}
+                        </button>
+                    </div>
+                </div>
+
+                <div className="profile-editor-controls">
+                    <label>Icon Pack</label>
+                    <div className="icon-pack-options">
+                        {[['hand_drawn', 'Hand Drawn'], ['default', 'Default']].map(([value, label]) => (
+                            <label key={value} className="icon-pack-option">
+                                <input
+                                    type="radio"
+                                    name="iconPack"
+                                    value={value}
+                                    checked={iconPack === value}
+                                    onChange={() => setIconPack(value)}
+                                />
+                                {label}
+                            </label>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="profile-editor-actions">
                     <button
                         type="button"
-                        className="secondary-button"
                         onClick={() => navigate(currentUserId != null ? `/users/${currentUserId}` : '/profile')}
                         disabled={isSaving}
                     >
@@ -269,9 +294,9 @@ const ProfileEditor = () => {
                     <button
                         type="button"
                         onClick={handleSave}
-                        disabled={isSaving || !selectedFile || !imageSize}
+                        disabled={isSaving || (selectedFile && !imageSize)}
                     >
-                        {isSaving ? 'Saving...' : 'Save Photo'}
+                        {isSaving ? 'Saving...' : 'Save'}
                     </button>
                 </div>
             </section>

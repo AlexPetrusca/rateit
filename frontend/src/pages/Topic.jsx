@@ -88,6 +88,7 @@ const Topic = () => {
     const [hoveredCommentScores, setHoveredCommentScores] = useState({});
     const [expandedCommentReplyKeys, setExpandedCommentReplyKeys] = useState([]);
     const [expandedTopicImageUrl, setExpandedTopicImageUrl] = useState(null);
+    const [fullscreenReview, setFullscreenReview] = useState(null);
     const [topicPhotoBlur, setTopicPhotoBlur] = useState(0);
     const feedSentinelRef = useRef(null);
 
@@ -852,7 +853,7 @@ const Topic = () => {
                             className="topic-feed topic-photo-feed"
                             items={displayedFeedItems}
                             onAuthorClick={openProfile}
-                            onItemClick={(item) => toggleRatingExpansion(item.ratingId)}
+                            onItemClick={(item) => setFullscreenReview(item)}
                             getItemClassName={(item) => (
                                 item.ratingId === expandedRatingId
                                     ? 'topic-rating-card is-expanded'
@@ -893,6 +894,42 @@ const Topic = () => {
 
                         {!isFeedLoading && feedError && (
                             <div className="inline-error">{feedError}</div>
+                        )}
+
+                        {fullscreenReview && (
+                            <div
+                                className="review-fullscreen"
+                                role="dialog"
+                                aria-modal="true"
+                                onClick={() => setFullscreenReview(null)}
+                            >
+                                <button
+                                    type="button"
+                                    className="image-lightbox-close"
+                                    onClick={() => setFullscreenReview(null)}
+                                    aria-label="Close review"
+                                >
+                                    ×
+                                </button>
+                                <div
+                                    className="review-fullscreen-card"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div className="review-fullscreen-header">
+                                        <span className="review-fullscreen-author">
+                                            {fullscreenReview.author?.username}
+                                        </span>
+                                        <AverageStarRating
+                                            value={fullscreenReview.score}
+                                            max={fullscreenReview.ratingScale?.max}
+                                            label={`${fullscreenReview.score} stars`}
+                                        />
+                                    </div>
+                                    <p className="review-fullscreen-text">
+                                        {parseRichText(fullscreenReview.reviewText)}
+                                    </p>
+                                </div>
+                            </div>
                         )}
 
                         {expandedTopicImageUrl && (

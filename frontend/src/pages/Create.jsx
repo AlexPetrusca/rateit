@@ -1,8 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
+import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
+import CameraIconHD from '../assets/icons/hand_drawn/camera.svg?react';
+import UploadIconHD from '../assets/icons/hand_drawn/upload.svg?react';
 import { parseRichText } from '../components/RichText.jsx';
 import RichTextarea from '../components/RichTextarea.jsx';
 import StarRating from '../components/StarRating.jsx';
+import { useIconPack } from '../contexts/IconPackContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext';
 import BackendApiService from '../services/BackendApiService';
 import {
@@ -14,6 +19,8 @@ import '../App.css';
 
 const Create = () => {
     const navigate = useNavigate();
+    const { iconPack } = useIconPack();
+    const hd = iconPack === 'hand_drawn';
     const [body, setBody] = useState('');
     const [reviewText, setReviewText] = useState('');
     const [score, setScore] = useState('4');
@@ -95,22 +102,22 @@ const Create = () => {
                     <div className="create-layout">
                         <div className="create-fields">
                             <div className="form-group">
-                                <label htmlFor="create-image">Photo</label>
-                                <input
-                                    id="create-image"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleFileChange}
-                                />
-                                {selectedFile && (
-                                    <button
-                                        type="button"
-                                        className="link-button"
-                                        onClick={() => setSelectedFile(null)}
-                                    >
-                                        Remove photo
+                                <label>Photo</label>
+                                <div className="file-input-buttons">
+                                    <input id="create-image" type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+                                    <input id="create-image-camera" type="file" accept="image/*" capture="environment" onChange={handleFileChange} style={{ display: 'none' }} />
+                                    <button type="button" className="file-input-btn" aria-label="Take photo" onClick={() => document.getElementById('create-image-camera').click()}>
+                                        {hd ? <CameraIconHD /> : <PhotoCameraOutlinedIcon />}
                                     </button>
-                                )}
+                                    <button type="button" className="file-input-btn" aria-label="Upload photo" onClick={() => document.getElementById('create-image').click()}>
+                                        {hd ? <UploadIconHD /> : <FileUploadOutlinedIcon />}
+                                    </button>
+                                    {selectedFile && (
+                                        <button type="button" className="link-button" onClick={() => setSelectedFile(null)}>
+                                            Remove
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="form-group">
@@ -121,7 +128,6 @@ const Create = () => {
                                     onChange={setBody}
                                     placeholder="Write the thing you want to rate, or add a caption for your photo"
                                     rows={5}
-                                    bold={false}
                                 />
                             </div>
 

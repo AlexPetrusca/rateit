@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import GearIconHD from '../assets/icons/hand_drawn/gear.svg?react';
 import { useAuth } from '../contexts/AuthContext';
+import { useIconPack } from '../contexts/IconPackContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext';
 import CommentComposer from '../components/CommentComposer.jsx';
 import CommentThread from '../components/CommentThread.jsx';
@@ -18,6 +21,7 @@ const Profile = () => {
     const navigate = useNavigate();
     const { userId: routeUserId } = useParams();
     const { user: currentUser, isLoading: isAuthLoading } = useAuth();
+    const { iconPack } = useIconPack();
     const { notify } = useNotifications();
     const [profile, setProfile] = useState(null);
     const [posts, setPosts] = useState([]);
@@ -571,6 +575,11 @@ const Profile = () => {
                 ) : profile ? (
                     <>
                         <section className="profile-banner">
+                            <div className="profile-nav-actions">
+                                <button type="button" className="profile-action-button" onClick={() => navigate('/backlog')}>Backlog</button>
+                                <button type="button" className="profile-action-button" onClick={() => navigate('/install')}>Install</button>
+                            </div>
+                            <button type="button" className="profile-settings-btn" aria-label="Settings" onClick={() => navigate('/profile/edit')}>{iconPack === 'hand_drawn' ? <GearIconHD /> : <SettingsOutlinedIcon />}</button>
                             <UserAvatar
                                 username={profile.username}
                                 profilePicUrl={profile.profilePicUrl}
