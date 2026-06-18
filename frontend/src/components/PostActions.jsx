@@ -2,6 +2,8 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import IosShareOutlinedIcon from '@mui/icons-material/IosShareOutlined';
+import ShareHD from '../assets/icons/hand_drawn/share.svg?react';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import ReplyIcon from '@mui/icons-material/Reply';
 import ChatBubbleHD from '../assets/icons/hand_drawn/chat_bubble.svg?react';
@@ -11,6 +13,7 @@ import FullHeartHD from '../assets/icons/hand_drawn/full_heart.svg?react';
 import CycleHD from '../assets/icons/hand_drawn/cycle.svg?react';
 import ReplyHD from '../assets/icons/hand_drawn/reply.svg?react';
 import { useIconPack } from '../contexts/IconPackContext.jsx';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const PostActions = ({
     liked = false,
@@ -21,6 +24,7 @@ const PostActions = ({
     onComment,
     onReply,
     onEdit,
+    shareUrl,
     commentLabel = 'Comment',
     replyLabel = 'Reply',
     commentAriaLabel,
@@ -28,6 +32,13 @@ const PostActions = ({
 }) => {
     const { iconPack } = useIconPack();
     const hd = iconPack === 'hand_drawn';
+    const { notify } = useNotifications();
+
+    const handleShare = () => {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            notify({ message: 'Added to clipboard', type: 'info' });
+        });
+    };
 
     return (
         <div className="tweet-actions" aria-label="Rating actions">
@@ -90,6 +101,20 @@ const PostActions = ({
                         {hd ? <ReplyHD /> : <ReplyIcon />}
                     </span>
                     <span className="sr-only">{replyLabel}</span>
+                </button>
+            )}
+            {shareUrl && (
+                <button
+                    type="button"
+                    className="tweet-action"
+                    onClick={handleShare}
+                    aria-label="Share"
+                    title="Share"
+                >
+                    <span className="action-icon">
+                        {hd ? <ShareHD /> : <IosShareOutlinedIcon />}
+                    </span>
+                    <span className="sr-only">Share</span>
                 </button>
             )}
             {onEdit && (

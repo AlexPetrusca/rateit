@@ -886,6 +886,7 @@ const Topic = () => {
                                         onReply={() => openRatingComposer(item.ratingId)}
                                         onComment={() => toggleRatingExpansion(item.ratingId)}
                                         onEdit={canEdit ? () => navigate(`/posts/${item.ratingId}/edit`) : undefined}
+                                        shareUrl={`${window.location.origin}/posts/${item.ratingId}`}
                                         commentLabel={isExpanded ? 'Hide comments' : 'Comments'}
                                         replyLabel="Reply"
                                     />

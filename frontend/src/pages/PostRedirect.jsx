@@ -63,7 +63,7 @@ const PostRedirect = () => {
     }
 
     if (!isLoading && rateableItemId != null) {
-        return <Navigate to={`/topics/${rateableItemId}`} replace />;
+        return <Navigate to={`/topics/${rateableItemId}`} state={{ openReviewId: ratingId }} replace />;
     }
 
     if (!isLoading && loadError) {
