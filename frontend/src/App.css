@@ -2568,6 +2568,14 @@ button:disabled {
     border-left: 0;
 }
 
+.topic-rating-card:not(.is-expanded) .tweet-review {
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal;
+}
+
 .topic-feed .tweet-card-text {
     padding-bottom: 10px;
 }
