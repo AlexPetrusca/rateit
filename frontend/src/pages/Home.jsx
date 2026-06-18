@@ -387,6 +387,7 @@ const Home = ({ fetchFeed = BackendApiService.getFeed }) => {
                         <CommentThread
                             comments={comments}
                             onAuthorClick={openProfile}
+                            onCommentClick={() => navigate(`/topics/${item.rateableItem?.id}`, { state: { openReviewId: item.ratingId } })}
                             onReplyClick={(comment) => {
                                 const replyKey = getCommentReplyKey(item.ratingId, comment.id);
                                 setActiveComposer((current) => (
@@ -472,8 +473,8 @@ const Home = ({ fetchFeed = BackendApiService.getFeed }) => {
                         <FeedTimeline
                             items={feedItems}
                             onAuthorClick={openProfile}
-                            onPostClick={openPost}
                             onTopicClick={openTopic}
+                            onItemClick={(item) => navigate(`/topics/${item.rateableItem?.id}`, { state: { openReviewId: item.ratingId } })}
                             renderFooter={(item) => {
                                 const rerateKey = getComposerKey(item.ratingId, 'rerate');
                                 const isCommentsOpen = expandedCommentRatingIds.includes(item.ratingId);

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Typography } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -67,6 +67,7 @@ const AverageStarRating = ({ value, max = 5, label }) => {
 const Topic = () => {
     const navigate = useNavigate();
     const { rateableItemId: routeRateableItemId } = useParams();
+    const location = useLocation();
     const { user, isAuthenticated } = useAuth();
     const currentUserId = user?.userId ?? user?.id ?? null;
     const { notify } = useNotifications();
@@ -350,6 +351,13 @@ const Topic = () => {
             isMounted = false;
         };
     }, [commentsByRating, expandedRatingId, isFullyAuthenticated, notify]);
+
+    useEffect(() => {
+        const targetId = location.state?.openReviewId;
+        if (!targetId || !feedItems.length) return;
+        const item = feedItems.find((f) => f.ratingId === targetId);
+        if (item) setFullscreenReview(item);
+    }, [feedItems, location.state?.openReviewId]);
 
     const updateFeedItem = (ratingId, updater) => {
         setFeedItems((items) => items.map((item) => (
@@ -752,6 +760,7 @@ const Topic = () => {
             placeholder="Add your take on this topic"
             submitLabel="Add rating"
             onSubmit={submitTopicRating}
+            onClose={() => navigate(-1)}
         />
     );
 

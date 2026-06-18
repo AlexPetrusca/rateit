@@ -11,6 +11,7 @@ const CommentThread = ({
     onReplyClick,
     onLikeClick,
     onEditClick,
+    onCommentClick,
     activeReplyKey,
     activeEditKey,
     getReplyKey,
@@ -145,7 +146,13 @@ const CommentThread = ({
                                 </div>
                             )}
                         </div>
-                        <div className="comment-text">{parseRichText(comment.text)}</div>
+                        {typeof onCommentClick === 'function' ? (
+                            <div className="comment-text comment-text-clickable" role="button" tabIndex={0} onClick={() => onCommentClick(comment)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onCommentClick(comment); }}>
+                                {parseRichText(comment.text)}
+                            </div>
+                        ) : (
+                            <div className="comment-text">{parseRichText(comment.text)}</div>
+                        )}
                         <PostActions
                             liked={Boolean(comment.likedByCurrentUser)}
                             likeCount={comment.likeCount || 0}

@@ -28,7 +28,7 @@ const FeedTimeline = ({
         <>
             <section className={className} aria-label="Recent ratings">
                 {items.map((item) => (
-                    <div key={getItemKey(item)}>
+                    <div key={getItemKey(item)} id={`rating-${getItemKey(item)}`}>
                         <PostCard
                             post={item}
                             onAuthorClick={onAuthorClick}

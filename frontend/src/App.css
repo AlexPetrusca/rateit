@@ -2576,6 +2576,15 @@ button:disabled {
     white-space: normal;
 }
 
+.timeline .tweet-body,
+.timeline .tweet-review {
+    display: -webkit-box;
+    -webkit-line-clamp: 8;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal;
+}
+
 .topic-feed .tweet-card-text {
     padding-bottom: 10px;
 }
@@ -2913,6 +2922,10 @@ button:disabled {
     color: #0f1419;
     font-size: 0.95rem;
     line-height: 1.45;
+}
+
+.comment-text-clickable {
+    cursor: pointer;
 }
 
 .feed-muted {
