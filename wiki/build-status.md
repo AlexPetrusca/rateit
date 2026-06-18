@@ -15,14 +15,10 @@ Maintenance rule: keep this page current when features are started, completed, d
 ## To Do
 ### P1
 - Loading is ugly everywhere, will need to do a visual overhaul
-- Nav bar needs love. not sure what the plan is.
-- composition boxes look good, need to figure out where they should spawn on topic pages
 - instead of showing ratings with no text, those should just be accessible by tapping the avg star rating on the topic. no need to create cards for every empty rating
 - Dark mode
 - Add filter for profile pages to order by date or review
-- make topic page full image, scroll to see ratings and comments
 - everyones a critic as refresh indicator
-- Hitting return twice on a post or comment creates it multiple times. need to make sure its only created once.
 - Add profile pic sizing to create account page
 - Need the ability to @people in posts
 - Pulling down on mobile doesnt always refresh the page. only if finger is in the top bar labeled "home". if the screen is being dragged and grey at the top is exposed, the screen should refresh.
@@ -30,9 +26,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Add a basic censor that stops you from posting slurs
 - Add ability to edit topics
 - Add the ability to make your account private so only approved followers can see your posts.
-- Update ui to add photos, it should be first and have symbols for upload vs use camera
 - Make the stars bigger, nicer, and flashier when rating.
-- Split the feed into two views, one public and one following-only.
 - Add a notifications pane for likes, comments, follows, and other activity.
 - Resolve the container registry namespace mismatch so Critic backend and mocker images can live under the right owner/repo instead of depending on legacy RateIt image names.
 ### P2
@@ -40,7 +34,6 @@ Maintenance rule: keep this page current when features are started, completed, d
 - There is a delay when loading things that seems unnecessary (alex item)
 - Add the ability to tag your own ratings.
 - Add videos.
-- Fix the re-rate icon. The current cycle icon looks bad.
 ### P3
 - Find a way to categorize ratings.
 - Make topics show an overall average rating and a way to view all ratings tied to a topic.
@@ -113,3 +106,13 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Desktop topic labels no longer change color, underline, or flash a blue background on hover.
 - The logged-out entry path now sends `/` directly to `/login`, hides the top bar on the login page, and uses a layered full-screen DM Sans `EVERYONES A CRITIC` background with an overlaid phone-entry field, clickable flag/country-code picker, visible phone-field caret, automatic OTP send after a complete 10-digit number, and an in-place verification-code field.
 - Shared comment, rating composer, admin selection toolbar, rating display, timestamp, and text truncation helpers now replace duplicated UI/helper code across feed, topic, profile, and admin pages.
+- Feed is split into two views: a public home feed and a following-only feed, selectable via the bottom nav.
+- The bottom nav bar uses a hand-drawn SVG icon pack with a user-selectable fallback to MUI icons, persisted in localStorage and settable in the profile editor.
+- Photo upload UI on the Create page now uses camera and upload icon buttons instead of a plain file input; the photo section is first in the form.
+- Rich text composer supports bold, italic, underline, links, and combined bold+italic (`_**word**_`); bold text renders in primary color in dark mode.
+- Textareas in all composers auto-expand as content grows.
+- Draft saving is fully backed by the database: drafts are stored as `DRAFT`-status ratings, listed on a dedicated Drafts page, and published on submit; back/draft/submit buttons sit at the bottom of the Create page with double-click protection.
+- Tapping a review card on a topic page opens it fullscreen for easier reading on narrow screens.
+- Submitting a post or deleting a draft is protected against double-clicks by disabling the action button while the request is in flight.
+- Topic, profile, and home composers now each have a back button that closes the composer and a checkmark button that submits, replacing the old labeled submit buttons.
+- Make topic page full image with scroll-driven blur; ratings and comments scroll beneath the fixed hero.
