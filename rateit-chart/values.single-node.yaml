@@ -34,8 +34,6 @@ ingress-nginx:
   enabled: false
 
 minio:
-  persistence:
-    size: 5Gi
   resources:
     requests:
       memory: 128Mi

@@ -6,6 +6,9 @@
 
 set -e  # Exit immediately if a command exits with a non-zero status
 
+LOCAL_KUBE_CONTEXT="docker-desktop"
+REMOTE_KUBE_CONTEXT="do-sfo3-critic"
+
 IMAGE_TAG_WAS_PROVIDED=false
 if [ -n "${IMAGE_TAG:-}" ]; then
   IMAGE_TAG_WAS_PROVIDED=true
@@ -49,6 +52,12 @@ fi
 
 if [ "$SKIP_BACKEND_PUSH" = false ] && [ "$IMAGE_TAG_WAS_PROVIDED" = false ]; then
   IMAGE_TAG="dev-$(date +%Y%m%d%H%M%S)-$(git rev-parse --short HEAD)"
+fi
+
+if [ "$LOCAL_DEPLOY" = true ]; then
+  kubectl config use-context "$LOCAL_KUBE_CONTEXT"
+else
+  kubectl config use-context "$REMOTE_KUBE_CONTEXT"
 fi
 
 echo "Deploying application to Kubernetes with image tag: $IMAGE_TAG"
@@ -104,9 +113,13 @@ VALUES_ARGS=(
   --values ./rateit-chart/values.yaml
   --values ./rateit-chart/values.secret.yaml
 )
+if [ "$LOCAL_DEPLOY" = true ]; then
+  VALUES_ARGS+=(--values ./rateit-chart/values.local.yaml)
+fi
 if [ "$SINGLE_NODE_DEPLOY" = true ]; then
   VALUES_ARGS+=(--values ./rateit-chart/values.single-node.yaml)
 fi
+
 helm upgrade --install "$RELEASE_NAME" ./rateit-chart \
   --namespace "$NAMESPACE" --create-namespace \
   "${VALUES_ARGS[@]}" \

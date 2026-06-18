@@ -1,0 +1,11 @@
+# Local docker-desktop dev preset.
+# Keeps mocker and local backend; drops heavy infra not needed for local dev.
+
+kafka:
+  enabled: false
+
+prometheus:
+  enabled: false
+
+grafana:
+  enabled: false
