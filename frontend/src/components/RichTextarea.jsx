@@ -1,13 +1,14 @@
 import { useRef } from 'react';
 import LinkIcon from '@mui/icons-material/Link';
 
-const FORMATS = [
+const ALL_FORMATS = [
     { marker: '**', label: 'B', title: 'Bold', className: 'rich-toolbar-btn-bold' },
     { marker: '_', label: 'I', title: 'Italic', className: 'rich-toolbar-btn-italic' },
     { marker: '~', label: 'U', title: 'Underline', className: 'rich-toolbar-btn-underline' },
 ];
 
-const RichTextarea = ({ value = '', onChange, id, placeholder, rows, disabled }) => {
+const RichTextarea = ({ value = '', onChange, id, placeholder, rows, disabled, bold = true }) => {
+    const FORMATS = bold ? ALL_FORMATS : ALL_FORMATS.filter(f => f.marker !== '**');
     const ref = useRef(null);
 
     const applyFormat = (marker) => {

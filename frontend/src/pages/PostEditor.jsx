@@ -175,6 +175,7 @@ const PostEditor = () => {
                                         onChange={setBody}
                                         placeholder="Write the thing you want to rate"
                                         rows={5}
+                                        bold={false}
                                     />
                                 </div>
 

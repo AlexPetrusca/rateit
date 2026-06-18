@@ -825,7 +825,6 @@ button:disabled {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    align-self: flex-start;
     padding: 0;
     margin: 0;
     border: 0;
@@ -1489,9 +1488,6 @@ button:disabled {
 }
 
 .tweet-card {
-    display: grid;
-    grid-template-columns: 48px minmax(0, 1fr);
-    gap: 12px;
     padding: 16px;
     border-bottom: 1px solid #eff3f4;
     background: #ffffff;
@@ -1516,12 +1512,6 @@ button:disabled {
     line-height: 1.4;
 }
 
-.tweet-avatar-column {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-}
-
 .tweet-main {
     min-width: 0;
 }
@@ -1529,8 +1519,10 @@ button:disabled {
 .tweet-meta {
     display: flex;
     align-items: center;
+    flex-wrap: nowrap;
     gap: 5px;
     min-width: 0;
+    overflow: hidden;
     color: #536471;
     font-size: 0.95rem;
 }
@@ -1623,6 +1615,11 @@ button:disabled {
     line-height: 1.45;
     overflow-wrap: anywhere;
     white-space: pre-wrap;
+}
+
+.feed-page .text-post-body,
+.feed-page .text-post-topic-link {
+    font-weight: 700;
 }
 
 .text-post-topic-link {
@@ -2298,8 +2295,6 @@ button:disabled {
 
 .tweet-review {
     color: #536471;
-    padding-left: 12px;
-    border-left: 3px solid #cfd9de;
 }
 
 .topic-feed .tweet-review {

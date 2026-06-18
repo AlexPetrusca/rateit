@@ -142,33 +142,30 @@ const PostCard = ({
     return (
         <>
             <article className={cardClassName}>
-                <div className="tweet-avatar-column">
-                    {post.author?.userId != null && typeof onAuthorClick === 'function' ? (
-                        <button
-                            type="button"
-                            className="profile-link profile-link-avatar"
-                            onClick={() => onAuthorClick(post.author.userId)}
-                            aria-label={`Open profile for ${post.author.username}`}
-                        >
+                <div className="tweet-main">
+                    <header className="tweet-meta">
+                        {post.author?.userId != null && typeof onAuthorClick === 'function' ? (
+                            <button
+                                type="button"
+                                className="profile-link profile-link-avatar"
+                                onClick={() => onAuthorClick(post.author.userId)}
+                                aria-label={`Open profile for ${post.author.username}`}
+                            >
+                                <UserAvatar
+                                    username={post.author?.username}
+                                    profilePicUrl={post.author?.profilePicUrl}
+                                    alt=""
+                                    size={avatarSize}
+                                />
+                            </button>
+                        ) : (
                             <UserAvatar
                                 username={post.author?.username}
                                 profilePicUrl={post.author?.profilePicUrl}
                                 alt=""
                                 size={avatarSize}
                             />
-                        </button>
-                    ) : (
-                        <UserAvatar
-                            username={post.author?.username}
-                            profilePicUrl={post.author?.profilePicUrl}
-                            alt=""
-                            size={avatarSize}
-                        />
-                    )}
-                </div>
-
-                <div className="tweet-main">
-                    <header className="tweet-meta">
+                        )}
                         {post.author?.userId != null && typeof onAuthorClick === 'function' ? (
                             <button
                                 type="button"

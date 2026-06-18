@@ -121,6 +121,7 @@ const Create = () => {
                                     onChange={setBody}
                                     placeholder="Write the thing you want to rate, or add a caption for your photo"
                                     rows={5}
+                                    bold={false}
                                 />
                             </div>
 
