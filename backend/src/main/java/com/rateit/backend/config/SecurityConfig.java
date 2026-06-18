@@ -16,6 +16,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +36,7 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain publicAuthChain(HttpSecurity http) {
         http.securityMatcher("/auth/**", "/actuator/prometheus", "/swagger-ui/**", "/v3/api-docs/**")
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth.anyRequest().permitAll()); // no auth needed
         return http.build();
@@ -41,7 +45,8 @@ public class SecurityConfig {
     @Bean
     @Order(2)
     public SecurityFilterChain apiChain(HttpSecurity http) {
-        http.csrf(csrf -> csrf.disable())
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/admin/**").hasAuthority(UserRoles.ADMIN)
                 .anyRequest().authenticated()) // require auth
@@ -52,6 +57,27 @@ public class SecurityConfig {
             )
             .addFilterAfter(sessionRefreshFilter, BearerTokenAuthenticationFilter.class);
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:3002",
+            "http://127.0.0.1:3002",
+            "http://localhost:8081",
+            "http://127.0.0.1:8081",
+            "http://localhost:19006",
+            "http://127.0.0.1:19006"
+        ));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/auth/**", configuration);
+        source.registerCorsConfiguration("/api/**", configuration);
+        return source;
     }
 
     @Bean

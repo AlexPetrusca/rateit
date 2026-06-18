@@ -8,7 +8,7 @@ Root instructions for agent work in this repo. Read the current docs for the are
 2. For app/feed work: [`docs/app/app_spec.md`](docs/app/app_spec.md), [`docs/app/feed.md`](docs/app/feed.md)
 3. For admin/automation work: [`docs/admin/admin_spec.md`](docs/admin/admin_spec.md), [`docs/admin/automation.md`](docs/admin/automation.md)
 4. [`docs/agent_learnings.md`](docs/agent_learnings.md)
-5. Subtree notes: [`frontend/AGENTS.md`](frontend/AGENTS.md) or [`backend/AGENTS.md`](backend/AGENTS.md)
+5. Subtree notes: [`frontend/AGENTS.md`](frontend/AGENTS.md), [`backend/AGENTS.md`](backend/AGENTS.md), or [`mobile/AGENTS.md`](mobile/AGENTS.md)
 
 ## Repo Rules
 

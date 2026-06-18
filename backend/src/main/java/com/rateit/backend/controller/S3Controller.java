@@ -2,6 +2,7 @@ package com.rateit.backend.controller;
 
 import com.rateit.backend.entity.rest.S3UploadRequest;
 import com.rateit.backend.entity.rest.S3UploadResponse;
+import com.rateit.backend.entity.rest.S3DownloadUrlResponse;
 import com.rateit.backend.service.S3Service;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,24 @@ public class S3Controller {
         );
 
         return ResponseEntity.ok(new S3UploadResponse(uploadUrl, key));
+    }
+
+    @GetMapping("/images/url/{*key}")
+    public ResponseEntity<S3DownloadUrlResponse> getPresignedDownloadUrlJson(@PathVariable String key, HttpServletRequest servletRequest) {
+        String bucketName = "images";
+
+        if (key.startsWith("/")) {
+            key = key.substring(1);
+        }
+
+        String downloadUrl = s3Service.createPresignedGetUrl(
+            bucketName,
+            key,
+            Duration.ofMinutes(10),
+            getForwardedOrigin(servletRequest)
+        );
+
+        return ResponseEntity.ok(new S3DownloadUrlResponse(downloadUrl, key));
     }
 
     @GetMapping("/images/{*key}")

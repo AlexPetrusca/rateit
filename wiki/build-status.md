@@ -109,3 +109,4 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Desktop topic labels no longer change color, underline, or flash a blue background on hover.
 - The logged-out entry path now sends `/` directly to `/login`, hides the top bar on the login page, and uses a layered full-screen DM Sans `EVERYONES A CRITIC` background with an overlaid phone-entry field, clickable flag/country-code picker, visible phone-field caret, automatic OTP send after a complete 10-digit number, and an in-place verification-code field.
 - Shared comment, rating composer, admin selection toolbar, rating display, timestamp, and text truncation helpers now replace duplicated UI/helper code across feed, topic, profile, and admin pages.
+- Added a separate Expo React Native app under `mobile/` with native screens for login/account setup, feed, create, profile, search, follow lists, topic, post editing, backlog/suggestions, install info, and admin moderation/automation.

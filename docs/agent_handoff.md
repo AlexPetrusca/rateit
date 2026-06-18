@@ -4,7 +4,7 @@ This file is the entry point for a new agent joining the repo. Read it first, th
 
 ## Current Product State
 
-Critic is a React + Spring Boot app with phone-number login, JWT cookie auth, a public feed of ratings, threaded comments, re-rating, user profiles, user search, followers/following, a topic view for shared ratings, and an admin area for moderation plus synthetic-data automation.
+Critic is a React + Spring Boot app with a separate Expo React Native mobile app, phone-number login, JWT cookie auth, a public feed of ratings, threaded comments, re-rating, user profiles, user search, followers/following, a topic view for shared ratings, and an admin area for moderation plus synthetic-data automation.
 
 ### What is implemented now
 
@@ -15,6 +15,7 @@ Critic is a React + Spring Boot app with phone-number login, JWT cookie auth, a 
 - Admin-only APIs under `/api/admin/**` guarded by `ROLE_ADMIN`.
 - Infinite-scroll home feed with pagination in chunks of 5.
 - Shared feed/post/comment UI components used across home, profile, and topic pages.
+- A React Native mobile app lives in `mobile/` and mirrors the same user-facing and admin surfaces with native reusable components.
 - User profile pages with user info and that user’s posts.
 - Profile editor page at `/profile/edit` for updating the signed-in user's profile picture.
 - The old create-account handoff now reuses the same setup form inline on `/login` after OTP verification, and `/create-account` is now just a redirect back to `/login`.
@@ -68,6 +69,8 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 
 ## Main UI Surfaces
 
+Web routes:
+
 - `/` home feed
 - `/login`
 - `/create-account`
@@ -85,6 +88,8 @@ Keep this section high-level. Detailed app behavior belongs in `docs/app/app_spe
 - `/admin/users`
 - `/admin/posts`
 - `/admin/jobs`
+
+Mobile screens in `mobile/src/screens/` cover the same product areas: login/account setup, home feed, create, profiles, profile editor, search, follower/following lists, topic, post editor, backlog, suggestion submit, install info, and admin moderation/automation screens.
 
 ## Backend Surface
 
@@ -141,6 +146,8 @@ Use these instead of recreating the same UI:
 - `AdminDataGrid`
 - `AdminSelectionToolbar`
 
+The mobile app has native equivalents under `mobile/src/components/`, including `RatingFeedItem`, `PostCard`, `CommentThread`, `CommentComposer`, `RatingComposer`, `StarRating`, and `UserAvatar`.
+
 ## Current Behavior Constraints
 
 - User deletion is a hard delete and also removes their authored posts and the comments on those posts.
@@ -157,6 +164,7 @@ Use these instead of recreating the same UI:
 4. Read [`docs/admin/automation.md`](./admin/automation.md) for the queue and synthetic-data pipeline.
 5. Inspect the shared feed UI in `frontend/src/components/FeedTimeline.jsx` and `frontend/src/components/PostCard.jsx`.
 6. Inspect the admin UI in `frontend/src/pages/AdminUsers.jsx`, `AdminPosts.jsx`, and `AdminJobs.jsx`.
+7. For native mobile work, start with `mobile/AGENTS.md`, `mobile/src/navigation/AppNavigator.jsx`, and the shared mobile components in `mobile/src/components/`.
 
 ## Important Workflow Rule
 

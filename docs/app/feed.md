@@ -109,6 +109,7 @@ The topic summary star row uses the raw average score, so partial averages are s
 - `GET /api/feed/ratings/{ratingId}/comments`
 - `POST /api/feed/ratings/{ratingId}/comments`
 - `POST /api/feed/ratings/{ratingId}/rerate`
+- `GET /api/s3/images/url/{key}`
 
 ## Current feed notes
 

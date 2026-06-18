@@ -4,6 +4,8 @@ This document covers the main user-facing product surface outside the admin area
 
 ## Product Surface
 
+The web app lives in `frontend/`. The native mobile app lives in `mobile/` and mirrors the same core product surface with React Native screens and reusable native components.
+
 The top bar is intentionally minimal: a hamburger menu opens Home, Backlog, Install, and Login for signed-out users, and Home, Backlog, Install, and Admin for signed-in admins, while the signed-in right side keeps only Create and the profile avatar.
 The login route is its own full-screen brand treatment and does not render the top bar.
 
@@ -59,6 +61,8 @@ Use the shared components below before creating new copies:
 
 ## Mobile Layout
 
+- The React Native app uses native stack navigation and a menu screen instead of the browser top bar.
+- Native screens should preserve the same functional contracts as the web pages even when the layout differs.
 - At phone widths, the top navigation stays compact by moving secondary destinations into the hamburger menu and keeping only the core actions visible.
 - Feed cards reduce avatar and gutter sizes, use short post dates, and allow action controls to wrap without creating horizontal page overflow.
 - Search forms, profile headers, and composer actions stack vertically when their desktop layout no longer fits.
@@ -125,6 +129,8 @@ Use the shared components below before creating new copies:
 If you are changing the main app surface, these are the first files to inspect:
 
 - frontend routing: `frontend/src/App.jsx`
+- mobile routing: `mobile/src/navigation/AppNavigator.jsx`
+- mobile shared components: `mobile/src/components/`
 - logged-in state: `frontend/src/contexts/AuthContext.jsx`
 - home feed: `frontend/src/pages/Home.jsx`
 - profile page: `frontend/src/pages/Profile.jsx`
@@ -155,6 +161,7 @@ If you are changing the main app surface, these are the first files to inspect:
 - `POST /api/feed/ratings/{ratingId}/like`
 - `DELETE /api/feed/ratings/{ratingId}/like`
 - `POST /api/feed/ratings/{ratingId}/rerate`
+- `GET /api/s3/images/url/{key}` for mobile-friendly authenticated image URL resolution
 - `GET /api/users/me`
 - `PUT /api/users/me`
 - `GET /api/users/search?query={query}&limit={limit}`
