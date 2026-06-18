@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import PostActions from './PostActions.jsx';
+import RichText from './RichText.jsx';
 import StarRating from './StarRating.jsx';
 import UserAvatar from './UserAvatar.jsx';
 import { colors, spacing, text } from '../theme.js';
@@ -56,7 +57,7 @@ const CommentThread = ({
       const canEdit = Boolean(onEditPress) && currentUserId != null && comment.author?.userId === currentUserId;
 
       return (
-        <View key={comment.id} style={[styles.comment, depth > 1 && { marginLeft: Math.min(48, (depth - 1) * 10) }]}>
+        <View key={comment.id} style={[styles.comment, depth > 1 && { marginLeft: Math.min(36, (depth - 1) * 10) }]}>
           <View style={styles.row}>
             <UserAvatar username={comment.author?.username} profilePicUrl={comment.author?.profilePicUrl} size="sm" />
             <View style={styles.body}>
@@ -67,7 +68,7 @@ const CommentThread = ({
                   <Text style={styles.scoreLabel}>{formatScoreValue(comment.score)}</Text>
                 </View>
               ) : null}
-              <Text style={styles.text}>{comment.text}</Text>
+              <RichText style={styles.text}>{comment.text}</RichText>
               <PostActions
                 liked={Boolean(comment.likedByCurrentUser)}
                 likeCount={comment.likeCount || 0}
@@ -99,10 +100,10 @@ const CommentThread = ({
 
 const styles = StyleSheet.create({
   thread: {
-    gap: spacing.sm
+    gap: 0
   },
   comment: {
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     gap: spacing.sm
@@ -131,8 +132,8 @@ const styles = StyleSheet.create({
   },
   text: text.body,
   replies: {
-    marginLeft: spacing.lg,
-    paddingLeft: spacing.md,
+    marginLeft: 18,
+    paddingLeft: spacing.sm,
     borderLeftWidth: 2,
     borderLeftColor: colors.border
   }

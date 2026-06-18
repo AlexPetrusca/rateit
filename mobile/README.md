@@ -19,6 +19,8 @@ Then open `http://localhost:3002`.
 
 Use a backend or nginx URL the simulator can reach. For a physical phone, use the machine's LAN IP instead of `localhost`.
 
+Set `EXPO_PUBLIC_APP_PUBLIC_URL` when shared post links should point somewhere other than the current Expo web origin, for example a LAN URL when testing from a phone.
+
 If the browser origin still shows `http://localhost:8081`, stop the old Expo process and restart `npm run web`; the package scripts pin Expo to `3002`.
 
 ## Checks

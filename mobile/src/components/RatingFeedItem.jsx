@@ -16,6 +16,7 @@ const RatingFeedItem = ({
   onTopicPress,
   onCardPress,
   onEditPress,
+  shareUrl,
   refresh,
   showMedia = true,
   showTopicText = true
@@ -157,6 +158,7 @@ const RatingFeedItem = ({
             onComment={() => interactions.toggleComments(item.ratingId)}
             onReply={() => interactions.openCommentComposer(item.ratingId)}
             onEdit={canEdit ? () => onEditPress?.(item.ratingId) : undefined}
+            shareUrl={shareUrl}
             commentLabel={isCommentsOpen ? 'Hide comments' : 'Comments'}
             replyLabel="Reply"
           />

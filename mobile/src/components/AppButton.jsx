@@ -3,12 +3,12 @@ import { colors, radius, spacing } from '../theme.js';
 
 const variants = {
   primary: {
-    backgroundColor: colors.text,
-    borderColor: colors.text,
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
     color: '#ffffff'
   },
   secondary: {
-    backgroundColor: colors.surface,
+    backgroundColor: 'transparent',
     borderColor: colors.borderStrong,
     color: colors.text
   },
@@ -65,16 +65,16 @@ const AppButton = ({
 const styles = StyleSheet.create({
   button: {
     minHeight: 44,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderWidth: 1,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center'
   },
   text: {
     fontSize: 15,
-    fontWeight: '800'
+    fontWeight: '700'
   }
 });
 

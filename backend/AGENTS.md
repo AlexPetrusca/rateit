@@ -11,6 +11,7 @@ Spring Boot service with JPA entities, REST controllers, background jobs, securi
 - `./mvnw -q test`
 - `./mvnw -q -DskipTests compile`
 - `./mvnw spring-boot:run`
+- `./scripts/dev.sh` for local backend auto-refresh; it runs Spring Boot and recompiles when `src/main/java` or `src/main/resources` changes so devtools can restart the app.
 
 ## Backend Conventions
 

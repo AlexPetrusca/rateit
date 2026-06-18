@@ -37,8 +37,8 @@ cd critic
 # Start with Docker Compose (recommended)
 docker-compose up -d
 
-# Or build locally
-cd backend && ./mvnw spring-boot:run
+# Or run locally with backend auto-refresh
+cd backend && ./scripts/dev.sh
 cd ../frontend && npm install && npm run dev
 ```
 

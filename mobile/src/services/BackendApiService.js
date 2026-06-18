@@ -90,6 +90,12 @@ const BackendApiService = {
     'Failed to fetch feed'
   ),
 
+  getFollowingFeed: ({ page = 0, size = 20 } = {}) => request(
+    `/api/feed/following?page=${encodeURIComponent(page)}&limit=${encodeURIComponent(size)}`,
+    {},
+    'Failed to fetch following feed'
+  ),
+
   getTopicRatings: ({ rateableItemId, page = 0, size = 20 } = {}) => request(
     `/api/feed/topics/${encodeURIComponent(rateableItemId)}?page=${encodeURIComponent(page)}&limit=${encodeURIComponent(size)}`,
     {},
@@ -299,7 +305,22 @@ const BackendApiService = {
 
   deleteAdminSuggestion: (suggestionId) => request(`/api/admin/suggestions/${encodeURIComponent(suggestionId)}`, {
     method: 'DELETE'
-  }, 'Failed to delete suggestion')
+  }, 'Failed to delete suggestion'),
+
+  getDrafts: () => request('/api/feed/drafts', {}, 'Failed to fetch drafts'),
+
+  saveDraft: ({ id, body, reviewText, score, mediaObjectKey, mediaContentType }) => request('/api/feed/drafts', {
+    method: 'POST',
+    body: jsonBody({ id, body, reviewText, score, mediaObjectKey, mediaContentType })
+  }, 'Failed to save draft'),
+
+  deleteDraft: (draftId) => request(`/api/feed/drafts/${encodeURIComponent(draftId)}`, {
+    method: 'DELETE'
+  }, 'Failed to delete draft'),
+
+  publishDraft: (draftId) => request(`/api/feed/drafts/${encodeURIComponent(draftId)}/publish`, {
+    method: 'POST'
+  }, 'Failed to publish draft')
 };
 
 export default BackendApiService;

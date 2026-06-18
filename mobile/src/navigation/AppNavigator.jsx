@@ -1,6 +1,8 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import BottomBar from '../components/BottomBar.jsx';
 import AdminCommentsScreen from '../screens/admin/AdminCommentsScreen.jsx';
 import AdminHomeScreen from '../screens/admin/AdminHomeScreen.jsx';
 import AdminJobsScreen from '../screens/admin/AdminJobsScreen.jsx';
@@ -9,6 +11,7 @@ import AdminSuggestionsScreen from '../screens/admin/AdminSuggestionsScreen.jsx'
 import AdminUsersScreen from '../screens/admin/AdminUsersScreen.jsx';
 import BacklogScreen from '../screens/BacklogScreen.jsx';
 import CreateScreen from '../screens/CreateScreen.jsx';
+import DraftsScreen from '../screens/DraftsScreen.jsx';
 import FollowListScreen from '../screens/FollowListScreen.jsx';
 import HomeScreen from '../screens/HomeScreen.jsx';
 import InstallInfoScreen from '../screens/InstallInfoScreen.jsx';
@@ -24,27 +27,13 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { colors } from '../theme.js';
 
 const Stack = createNativeStackNavigator();
-
-const MenuButton = ({ navigation }) => (
-  <Pressable onPress={() => navigation.navigate('Menu')} style={styles.menuButton}>
-    <Text style={styles.menuText}>Menu</Text>
-  </Pressable>
-);
-
-const screenOptions = ({ navigation }) => ({
-  headerStyle: {
-    backgroundColor: colors.surface
-  },
-  headerTitleStyle: {
-    color: colors.text,
-    fontWeight: '800'
-  },
-  headerRight: () => <MenuButton navigation={navigation} />
-});
+const navigationRef = createNavigationContainerRef();
 
 const AppNavigator = () => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const isAdmin = user?.role === 'ROLE_ADMIN';
+  const [activeRouteName, setActiveRouteName] = useState('Home');
+  const hideBottomBar = ['Topic', 'Create', 'Drafts', 'Login'].includes(activeRouteName);
 
   if (isLoading) {
     return (
@@ -55,8 +44,12 @@ const AppNavigator = () => {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={isAuthenticated ? screenOptions : { headerShown: false }}>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => setActiveRouteName(navigationRef.getCurrentRoute()?.name || 'Home')}
+      onStateChange={() => setActiveRouteName(navigationRef.getCurrentRoute()?.name || 'Home')}
+    >
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
@@ -65,8 +58,10 @@ const AppNavigator = () => {
         ) : (
           <>
             <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Following" component={HomeScreen} initialParams={{ feedType: 'following' }} />
             <Stack.Screen name="Menu" component={MenuScreen} />
             <Stack.Screen name="Create" component={CreateScreen} />
+            <Stack.Screen name="Drafts" component={DraftsScreen} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="ProfileEditor" component={ProfileEditorScreen} options={{ title: 'Profile Photo' }} />
             <Stack.Screen name="PostEditor" component={PostEditorScreen} options={{ title: 'Edit Post' }} />
@@ -89,6 +84,13 @@ const AppNavigator = () => {
           </>
         )}
       </Stack.Navigator>
+      {isAuthenticated && !hideBottomBar ? (
+        <BottomBar
+          user={user}
+          activeRouteName={activeRouteName}
+          onNavigate={(route, params) => navigationRef.navigate(route, params)}
+        />
+      ) : null}
     </NavigationContainer>
   );
 };
@@ -99,14 +101,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background
-  },
-  menuButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6
-  },
-  menuText: {
-    color: colors.accent,
-    fontWeight: '800'
   }
 });
 

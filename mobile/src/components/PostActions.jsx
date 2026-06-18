@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, spacing } from '../theme.js';
 
 const ActionButton = ({ icon, label, count, onPress, active = false, showCount = true }) => {
@@ -32,28 +32,39 @@ const PostActions = ({
   onComment,
   onReply,
   onEdit,
+  shareUrl,
   commentLabel = 'Comments',
   replyLabel = 'Reply',
   showCommentCount = true
-}) => (
-  <View style={styles.container}>
-    <ActionButton icon={liked ? '♥' : '♡'} label={liked ? 'Unlike' : 'Like'} count={likeCount} onPress={onLike} active={liked} />
-    <ActionButton icon="↻" label="Re-rate" onPress={onRerate} showCount={false} />
-    <ActionButton icon="☰" label={commentLabel} count={commentCount} onPress={onComment} showCount={showCommentCount} />
-    <ActionButton icon="↪" label={replyLabel} onPress={onReply} showCount={false} />
-    <ActionButton icon="✎" label="Edit" onPress={onEdit} showCount={false} />
-  </View>
-);
+}) => {
+  const handleShare = () => {
+    if (shareUrl) {
+      Share.share({ message: shareUrl, url: shareUrl });
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <ActionButton icon={liked ? '♥' : '♡'} label={liked ? 'Unlike' : 'Like'} count={likeCount} onPress={onLike} active={liked} />
+      <ActionButton icon="↻" label="Re-rate" onPress={onRerate} showCount={false} />
+      <ActionButton icon="◌" label={commentLabel} count={commentCount} onPress={onComment} showCount={showCommentCount} />
+      <ActionButton icon="↪" label={replyLabel} onPress={onReply} showCount={false} />
+      <ActionButton icon="⇧" label="Share" onPress={shareUrl ? handleShare : undefined} showCount={false} />
+      <ActionButton icon="✎" label="Edit" onPress={onEdit} showCount={false} />
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm
+    gap: spacing.xs,
+    alignItems: 'center'
   },
   action: {
     minHeight: 34,
-    minWidth: 46,
+    minWidth: 40,
     paddingHorizontal: spacing.sm,
     borderRadius: radius.pill,
     flexDirection: 'row',
@@ -69,7 +80,7 @@ const styles = StyleSheet.create({
   },
   icon: {
     color: colors.textMuted,
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: '800'
   },
   count: {

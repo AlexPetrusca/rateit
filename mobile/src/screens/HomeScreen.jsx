@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import FeedList from '../components/FeedList.jsx';
 import RatingFeedItem from '../components/RatingFeedItem.jsx';
 import Screen from '../components/Screen.jsx';
+import { APP_PUBLIC_URL } from '../config.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import { useRatingInteractions } from '../hooks/useRatingInteractions.js';
@@ -9,7 +10,8 @@ import BackendApiService from '../services/BackendApiService.js';
 
 const PAGE_SIZE = 5;
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = ({ navigation, route }) => {
+  const feedType = route.params?.feedType || 'home';
   const { user } = useAuth();
   const { notify } = useNotifications();
   const [items, setItems] = useState([]);
@@ -32,7 +34,8 @@ const HomeScreen = ({ navigation }) => {
       setLoading(true);
     }
     try {
-      const nextItems = await BackendApiService.getFeed({ page: nextPage, size: PAGE_SIZE });
+      const fetchFeed = feedType === 'following' ? BackendApiService.getFollowingFeed : BackendApiService.getFeed;
+      const nextItems = await fetchFeed({ page: nextPage, size: PAGE_SIZE });
       setItems((current) => (append ? [...current, ...nextItems] : nextItems));
       setPage(nextPage);
       setHasMore(nextItems.length === PAGE_SIZE);
@@ -43,7 +46,7 @@ const HomeScreen = ({ navigation }) => {
       setLoadingMore(false);
       setRefreshing(false);
     }
-  }, [notify]);
+  }, [feedType, notify]);
 
   useEffect(() => {
     loadPage(0, false);
@@ -56,7 +59,7 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <Screen
-      title="Home"
+      title={null}
       scroll={false}
       actions={null}
     >
@@ -83,6 +86,7 @@ const HomeScreen = ({ navigation }) => {
             onTopicPress={(rateableItemId) => navigation.navigate('Topic', { rateableItemId })}
             onCardPress={(post) => navigation.navigate('Topic', { rateableItemId: post.rateableItem?.id })}
             onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
+            shareUrl={`${APP_PUBLIC_URL}/posts/${item.ratingId}`}
           />
         )}
       />

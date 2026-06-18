@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import AppButton from '../components/AppButton.jsx';
 import Card from '../components/Card.jsx';
 import FeedList from '../components/FeedList.jsx';
@@ -10,7 +10,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import { useRatingInteractions } from '../hooks/useRatingInteractions.js';
 import BackendApiService from '../services/BackendApiService.js';
-import { spacing, text } from '../theme.js';
+import { colors, spacing, text } from '../theme.js';
 
 const PAGE_SIZE = 5;
 
@@ -91,23 +91,39 @@ const ProfileScreen = ({ navigation, route }) => {
     <Card style={styles.profileCard}>
       <UserAvatar username={profile.username} profilePicUrl={profile.profilePicUrl} size="xl" />
       <View style={styles.profileCopy}>
-        <Text style={styles.name}>{profile.username}</Text>
+        <View style={styles.nameRow}>
+          <Text style={styles.name}>{profile.username}</Text>
+          {isOwnProfile ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile"
+              onPress={() => navigation.navigate('ProfileEditor')}
+              style={({ pressed }) => [styles.settingsButton, pressed && styles.settingsButtonPressed]}
+            >
+              <Text style={styles.settingsIcon}>⚙</Text>
+            </Pressable>
+          ) : null}
+        </View>
         <Text style={styles.handle}>@{profile.username}</Text>
         <View style={styles.counts}>
-          <AppButton variant="ghost" label={`${profile.followerCount || 0} followers`} onPress={() => navigation.navigate('FollowList', { userId: profile.userId, type: 'followers' })} />
-          <AppButton variant="ghost" label={`${profile.followingCount || 0} following`} onPress={() => navigation.navigate('FollowList', { userId: profile.userId, type: 'following' })} />
+          <Pressable onPress={() => navigation.navigate('FollowList', { userId: profile.userId, type: 'following' })} style={styles.countButton}>
+            <Text style={styles.countStrong}>{profile.followingCount || 0}</Text>
+            <Text style={styles.countLabel}>Following</Text>
+          </Pressable>
+          <Pressable onPress={() => navigation.navigate('FollowList', { userId: profile.userId, type: 'followers' })} style={styles.countButton}>
+            <Text style={styles.countStrong}>{profile.followerCount || 0}</Text>
+            <Text style={styles.countLabel}>Followers</Text>
+          </Pressable>
         </View>
-        {isOwnProfile ? (
-          <AppButton variant="secondary" label="Edit profile photo" onPress={() => navigation.navigate('ProfileEditor')} />
-        ) : (
+        {!isOwnProfile ? (
           <AppButton label={profile.followRelation === 'FOLLOWING' ? 'Following' : 'Follow'} onPress={toggleFollow} />
-        )}
+        ) : null}
       </View>
     </Card>
   ) : null;
 
   return (
-    <Screen title={isOwnProfile ? 'Your Profile' : 'Profile'} scroll={false}>
+    <Screen title={null} scroll={false}>
       <FeedList
         items={posts}
         loading={loading}
@@ -140,20 +156,61 @@ const ProfileScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   profileCard: {
     marginBottom: spacing.md,
-    alignItems: 'center'
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 20,
+    padding: 20,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: 8
   },
   profileCopy: {
-    width: '100%',
-    alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
     gap: spacing.sm
   },
-  name: text.h2,
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm
+  },
+  name: {
+    ...text.h2,
+    flexShrink: 1
+  },
   handle: text.muted,
   counts: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: spacing.lg
+  },
+  countButton: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 5
+  },
+  countStrong: {
+    color: colors.text,
+    fontWeight: '800'
+  },
+  countLabel: {
+    color: colors.textMuted
+  },
+  settingsButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm
+    borderRadius: 18
+  },
+  settingsButtonPressed: {
+    backgroundColor: colors.surfacePressed
+  },
+  settingsIcon: {
+    color: colors.textMuted,
+    fontSize: 21,
+    fontWeight: '800'
   }
 });
 

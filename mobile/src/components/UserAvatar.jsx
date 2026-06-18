@@ -44,10 +44,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: colors.border,
+    backgroundColor: '#cfd9de'
   },
   initials: {
-    color: colors.text,
+    color: '#0f1419',
     fontWeight: '800'
   }
 });

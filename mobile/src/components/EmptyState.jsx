@@ -12,7 +12,8 @@ const styles = StyleSheet.create({
   container: {
     padding: spacing.xl,
     alignItems: 'center',
-    gap: spacing.sm
+    gap: spacing.sm,
+    backgroundColor: colors.background
   },
   title: {
     ...text.h3,

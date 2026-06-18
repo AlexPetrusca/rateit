@@ -14,7 +14,9 @@ const FeedList = ({
   emptyTitle = 'No items yet.',
   emptyMessage,
   endMessage,
-  ListHeaderComponent
+  ListHeaderComponent,
+  ListFooterExtra,
+  contentContainerStyle
 }) => {
   if (loading && !items?.length) {
     return (
@@ -30,7 +32,7 @@ const FeedList = ({
       data={items}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
-      contentContainerStyle={styles.list}
+      contentContainerStyle={[styles.list, contentContainerStyle]}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       refreshing={refreshing}
       onRefresh={onRefresh}
@@ -40,6 +42,7 @@ const FeedList = ({
       ListEmptyComponent={<EmptyState title={emptyTitle} message={emptyMessage} />}
       ListFooterComponent={(
         <View style={styles.footer}>
+          {ListFooterExtra}
           {loadingMore ? <ActivityIndicator color={colors.accent} /> : null}
           {!loadingMore && endMessage ? <Text style={styles.message}>{endMessage}</Text> : null}
         </View>
@@ -50,8 +53,7 @@ const FeedList = ({
 
 const styles = StyleSheet.create({
   list: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    paddingBottom: 112,
     flexGrow: 1
   },
   separator: {
@@ -64,8 +66,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   footer: {
-    minHeight: 48,
-    alignItems: 'center',
+    minHeight: 64,
+    alignItems: 'stretch',
     justifyContent: 'center'
   },
   message: {

@@ -41,7 +41,8 @@ const RatingComposer = ({
 
 const styles = StyleSheet.create({
   card: {
-    gap: spacing.md
+    gap: spacing.md,
+    backgroundColor: colors.surface
   },
   scoreHeader: {
     flexDirection: 'row',

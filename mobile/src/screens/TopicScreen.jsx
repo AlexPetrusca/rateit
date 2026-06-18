@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
-import Card from '../components/Card.jsx';
+import { ImageBackground, StyleSheet, Text, View } from 'react-native';
 import FeedList from '../components/FeedList.jsx';
 import RatingComposer from '../components/RatingComposer.jsx';
 import RatingFeedItem from '../components/RatingFeedItem.jsx';
+import RichText from '../components/RichText.jsx';
 import Screen from '../components/Screen.jsx';
 import StarRating from '../components/StarRating.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -80,15 +80,27 @@ const TopicScreen = ({ navigation, route }) => {
 
   const header = (
     <View style={styles.headerWrap}>
-      <Card style={styles.topicCard}>
-        {mediaUrl ? <Image source={{ uri: mediaUrl }} style={styles.hero} /> : null}
-        <Text style={styles.topicTitle}>{topicTitle}</Text>
-        <View style={styles.scoreRow}>
-          <StarRating value={averageScore} />
-          <Text style={styles.meta}>{averageScore ? formatFiveStarScore(averageScore) : 'No average yet'}</Text>
+      <ImageBackground
+        source={mediaUrl ? { uri: mediaUrl } : undefined}
+        resizeMode="cover"
+        style={[styles.hero, !mediaUrl && styles.heroNoPhoto]}
+        imageStyle={styles.heroImage}
+      >
+        <View style={styles.heroOverlay} />
+        <View style={styles.heroContent}>
+          <RichText style={styles.topicTitle}>{topicTitle}</RichText>
+          <View style={styles.scoreRow}>
+            <StarRating value={averageScore} />
+            <Text style={styles.heroMeta}>{averageScore ? formatFiveStarScore(averageScore) : 'No average yet'}</Text>
+          </View>
+          <Text style={styles.heroCount}>{topic?.ratingCount || items.length || 0} ratings</Text>
         </View>
-        <Text style={styles.meta}>{topic?.ratingCount || items.length || 0} ratings</Text>
-      </Card>
+      </ImageBackground>
+    </View>
+  );
+
+  const footer = (
+    <View style={styles.footerComposer}>
       <RatingComposer
         title="Add your rating"
         score={composerScore}
@@ -104,26 +116,30 @@ const TopicScreen = ({ navigation, route }) => {
   );
 
   return (
-    <Screen title="Topic" scroll={false}>
+    <Screen title={null} scroll={false} contentStyle={styles.topicContent}>
       <FeedList
         items={items}
         loading={loading}
         onRefresh={loadTopic}
         ListHeaderComponent={header}
+        ListFooterExtra={footer}
+        contentContainerStyle={styles.topicList}
         emptyTitle="No ratings yet."
         renderItem={({ item }) => (
-          <RatingFeedItem
-            item={item}
-            currentUserId={user?.userId ?? user?.id}
-            interactions={interactions}
-            refresh={loadTopic}
-            onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
-            onTopicPress={() => null}
-            onCardPress={() => interactions.toggleComments(item.ratingId)}
-            onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
-            showMedia={false}
-            showTopicText={false}
-          />
+          <View style={styles.feedCardWrap}>
+            <RatingFeedItem
+              item={item}
+              currentUserId={user?.userId ?? user?.id}
+              interactions={interactions}
+              refresh={loadTopic}
+              onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
+              onTopicPress={() => null}
+              onCardPress={() => interactions.toggleComments(item.ratingId)}
+              onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
+              showMedia={false}
+              showTopicText={false}
+            />
+          </View>
         )}
       />
     </Screen>
@@ -131,30 +147,71 @@ const TopicScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  headerWrap: {
-    gap: spacing.md,
-    marginBottom: spacing.md
+  topicContent: {
+    maxWidth: '100%',
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+    gap: 0
   },
-  topicCard: {
-    backgroundColor: colors.text
+  topicList: {
+    paddingBottom: 112
+  },
+  headerWrap: {
+    marginBottom: -82
   },
   hero: {
-    height: 260,
-    borderRadius: 8,
-    marginBottom: spacing.sm
+    minHeight: 560,
+    justifyContent: 'flex-end',
+    paddingHorizontal: spacing.xl,
+    paddingBottom: 120,
+    backgroundColor: '#090d16',
+    overflow: 'hidden'
+  },
+  heroNoPhoto: {
+    backgroundColor: '#000000'
+  },
+  heroImage: {
+    opacity: 0.82
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.42)'
+  },
+  heroContent: {
+    gap: spacing.sm,
+    maxWidth: 640
   },
   topicTitle: {
     ...text.h1,
-    color: '#ffffff'
+    color: '#f8fbff',
+    fontSize: 42,
+    lineHeight: 44
   },
   scoreRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm
   },
-  meta: {
-    color: '#d1d5db',
+  heroMeta: {
+    color: 'rgba(248, 251, 255, 0.96)',
+    fontWeight: '800'
+  },
+  heroCount: {
+    color: 'rgba(248, 251, 255, 0.76)',
     fontWeight: '700'
+  },
+  feedCardWrap: {
+    width: '100%',
+    maxWidth: 360,
+    alignSelf: 'center',
+    marginBottom: 6
+  },
+  footerComposer: {
+    width: '100%',
+    maxWidth: 360,
+    alignSelf: 'center',
+    marginTop: 6
   }
 });
 

@@ -38,6 +38,7 @@ Do not use this file for:
 
 - If a custom `ObjectMapper` is introduced, it must register modules so Java time types like `Instant` round-trip correctly.
 - Job payload/result JSON should be backward-compatible enough that older queued jobs can still be opened in the UI.
+- Spring Boot devtools restarts when compiled classpath files change, so command-line backend hot reload should use `backend/scripts/dev.sh` to recompile changed sources/resources.
 
 ### Auth and roles
 
