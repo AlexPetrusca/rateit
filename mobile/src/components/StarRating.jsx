@@ -3,14 +3,24 @@ import { colors, spacing } from '../theme.js';
 
 const stepValues = Array.from({ length: 10 }, (_, index) => (index + 1) / 2);
 
-const starFor = (value, index) => {
-  if (value >= index) {
-    return '★';
-  }
-  if (value >= index - 0.5) {
-    return '⯨';
-  }
-  return '☆';
+const fillFor = (value, index) => {
+  const fill = value - (index - 1);
+  return Math.max(0, Math.min(1, fill));
+};
+
+const DisplayStar = ({ fill, fontSize }) => {
+  const starStyle = [styles.star, { fontSize, lineHeight: fontSize + 2 }];
+
+  return (
+    <View style={[styles.starSlot, { width: fontSize + 2, height: fontSize + 2 }]}>
+      <Text style={[starStyle, styles.emptyStar]}>☆</Text>
+      {fill > 0 ? (
+        <View style={[styles.filledStarClip, { width: (fontSize + 2) * fill }]}>
+          <Text style={starStyle}>★</Text>
+        </View>
+      ) : null}
+    </View>
+  );
 };
 
 const StarRating = ({
@@ -45,9 +55,7 @@ const StarRating = ({
   return (
     <View accessibilityLabel={label} style={styles.display}>
       {[1, 2, 3, 4, 5].map((index) => (
-        <Text key={index} style={[styles.star, { fontSize }]}>
-          {starFor(roundedValue, index)}
-        </Text>
+        <DisplayStar key={index} fill={fillFor(roundedValue, index)} fontSize={fontSize} />
       ))}
     </View>
   );
@@ -73,6 +81,20 @@ const styles = StyleSheet.create({
   star: {
     color: colors.star,
     fontWeight: '900'
+  },
+  starSlot: {
+    position: 'relative',
+    overflow: 'hidden'
+  },
+  emptyStar: {
+    color: colors.borderStrong
+  },
+  filledStarClip: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    overflow: 'hidden'
   }
 });
 

@@ -120,3 +120,4 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Make topic page full image with scroll-driven blur; ratings and comments scroll beneath the fixed hero.
 - Added a separate Expo React Native app under `mobile/` with native screens for login/account setup, feed, create, profile, search, follow lists, topic, post editing, backlog/suggestions, install info, and admin moderation/automation.
 - Mobile app styling now follows the current frontend shell more closely: dark theme tokens, floating bottom nav, shared feed cards/comments, following feed, drafts, rich-text rendering, compact profile banner, and topic hero/rating stack layout.
+- Mobile topic screen now mirrors the frontend topic layout with a fixed full-screen background image, scroll-driven blur, raised narrow rating cards, and matching topic composer treatment.

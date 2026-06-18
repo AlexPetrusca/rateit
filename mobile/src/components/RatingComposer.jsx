@@ -16,12 +16,13 @@ const RatingComposer = ({
   submitLabel = 'Post',
   onSubmit,
   loading = false,
-  multilineLabel = 'Review'
+  multilineLabel = 'Review',
+  cardStyle
 }) => {
   const numericScore = Number(score || 0);
 
   return (
-    <Card style={styles.card}>
+    <Card style={[styles.card, cardStyle]}>
       <View style={styles.scoreHeader}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.scoreLabel}>{formatFiveStarScore(numericScore)}</Text>

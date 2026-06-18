@@ -16,7 +16,8 @@ const PostCard = ({
   onCardPress,
   showTopicText = true,
   showMedia = true,
-  compact = false
+  compact = false,
+  style
 }) => {
   if (!post) {
     return null;
@@ -27,7 +28,7 @@ const PostCard = ({
   const mediaUrl = useResolvedImageUrl(!isDeleted ? post.rateableItem?.mediaObjectKey : null);
 
   return (
-    <View style={[styles.card, compact && styles.compact]}>
+    <View style={[styles.card, compact && styles.compact, style]}>
       <View style={styles.main}>
         <View style={styles.meta}>
           <Pressable

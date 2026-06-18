@@ -19,7 +19,8 @@ const RatingFeedItem = ({
   shareUrl,
   refresh,
   showMedia = true,
-  showTopicText = true
+  showTopicText = true,
+  cardStyle
 }) => {
   const [activeEditKey, setActiveEditKey] = useState(null);
   const [editDrafts, setEditDrafts] = useState({});
@@ -148,6 +149,7 @@ const RatingFeedItem = ({
         onCardPress={onCardPress}
         showMedia={showMedia}
         showTopicText={showTopicText}
+        style={cardStyle}
         actions={(
           <PostActions
             liked={item.likedByCurrentUser}
