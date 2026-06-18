@@ -1,8 +1,10 @@
 package com.rateit.backend.controller;
 
+import com.rateit.backend.entity.dto.DraftDto;
 import com.rateit.backend.entity.dto.FeedItemDto;
 import com.rateit.backend.entity.dto.RatingCommentDto;
 import com.rateit.backend.entity.rest.CreateRatingRequest;
+import com.rateit.backend.entity.rest.SaveDraftRequest;
 import com.rateit.backend.entity.rest.CreateRatingCommentRequest;
 import com.rateit.backend.entity.rest.CreateRerateRequest;
 import com.rateit.backend.entity.rest.UpdateRatingCommentRequest;
@@ -37,6 +39,15 @@ public class FeedController {
         }
 
         return ResponseEntity.ok(feedService.getRecentRatings(limit, page, token.getToken().getSubject()));
+    }
+
+    @GetMapping("/following")
+    public ResponseEntity<List<FeedItemDto>> getFollowingFeed(
+        @RequestParam(required = false) Integer limit,
+        @RequestParam(required = false) Integer page,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.ok(feedService.getFollowingFeed(limit, page, token.getToken().getSubject()));
     }
 
     @GetMapping("/ratings/{ratingId}")
@@ -129,6 +140,32 @@ public class FeedController {
         JwtAuthenticationToken token
     ) {
         return ResponseEntity.ok(feedActionService.updateComment(commentId, request, token.getToken().getSubject()));
+    }
+
+    @GetMapping("/drafts")
+    public ResponseEntity<List<DraftDto>> listDrafts(JwtAuthenticationToken token) {
+        return ResponseEntity.ok(feedActionService.listDrafts(token.getToken().getSubject()));
+    }
+
+    @PostMapping("/drafts")
+    public ResponseEntity<DraftDto> saveDraft(
+        @RequestBody SaveDraftRequest request,
+        JwtAuthenticationToken token
+    ) {
+        DraftDto draft = feedActionService.saveDraft(request, token.getToken().getSubject());
+        return ResponseEntity.status(HttpStatus.CREATED).body(draft);
+    }
+
+    @DeleteMapping("/drafts/{draftId}")
+    public ResponseEntity<Void> deleteDraft(@PathVariable Long draftId, JwtAuthenticationToken token) {
+        feedActionService.deleteDraft(draftId, token.getToken().getSubject());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/drafts/{draftId}/publish")
+    public ResponseEntity<FeedItemDto> publishDraft(@PathVariable Long draftId, JwtAuthenticationToken token) {
+        FeedItemDto published = feedActionService.publishDraft(draftId, token.getToken().getSubject());
+        return ResponseEntity.status(HttpStatus.CREATED).body(published);
     }
 
     @PostMapping("/ratings/{ratingId}/rerate")

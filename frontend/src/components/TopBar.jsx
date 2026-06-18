@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import MenuIcon from '@mui/icons-material/Menu';
 import { useAuth } from '../contexts/AuthContext';
 import { useClickOutside } from '../hooks/ClickOutside.jsx';
 import UserAvatar from './UserAvatar.jsx';
@@ -67,11 +68,7 @@ const TopBar = () => {
                         aria-label="Open navigation menu"
                         onClick={() => setShowNavMenu((current) => !current)}
                     >
-                        <span className="hamburger-icon" aria-hidden="true">
-                            <span />
-                            <span />
-                            <span />
-                        </span>
+                        <MenuIcon aria-hidden="true" />
                     </button>
                     {showNavMenu && (
                         <div className="dropdown-menu nav-dropdown-menu" role="menu">

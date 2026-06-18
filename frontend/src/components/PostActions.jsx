@@ -1,37 +1,19 @@
-const HeartIcon = ({ filled = false }) => (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={filled ? 'is-filled' : ''}>
-        <path d="M20.8 4.6c-1.7-1.6-4.4-1.5-6 .2L12 7.7 9.2 4.8c-1.6-1.7-4.3-1.8-6-.2-1.8 1.7-1.9 4.5-.2 6.3l9 9.1 9-9.1c1.7-1.8 1.6-4.6-.2-6.3Z" />
-    </svg>
-);
-
-const CycleIcon = () => (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M17 2v5h-5" />
-        <path d="M7 22v-5h5" />
-        <path d="M19 9a7 7 0 0 0-11.9-4.9L7 5" />
-        <path d="M5 15a7 7 0 0 0 11.9 4.9L17 19" />
-    </svg>
-);
-
-const CommentIcon = () => (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M21 11.5a8.5 8.5 0 0 1-9 8.4 9 9 0 0 1-3.8-.8L3 21l1.6-5A8.1 8.1 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5Z" />
-    </svg>
-);
-
-const ReplyIcon = () => (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M5 10h10a4 4 0 0 1 4 4v3" />
-        <path d="m13 13 6 4-6 4" />
-    </svg>
-);
-
-const PencilIcon = () => (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 20h4l10-10-4-4L4 16v4Z" />
-        <path d="m13 7 4 4" />
-    </svg>
-);
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import IosShareOutlinedIcon from '@mui/icons-material/IosShareOutlined';
+import ShareHD from '../assets/icons/hand_drawn/share.svg?react';
+import RepeatIcon from '@mui/icons-material/Repeat';
+import ReplyIcon from '@mui/icons-material/Reply';
+import ChatBubbleHD from '../assets/icons/hand_drawn/chat_bubble.svg?react';
+import PencilHD from '../assets/icons/hand_drawn/pencil.svg?react';
+import EmptyHeartHD from '../assets/icons/hand_drawn/empty_heart.svg?react';
+import FullHeartHD from '../assets/icons/hand_drawn/full_heart.svg?react';
+import CycleHD from '../assets/icons/hand_drawn/cycle.svg?react';
+import ReplyHD from '../assets/icons/hand_drawn/reply.svg?react';
+import { useIconPack } from '../contexts/IconPackContext.jsx';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const PostActions = ({
     liked = false,
@@ -42,85 +24,115 @@ const PostActions = ({
     onComment,
     onReply,
     onEdit,
+    shareUrl,
     commentLabel = 'Comment',
     replyLabel = 'Reply',
     commentAriaLabel,
     showCommentCount = true
-}) => (
-    <div className="tweet-actions" aria-label="Rating actions">
-        {onLike && (
-            <button
-                type="button"
-                className={liked ? 'tweet-action is-liked' : 'tweet-action'}
-                onClick={onLike}
-                aria-label={`${liked ? 'Unlike' : 'Like'} post. ${likeCount || 0} likes`}
-                title={liked ? 'Unlike' : 'Like'}
-            >
-                <span className="action-icon">
-                    <HeartIcon filled={liked} />
-                </span>
-                <span className="sr-only">{liked ? 'Unlike' : 'Like'}</span>
-                <span className="tweet-action-count">{likeCount || 0}</span>
-            </button>
-        )}
-        {onRerate && (
-            <button
-                type="button"
-                className="tweet-action"
-                onClick={onRerate}
-                aria-label="Re-rate post"
-                title="Re-rate"
-            >
-                <span className="action-icon">
-                    <CycleIcon />
-                </span>
-                <span className="sr-only">Re-rate</span>
-            </button>
-        )}
-        {onComment && (
-            <button
-                type="button"
-                className="tweet-action"
-                onClick={onComment}
-                aria-label={commentAriaLabel || `${commentLabel} on post. ${commentCount || 0} comments`}
-                title={commentLabel}
-            >
-                <span className="action-icon">
-                    <CommentIcon />
-                </span>
-                <span className="sr-only">{commentLabel}</span>
-                {showCommentCount && <span className="tweet-action-count">{commentCount || 0}</span>}
-            </button>
-        )}
-        {onReply && (
-            <button
-                type="button"
-                className="tweet-action"
-                onClick={onReply}
-                aria-label={`${replyLabel} on post`}
-                title={replyLabel}
-            >
-                <span className="action-icon">
-                    <ReplyIcon />
-                </span>
-                <span className="sr-only">{replyLabel}</span>
-            </button>
-        )}
-        {onEdit && (
-            <button
-                type="button"
-                className="tweet-action"
-                onClick={onEdit}
-                aria-label="Edit post"
-                title="Edit"
-            >
-                <span className="action-icon">
-                    <PencilIcon />
-                </span>
-                <span className="sr-only">Edit</span>
-            </button>
-        )}
-    </div>
-);
+}) => {
+    const { iconPack } = useIconPack();
+    const hd = iconPack === 'hand_drawn';
+    const { notify } = useNotifications();
+
+    const handleShare = () => {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            notify({ message: 'Added to clipboard', type: 'info' });
+        });
+    };
+
+    return (
+        <div className="tweet-actions" aria-label="Rating actions">
+            {onLike && (
+                <button
+                    type="button"
+                    className={liked ? 'tweet-action is-liked' : 'tweet-action'}
+                    onClick={onLike}
+                    aria-label={`${liked ? 'Unlike' : 'Like'} post. ${likeCount || 0} likes`}
+                    title={liked ? 'Unlike' : 'Like'}
+                >
+                    <span className="action-icon">
+                        {liked
+                            ? (hd ? <FullHeartHD /> : <FavoriteIcon />)
+                            : (hd ? <EmptyHeartHD /> : <FavoriteBorderIcon />)
+                        }
+                    </span>
+                    <span className="sr-only">{liked ? 'Unlike' : 'Like'}</span>
+                    <span className="tweet-action-count">{likeCount || 0}</span>
+                </button>
+            )}
+            {onRerate && (
+                <button
+                    type="button"
+                    className="tweet-action"
+                    onClick={onRerate}
+                    aria-label="Re-rate post"
+                    title="Re-rate"
+                >
+                    <span className="action-icon">
+                        {hd ? <CycleHD /> : <RepeatIcon />}
+                    </span>
+                    <span className="sr-only">Re-rate</span>
+                </button>
+            )}
+            {onComment && (
+                <button
+                    type="button"
+                    className="tweet-action"
+                    onClick={onComment}
+                    aria-label={commentAriaLabel || `${commentLabel} on post. ${commentCount || 0} comments`}
+                    title={commentLabel}
+                >
+                    <span className="action-icon">
+                        {hd ? <ChatBubbleHD /> : <ChatBubbleOutlineIcon />}
+                    </span>
+                    <span className="sr-only">{commentLabel}</span>
+                    {showCommentCount && <span className="tweet-action-count">{commentCount || 0}</span>}
+                </button>
+            )}
+            {onReply && (
+                <button
+                    type="button"
+                    className="tweet-action"
+                    onClick={onReply}
+                    aria-label={`${replyLabel} on post`}
+                    title={replyLabel}
+                >
+                    <span className="action-icon">
+                        {hd ? <ReplyHD /> : <ReplyIcon />}
+                    </span>
+                    <span className="sr-only">{replyLabel}</span>
+                </button>
+            )}
+            {shareUrl && (
+                <button
+                    type="button"
+                    className="tweet-action"
+                    onClick={handleShare}
+                    aria-label="Share"
+                    title="Share"
+                >
+                    <span className="action-icon">
+                        {hd ? <ShareHD /> : <IosShareOutlinedIcon />}
+                    </span>
+                    <span className="sr-only">Share</span>
+                </button>
+            )}
+            {onEdit && (
+                <button
+                    type="button"
+                    className="tweet-action"
+                    onClick={onEdit}
+                    aria-label="Edit post"
+                    title="Edit"
+                >
+                    <span className="action-icon">
+                        {hd ? <PencilHD /> : <EditOutlinedIcon />}
+                    </span>
+                    <span className="sr-only">Edit</span>
+                </button>
+            )}
+        </div>
+    );
+};
 
 export default PostActions;

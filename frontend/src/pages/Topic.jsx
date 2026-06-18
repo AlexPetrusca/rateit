@@ -1,18 +1,21 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Typography } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import UserAvatar from '../components/UserAvatar.jsx';
 import CommentComposer from '../components/CommentComposer.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import FeedTimeline from '../components/FeedTimeline.jsx';
 import PostActions from '../components/PostActions.jsx';
 import RatingComposer from '../components/RatingComposer.jsx';
+import { parseRichText } from '../components/RichText.jsx';
 import BackendApiService from '../services/BackendApiService';
 import {
     DEFAULT_COMMENT_SCORE,
     isFiveStarScoreInRange
 } from '../utils/ratingDisplay.js';
+import { getBackTarget } from '../utils/navigationHistory';
 import '../App.css';
 
 const TOPIC_PAGE_SIZE = 5;
@@ -31,7 +34,10 @@ const AVERAGE_STAR_POINTS = '50 5 61 36 95 36 67 57 78 91 50 72 22 91 33 57 5 36
 const AVERAGE_STAR_FILLED_COLOR = '#ff303a';
 const AVERAGE_STAR_EMPTY_COLOR = '#cfd9de';
 
+let averageStarRatingCounter = 0;
+
 const AverageStarRating = ({ value, max = 5, label }) => {
+    const instanceId = useRef(++averageStarRatingCounter);
     const score = Number(value);
     const starCount = Number.isFinite(max) && max > 0 ? Math.round(max) : 5;
     const clampedScore = Number.isFinite(score) ? Math.max(0, Math.min(starCount, score)) : 0;
@@ -40,7 +46,7 @@ const AverageStarRating = ({ value, max = 5, label }) => {
         <span className="topic-average-stars" aria-label={label}>
             {Array.from({ length: starCount }, (_, index) => {
                 const fill = Math.max(0, Math.min(1, clampedScore - index));
-                const clipId = `topic-average-star-clip-${index}`;
+                const clipId = `topic-average-star-clip-${instanceId.current}-${index}`;
 
                 return (
                     <svg
@@ -66,6 +72,7 @@ const AverageStarRating = ({ value, max = 5, label }) => {
 const Topic = () => {
     const navigate = useNavigate();
     const { rateableItemId: routeRateableItemId } = useParams();
+    const location = useLocation();
     const { user, isAuthenticated } = useAuth();
     const currentUserId = user?.userId ?? user?.id ?? null;
     const { notify } = useNotifications();
@@ -87,6 +94,7 @@ const Topic = () => {
     const [hoveredCommentScores, setHoveredCommentScores] = useState({});
     const [expandedCommentReplyKeys, setExpandedCommentReplyKeys] = useState([]);
     const [expandedTopicImageUrl, setExpandedTopicImageUrl] = useState(null);
+    const [fullscreenReview, setFullscreenReview] = useState(null);
     const [topicPhotoBlur, setTopicPhotoBlur] = useState(0);
     const feedSentinelRef = useRef(null);
 
@@ -348,6 +356,13 @@ const Topic = () => {
             isMounted = false;
         };
     }, [commentsByRating, expandedRatingId, isFullyAuthenticated, notify]);
+
+    useEffect(() => {
+        const targetId = location.state?.openReviewId;
+        if (!targetId || !feedItems.length) return;
+        const item = feedItems.find((f) => f.ratingId === targetId);
+        if (item) setFullscreenReview(item);
+    }, [feedItems, location.state?.openReviewId]);
 
     const updateFeedItem = (ratingId, updater) => {
         setFeedItems((items) => items.map((item) => (
@@ -666,6 +681,7 @@ const Topic = () => {
                 placeholder={composerPlaceholder}
                 submitLabel={submitLabel}
                 onSubmit={() => submitComment(item, parentCommentId, editingComment)}
+                onClose={() => setActiveComposer(null)}
             />
         );
     };
@@ -749,6 +765,7 @@ const Topic = () => {
             placeholder="Add your take on this topic"
             submitLabel="Add rating"
             onSubmit={submitTopicRating}
+            onClose={() => { const t = getBackTarget(); t === -1 ? navigate(-1) : navigate(t); }}
         />
     );
 
@@ -822,19 +839,21 @@ const Topic = () => {
                                         className="topic-photo-title"
                                         style={topicTitleStyle}
                                     >
-                                        {topicLabel}
+                                        {parseRichText(topicLabel)}
                                     </Typography>
                                 )}
                                 <div className="topic-photo-meta">
-                                    <Typography variant="body1" className="topic-photo-average">
-                                        {formatAverageRating(topicAverageRating)}
-                                    </Typography>
-                                    <AverageStarRating
-                                        value={topicAverageRating}
-                                        label={`Average rating: ${formatAverageRating(topicAverageRating)} out of 5`}
-                                    />
+                                    <div className="topic-photo-rating-row">
+                                        <Typography variant="body1" className="topic-photo-average">
+                                            {formatAverageRating(topicAverageRating)}
+                                        </Typography>
+                                        <AverageStarRating
+                                            value={topicAverageRating}
+                                            label={`Average rating: ${formatAverageRating(topicAverageRating)} out of 5`}
+                                        />
+                                    </div>
                                     <Typography variant="body2" className="topic-photo-count">
-                                        {topicRatingCount} ratings
+                                        {topicRatingCount} {topicRatingCount === 1 ? 'rating' : 'ratings'}
                                     </Typography>
                                 </div>
                             </div>
@@ -849,7 +868,7 @@ const Topic = () => {
                             className="topic-feed topic-photo-feed"
                             items={displayedFeedItems}
                             onAuthorClick={openProfile}
-                            onItemClick={(item) => toggleRatingExpansion(item.ratingId)}
+                            onItemClick={(item) => setFullscreenReview(item)}
                             getItemClassName={(item) => (
                                 item.ratingId === expandedRatingId
                                     ? 'topic-rating-card is-expanded'
@@ -872,6 +891,7 @@ const Topic = () => {
                                         onReply={() => openRatingComposer(item.ratingId)}
                                         onComment={() => toggleRatingExpansion(item.ratingId)}
                                         onEdit={canEdit ? () => navigate(`/posts/${item.ratingId}/edit`) : undefined}
+                                        shareUrl={`${window.location.origin}/posts/${item.ratingId}`}
                                         commentLabel={isExpanded ? 'Hide comments' : 'Comments'}
                                         replyLabel="Reply"
                                     />
@@ -890,6 +910,63 @@ const Topic = () => {
 
                         {!isFeedLoading && feedError && (
                             <div className="inline-error">{feedError}</div>
+                        )}
+
+                        {fullscreenReview && (
+                            <div
+                                className="review-fullscreen"
+                                role="dialog"
+                                aria-modal="true"
+                                onClick={() => setFullscreenReview(null)}
+                            >
+                                <button
+                                    type="button"
+                                    className="image-lightbox-close"
+                                    onClick={() => setFullscreenReview(null)}
+                                    aria-label="Close review"
+                                >
+                                    ×
+                                </button>
+                                <div
+                                    className="review-fullscreen-card"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    {fullscreenReview.rateableItem?.mediaObjectKey && (
+                                        <img
+                                            className="review-fullscreen-image"
+                                            src={`/api/s3/images/${fullscreenReview.rateableItem.mediaObjectKey}`}
+                                            alt={fullscreenReview.rateableItem?.title || ''}
+                                        />
+                                    )}
+                                    {(fullscreenReview.rateableItem?.title || fullscreenReview.rateableItem?.body) && (
+                                        <p className="review-fullscreen-title">
+                                            {fullscreenReview.rateableItem?.title || fullscreenReview.rateableItem?.body}
+                                        </p>
+                                    )}
+                                    <div className="review-fullscreen-header">
+                                        <UserAvatar
+                                            username={fullscreenReview.author?.username}
+                                            profilePicUrl={fullscreenReview.author?.profilePicUrl}
+                                            size="lg"
+                                        />
+                                        <div className="review-fullscreen-meta">
+                                            <span className="review-fullscreen-author">
+                                                {fullscreenReview.author?.username}
+                                            </span>
+                                            <AverageStarRating
+                                                value={fullscreenReview.score}
+                                                max={fullscreenReview.ratingScale?.max}
+                                                label={`${fullscreenReview.score} stars`}
+                                            />
+                                        </div>
+                                    </div>
+                                    {fullscreenReview.reviewText && (
+                                        <p className="review-fullscreen-text">
+                                            {parseRichText(fullscreenReview.reviewText)}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
                         )}
 
                         {expandedTopicImageUrl && (

@@ -1,5 +1,9 @@
-import { BrowserRouter as Router, Navigate, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Routes, Route, useLocation } from 'react-router-dom';
+import { useLayoutEffect } from 'react';
+import { recordPath } from './utils/navigationHistory';
 import { AuthProvider } from './contexts/AuthContext';
+
+window.history.scrollRestoration = 'manual';
 import { NotificationProvider } from './contexts/NotificationContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -19,12 +23,24 @@ import Topic from './pages/Topic';
 import SuggestionSubmit from './pages/SuggestionSubmit';
 import PostRedirect from './pages/PostRedirect';
 import SearchUsers from './pages/SearchUsers';
+import FollowingFeed from './pages/FollowingFeed';
 import FollowList from './pages/FollowList';
+import Drafts from './pages/Drafts';
 import GuardedRoute from './components/GuardedRoute.jsx';
 import UnguardedRoute from "./components/UnguardedRoute.jsx";
 import Layout from './components/Layout.jsx';
 import { useAuth } from './contexts/AuthContext';
+import { IconPackProvider } from './contexts/IconPackContext.jsx';
 import './App.css';
+
+const ScrollToTop = () => {
+    const { pathname } = useLocation();
+    useLayoutEffect(() => {
+        recordPath(pathname);
+        window.scrollTo(0, 0);
+    }, [pathname]);
+    return null;
+};
 
 const OwnProfileRedirect = () => {
     const { user } = useAuth();
@@ -40,8 +56,10 @@ const OwnProfileRedirect = () => {
 function App() {
     return (
         <AuthProvider>
+            <IconPackProvider>
             <NotificationProvider>
                 <Router>
+                    <ScrollToTop />
                     <Layout>
                         <Routes>
                             <Route path="/login" element={
@@ -55,6 +73,15 @@ function App() {
                                 element={
                                     <GuardedRoute>
                                         <Create />
+                                    </GuardedRoute>
+                                }
+                            />
+
+                            <Route
+                                path="/drafts"
+                                element={
+                                    <GuardedRoute>
+                                        <Drafts />
                                     </GuardedRoute>
                                 }
                             />
@@ -169,6 +196,12 @@ function App() {
                                 </Route>
                             </Route>
 
+                            <Route path="/following" element={
+                                <GuardedRoute>
+                                    <FollowingFeed />
+                                </GuardedRoute>
+                            } />
+
                             <Route path="/" element={
                                 <GuardedRoute>
                                     <Home />
@@ -178,6 +211,7 @@ function App() {
                     </Layout>
                 </Router>
             </NotificationProvider>
+            </IconPackProvider>
         </AuthProvider>
     );
 }

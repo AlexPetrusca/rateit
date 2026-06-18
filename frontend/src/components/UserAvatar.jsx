@@ -26,7 +26,7 @@ const UserAvatar = ({
         <div className={classes} style={{ '--avatar-size': `${sizeValue}px` }}>
             {profilePicUrl && !imageFailed ? (
                 <img
-                    src={`/api/s3/images/${profilePicUrl}`}
+                    src={/^(blob:|https?:)/.test(profilePicUrl) ? profilePicUrl : `/api/s3/images/${profilePicUrl}`}
                     alt={alt}
                     className="user-avatar-image"
                     onError={() => setImageFailed(true)}

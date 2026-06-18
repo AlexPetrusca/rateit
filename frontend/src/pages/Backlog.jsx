@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import { Alert, Box, Button, Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 import { backlogData } from '../generated/backlogData.js';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -19,14 +20,6 @@ const renderInlineText = (text) => {
     });
 };
 
-const CommentBubbleIcon = () => (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-        <path
-            fill="currentColor"
-            d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9.5L5 21v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm1 3v8h2v2.17L9.17 15H20V7H5Z"
-        />
-    </svg>
-);
 
 const Backlog = () => {
     const navigate = useNavigate();
@@ -89,7 +82,7 @@ const Backlog = () => {
                             aria-label="Submit a suggestion"
                         >
                             <span className="backlog-suggest-icon" aria-hidden="true">
-                                <CommentBubbleIcon />
+                                <ChatBubbleIcon fontSize="small" />
                             </span>
                             <span>Suggest</span>
                         </button>

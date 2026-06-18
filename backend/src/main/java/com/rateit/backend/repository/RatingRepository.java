@@ -2,6 +2,7 @@ package com.rateit.backend.repository;
 
 import com.rateit.backend.entity.Rating;
 import com.rateit.backend.entity.User;
+import com.rateit.backend.entity.types.RatingStatus;
 import com.rateit.backend.entity.types.Visibility;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -94,6 +95,27 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         join fetch r.rateableItem item
         join fetch r.ratingScale
         left join fetch item.mediaAsset
+        where r.authorUser in (
+            select f.followedUser from Follow f where f.followerUser = :user
+        )
+          and r.visibility = :visibility
+          and item.visibility = :visibility
+          and r.deletedAt is null
+        order by r.createdAt desc
+        """)
+    List<Rating> findRecentByFollowedUsersAndVisibility(
+        @Param("user") User user,
+        @Param("visibility") Visibility visibility,
+        Pageable pageable
+    );
+
+    @Query("""
+        select r
+        from Rating r
+        join fetch r.authorUser
+        join fetch r.rateableItem item
+        join fetch r.ratingScale
+        left join fetch item.mediaAsset
         where item.id = :rateableItemId
           and r.visibility = :visibility
           and item.visibility = :visibility
@@ -127,6 +149,18 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     Double averageVisibleScoreByRateableItemIdAndVisibility(
         @Param("rateableItemId") Long rateableItemId,
         @Param("visibility") Visibility visibility
+    );
+
+    @Query("""
+        select r from Rating r
+        where r.authorUser = :authorUser
+          and r.status = :status
+          and r.deletedAt is null
+        order by r.updatedAt desc
+        """)
+    List<Rating> findDraftsByAuthorUser(
+        @Param("authorUser") User authorUser,
+        @Param("status") RatingStatus status
     );
 
     @Query(

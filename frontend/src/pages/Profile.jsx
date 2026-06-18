@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import GearIconHD from '../assets/icons/hand_drawn/gear.svg?react';
 import { useAuth } from '../contexts/AuthContext';
+import { useIconPack } from '../contexts/IconPackContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext';
 import CommentComposer from '../components/CommentComposer.jsx';
 import CommentThread from '../components/CommentThread.jsx';
@@ -18,6 +21,7 @@ const Profile = () => {
     const navigate = useNavigate();
     const { userId: routeUserId } = useParams();
     const { user: currentUser, isLoading: isAuthLoading } = useAuth();
+    const { iconPack } = useIconPack();
     const { notify } = useNotifications();
     const [profile, setProfile] = useState(null);
     const [posts, setPosts] = useState([]);
@@ -347,6 +351,7 @@ const Profile = () => {
                 placeholder={parentCommentId == null ? 'Add your take on this take' : 'Reply in thread'}
                 submitLabel="Reply"
                 onSubmit={() => submitComment(item, parentCommentId)}
+                onClose={() => setActiveComposer(null)}
             />
         );
     };
@@ -460,6 +465,7 @@ const Profile = () => {
                 placeholder="Add your take on this topic"
                 submitLabel="Re-rate"
                 onSubmit={() => submitRerate(ratingId)}
+                onClose={() => setActiveComposer(null)}
             />
         );
     };
@@ -563,9 +569,6 @@ const Profile = () => {
     return (
         <div className="feed-page">
             <main className="twitter-shell profile-shell">
-                <div className="timeline-header">
-                    <h1>{profileTitle}</h1>
-                </div>
 
                 {isAuthLoading || isProfileLoading ? (
                     <div className="profile-loading">Loading profile...</div>
@@ -574,6 +577,11 @@ const Profile = () => {
                 ) : profile ? (
                     <>
                         <section className="profile-banner">
+                            {isOwnProfile && (
+                                <button type="button" className="profile-nav-actions" aria-label="Settings" onClick={() => navigate('/profile/edit')}>
+                                    {iconPack === 'hand_drawn' ? <GearIconHD /> : <SettingsOutlinedIcon />}
+                                </button>
+                            )}
                             <UserAvatar
                                 username={profile.username}
                                 profilePicUrl={profile.profilePicUrl}
@@ -587,11 +595,7 @@ const Profile = () => {
                                     {!isOwnProfile && canUseFollowAction && (
                                         <button
                                             type="button"
-                                            className={
-                                                profile.followRelation === 'FOLLOWING'
-                                                    ? 'profile-action-button secondary-action-button'
-                                                    : 'profile-action-button'
-                                            }
+                                            className="profile-action-button"
                                             disabled={isFollowActionLoading}
                                             onClick={handleFollowAction}
                                         >

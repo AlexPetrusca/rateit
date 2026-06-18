@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { parseRichText } from './RichText.jsx';
 import StarRating from './StarRating.jsx';
 import UserAvatar from './UserAvatar.jsx';
 import { formatScoreValue } from '../utils/ratingDisplay.js';
@@ -76,15 +77,18 @@ const PostCard = ({
                             onTopicClick(post.rateableItem.id);
                         }}
                     >
-                        {topicLabel}
+                        {parseRichText(topicLabel)}
                     </button>
                 ) : (
                     <p className={['text-post-body', bodyClassName].filter(Boolean).join(' ')}>
-                        {topicLabel}
+                        {parseRichText(topicLabel)}
                     </p>
                 )
             )}
-            <div className="text-rating-score">
+            <div
+                className="text-rating-score"
+                onClick={onTopicClick && post.rateableItem?.id != null ? (e) => { e.stopPropagation(); onTopicClick(post.rateableItem.id); } : undefined}
+            >
                 <strong className="op-rating-stars">
                     <StarRating
                         value={post.score}
@@ -99,7 +103,7 @@ const PostCard = ({
 
     const reviewContent = !isDeleted && post.reviewText && (
         <p className={['tweet-review', postBodyClassName].filter(Boolean).join(' ')}>
-            {post.reviewText}
+            {parseRichText(post.reviewText)}
         </p>
     );
 
@@ -141,33 +145,30 @@ const PostCard = ({
     return (
         <>
             <article className={cardClassName}>
-                <div className="tweet-avatar-column">
-                    {post.author?.userId != null && typeof onAuthorClick === 'function' ? (
-                        <button
-                            type="button"
-                            className="profile-link profile-link-avatar"
-                            onClick={() => onAuthorClick(post.author.userId)}
-                            aria-label={`Open profile for ${post.author.username}`}
-                        >
+                <div className="tweet-main">
+                    <header className="tweet-meta">
+                        {post.author?.userId != null && typeof onAuthorClick === 'function' ? (
+                            <button
+                                type="button"
+                                className="profile-link profile-link-avatar"
+                                onClick={() => onAuthorClick(post.author.userId)}
+                                aria-label={`Open profile for ${post.author.username}`}
+                            >
+                                <UserAvatar
+                                    username={post.author?.username}
+                                    profilePicUrl={post.author?.profilePicUrl}
+                                    alt=""
+                                    size={avatarSize}
+                                />
+                            </button>
+                        ) : (
                             <UserAvatar
                                 username={post.author?.username}
                                 profilePicUrl={post.author?.profilePicUrl}
                                 alt=""
                                 size={avatarSize}
                             />
-                        </button>
-                    ) : (
-                        <UserAvatar
-                            username={post.author?.username}
-                            profilePicUrl={post.author?.profilePicUrl}
-                            alt=""
-                            size={avatarSize}
-                        />
-                    )}
-                </div>
-
-                <div className="tweet-main">
-                    <header className="tweet-meta">
+                        )}
                         {post.author?.userId != null && typeof onAuthorClick === 'function' ? (
                             <button
                                 type="button"

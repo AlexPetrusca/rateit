@@ -1,3 +1,4 @@
+import CloseIcon from '@mui/icons-material/Close';
 import { Dialog, DialogContent, DialogTitle, IconButton } from '@mui/material';
 
 const Modal = ({ isOpen, title, onClose, children }) => {
@@ -27,7 +28,7 @@ const Modal = ({ isOpen, title, onClose, children }) => {
             >
                 <span>{title}</span>
                 <IconButton aria-label="Close modal" onClick={onClose} size="small">
-                    ×
+                    <CloseIcon fontSize="small" />
                 </IconButton>
             </DialogTitle>
             <DialogContent dividers sx={{ p: 2.25 }}>

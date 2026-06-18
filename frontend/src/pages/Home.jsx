@@ -13,7 +13,7 @@ import '../App.css';
 
 const FEED_PAGE_SIZE = 5;
 
-const Home = () => {
+const Home = ({ fetchFeed = BackendApiService.getFeed }) => {
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
     const currentUserId = user?.userId ?? user?.id ?? null;
@@ -70,7 +70,7 @@ const Home = () => {
         setIsFeedLoadingMore(!isInitialLoad);
         setFeedError(null);
 
-        BackendApiService.getFeed({ page: feedPage, size: FEED_PAGE_SIZE })
+        fetchFeed({ page: feedPage, size: FEED_PAGE_SIZE })
             .then((items) => {
                 if (isMounted) {
                     setFeedItems((current) => (feedPage === 0 ? items : [...current, ...items]));
@@ -333,6 +333,7 @@ const Home = () => {
                 placeholder={parentCommentId == null ? 'Add your take on this take' : 'Reply in thread'}
                 submitLabel="Reply"
                 onSubmit={() => submitComment(item, parentCommentId)}
+                onClose={() => setActiveComposer(null)}
             />
         );
     };
@@ -361,7 +362,7 @@ const Home = () => {
                 [ratingId]: { score: '', reviewText: '' }
             }));
             setActiveComposer(null);
-            const items = await BackendApiService.getFeed({
+            const items = await fetchFeed({
                 page: 0,
                 size: Math.max(feedItems.length, FEED_PAGE_SIZE)
             });
@@ -386,6 +387,7 @@ const Home = () => {
                         <CommentThread
                             comments={comments}
                             onAuthorClick={openProfile}
+                            onCommentClick={() => navigate(`/topics/${item.rateableItem?.id}`, { state: { openReviewId: item.ratingId } })}
                             onReplyClick={(comment) => {
                                 const replyKey = getCommentReplyKey(item.ratingId, comment.id);
                                 setActiveComposer((current) => (
@@ -453,6 +455,7 @@ const Home = () => {
                 placeholder="Add your take on this topic"
                 submitLabel="Re-rate"
                 onSubmit={() => submitRerate(ratingId)}
+                onClose={() => setActiveComposer(null)}
             />
         );
     };
@@ -470,8 +473,8 @@ const Home = () => {
                         <FeedTimeline
                             items={feedItems}
                             onAuthorClick={openProfile}
-                            onPostClick={openPost}
                             onTopicClick={openTopic}
+                            onItemClick={(item) => navigate(`/topics/${item.rateableItem?.id}`, { state: { openReviewId: item.ratingId } })}
                             renderFooter={(item) => {
                                 const rerateKey = getComposerKey(item.ratingId, 'rerate');
                                 const isCommentsOpen = expandedCommentRatingIds.includes(item.ratingId);
@@ -491,6 +494,7 @@ const Home = () => {
                                         ))}
                                         onComment={() => toggleComments(item.ratingId)}
                                         onEdit={canEdit ? () => navigate(`/posts/${item.ratingId}/edit`) : undefined}
+                                        shareUrl={`${window.location.origin}/posts/${item.ratingId}`}
                                         commentLabel={isCommentsOpen ? 'Hide comments' : 'Comments'}
                                         replyLabel="Reply"
                                     />

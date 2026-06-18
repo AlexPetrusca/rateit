@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { parseRichText } from './RichText.jsx';
 import StarRating from './StarRating.jsx';
 import UserAvatar from './UserAvatar.jsx';
 import PostActions from './PostActions.jsx';
@@ -10,6 +11,7 @@ const CommentThread = ({
     onReplyClick,
     onLikeClick,
     onEditClick,
+    onCommentClick,
     activeReplyKey,
     activeEditKey,
     getReplyKey,
@@ -95,7 +97,7 @@ const CommentThread = ({
 
         return (
             <>
-                <div className="comment-row" style={{ marginLeft: `${Math.max(0, depth - 1) * indentStep}px` }}>
+                <div className="comment-row" style={{ marginLeft: `${Math.max(0, depth) * indentStep}px` }}>
                     <div className="comment-avatar-column">
                         {comment.author?.userId != null && typeof onAuthorClick === 'function' ? (
                             <button
@@ -144,7 +146,13 @@ const CommentThread = ({
                                 </div>
                             )}
                         </div>
-                        <div className="comment-text">{comment.text}</div>
+                        {typeof onCommentClick === 'function' ? (
+                            <div className="comment-text comment-text-clickable" role="button" tabIndex={0} onClick={() => onCommentClick(comment)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onCommentClick(comment); }}>
+                                {parseRichText(comment.text)}
+                            </div>
+                        ) : (
+                            <div className="comment-text">{parseRichText(comment.text)}</div>
+                        )}
                         <PostActions
                             liked={Boolean(comment.likedByCurrentUser)}
                             likeCount={comment.likeCount || 0}
