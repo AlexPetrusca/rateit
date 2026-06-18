@@ -15,6 +15,7 @@ import {
     DEFAULT_COMMENT_SCORE,
     isFiveStarScoreInRange
 } from '../utils/ratingDisplay.js';
+import { getBackTarget } from '../utils/navigationHistory';
 import '../App.css';
 
 const TOPIC_PAGE_SIZE = 5;
@@ -764,7 +765,7 @@ const Topic = () => {
             placeholder="Add your take on this topic"
             submitLabel="Add rating"
             onSubmit={submitTopicRating}
-            onClose={() => navigate(-1)}
+            onClose={() => { const t = getBackTarget(); t === -1 ? navigate(-1) : navigate(t); }}
         />
     );
 

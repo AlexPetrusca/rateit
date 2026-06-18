@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import { useLayoutEffect } from 'react';
+import { recordPath } from './utils/navigationHistory';
 import { AuthProvider } from './contexts/AuthContext';
 
 window.history.scrollRestoration = 'manual';
@@ -35,6 +36,7 @@ import './App.css';
 const ScrollToTop = () => {
     const { pathname } = useLocation();
     useLayoutEffect(() => {
+        recordPath(pathname);
         window.scrollTo(0, 0);
     }, [pathname]);
     return null;
