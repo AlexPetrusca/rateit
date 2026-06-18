@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Typography } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import UserAvatar from '../components/UserAvatar.jsx';
 import CommentComposer from '../components/CommentComposer.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import FeedTimeline from '../components/FeedTimeline.jsx';
@@ -32,7 +33,10 @@ const AVERAGE_STAR_POINTS = '50 5 61 36 95 36 67 57 78 91 50 72 22 91 33 57 5 36
 const AVERAGE_STAR_FILLED_COLOR = '#ff303a';
 const AVERAGE_STAR_EMPTY_COLOR = '#cfd9de';
 
+let averageStarRatingCounter = 0;
+
 const AverageStarRating = ({ value, max = 5, label }) => {
+    const instanceId = useRef(++averageStarRatingCounter);
     const score = Number(value);
     const starCount = Number.isFinite(max) && max > 0 ? Math.round(max) : 5;
     const clampedScore = Number.isFinite(score) ? Math.max(0, Math.min(starCount, score)) : 0;
@@ -41,7 +45,7 @@ const AverageStarRating = ({ value, max = 5, label }) => {
         <span className="topic-average-stars" aria-label={label}>
             {Array.from({ length: starCount }, (_, index) => {
                 const fill = Math.max(0, Math.min(1, clampedScore - index));
-                const clipId = `topic-average-star-clip-${index}`;
+                const clipId = `topic-average-star-clip-${instanceId.current}-${index}`;
 
                 return (
                     <svg
@@ -926,19 +930,40 @@ const Topic = () => {
                                     className="review-fullscreen-card"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <div className="review-fullscreen-header">
-                                        <span className="review-fullscreen-author">
-                                            {fullscreenReview.author?.username}
-                                        </span>
-                                        <AverageStarRating
-                                            value={fullscreenReview.score}
-                                            max={fullscreenReview.ratingScale?.max}
-                                            label={`${fullscreenReview.score} stars`}
+                                    {fullscreenReview.rateableItem?.mediaObjectKey && (
+                                        <img
+                                            className="review-fullscreen-image"
+                                            src={`/api/s3/images/${fullscreenReview.rateableItem.mediaObjectKey}`}
+                                            alt={fullscreenReview.rateableItem?.title || ''}
                                         />
+                                    )}
+                                    {(fullscreenReview.rateableItem?.title || fullscreenReview.rateableItem?.body) && (
+                                        <p className="review-fullscreen-title">
+                                            {fullscreenReview.rateableItem?.title || fullscreenReview.rateableItem?.body}
+                                        </p>
+                                    )}
+                                    <div className="review-fullscreen-header">
+                                        <UserAvatar
+                                            username={fullscreenReview.author?.username}
+                                            profilePicUrl={fullscreenReview.author?.profilePicUrl}
+                                            size="lg"
+                                        />
+                                        <div className="review-fullscreen-meta">
+                                            <span className="review-fullscreen-author">
+                                                {fullscreenReview.author?.username}
+                                            </span>
+                                            <AverageStarRating
+                                                value={fullscreenReview.score}
+                                                max={fullscreenReview.ratingScale?.max}
+                                                label={`${fullscreenReview.score} stars`}
+                                            />
+                                        </div>
                                     </div>
-                                    <p className="review-fullscreen-text">
-                                        {parseRichText(fullscreenReview.reviewText)}
-                                    </p>
+                                    {fullscreenReview.reviewText && (
+                                        <p className="review-fullscreen-text">
+                                            {parseRichText(fullscreenReview.reviewText)}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         )}
