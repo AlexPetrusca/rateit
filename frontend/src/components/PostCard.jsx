@@ -85,7 +85,10 @@ const PostCard = ({
                     </p>
                 )
             )}
-            <div className="text-rating-score">
+            <div
+                className="text-rating-score"
+                onClick={onTopicClick && post.rateableItem?.id != null ? (e) => { e.stopPropagation(); onTopicClick(post.rateableItem.id); } : undefined}
+            >
                 <strong className="op-rating-stars">
                     <StarRating
                         value={post.score}
