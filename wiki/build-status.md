@@ -29,6 +29,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Make the stars bigger, nicer, and flashier when rating.
 - Add a notifications pane for likes, comments, follows, and other activity.
 - Resolve the container registry namespace mismatch so Critic backend and mocker images can live under the right owner/repo instead of depending on legacy RateIt image names.
+- Set up DNS so critic-app.com and www.critic-app.com redirect to app.critic-app.com. Needs A/ALIAS/CNAME records at the registrar pointing to the same load balancer IP as app.critic-app.com, plus an nginx server block and ingress hosts entry for the bare domain.
 ### P2
 - have enter button on home page live in the bottom left
 - There is a delay when loading things that seems unnecessary (alex item)
