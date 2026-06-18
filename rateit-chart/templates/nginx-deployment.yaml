@@ -29,12 +29,14 @@ spec:
             # Mount an empty directory to overwrite the conf.d directory
             - name: empty-dir
               mountPath: /etc/nginx/conf.d
+        {{- if .Values.nginx.metrics.enabled }}
         - name: nginx-exporter
           image: nginx/nginx-prometheus-exporter:1.0.0
           args:
             - "-nginx.scrape-uri=http://127.0.0.1:8080/stub_status"
           ports:
             - containerPort: 9113
+        {{- end }}
       volumes:
         - name: nginx-config
           configMap:

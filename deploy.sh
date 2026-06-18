@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Top-level script to deploy all application components to Kubernetes
-# Usage: IMAGE_TAG=<tag> ./deploy.sh [--local] [--push] [--skip-push] [--force]
+# Usage: IMAGE_TAG=<tag> ./deploy.sh [--local] [--single-node] [--push] [--skip-push] [--force]
 # If IMAGE_TAG is not provided, defaults to "latest"
 
 set -e  # Exit immediately if a command exits with a non-zero status
@@ -18,6 +18,7 @@ RELEASE_NAME="critic"
 FORCE_RECREATE=false
 BACKEND_SPRING_PROFILES="${BACKEND_SPRING_PROFILES:-twilio}"
 LOCAL_DEPLOY=false
+SINGLE_NODE_DEPLOY=false
 SKIP_BACKEND_PUSH=false
 FORCE_BACKEND_PUSH=false
 PULL_POLICY="Always"
@@ -27,6 +28,7 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         -f|--force) FORCE_RECREATE=true ;;
         --local) LOCAL_DEPLOY=true ;;
+        --single-node) SINGLE_NODE_DEPLOY=true ;;
         --push) FORCE_BACKEND_PUSH=true ;;
         --skip-push) SKIP_BACKEND_PUSH=true; PULL_POLICY="IfNotPresent" ;;
         --twilio) BACKEND_SPRING_PROFILES="twilio" ;;
@@ -53,6 +55,9 @@ echo "Deploying application to Kubernetes with image tag: $IMAGE_TAG"
 echo "Backend Spring profiles: $BACKEND_SPRING_PROFILES"
 if [ "$LOCAL_DEPLOY" = true ]; then
   echo "Local deploy: localhost API/auth will use the mocker backend"
+fi
+if [ "$SINGLE_NODE_DEPLOY" = true ]; then
+  echo "Single-node deploy: local-only, ingress-controller, metrics, and observability workloads will be disabled"
 fi
 
 # Check prerequisites
@@ -95,10 +100,16 @@ fi
 
 # Deploy using Helm
 echo "Deploying to Kubernetes namespace: $NAMESPACE"
+VALUES_ARGS=(
+  --values ./rateit-chart/values.yaml
+  --values ./rateit-chart/values.secret.yaml
+)
+if [ "$SINGLE_NODE_DEPLOY" = true ]; then
+  VALUES_ARGS+=(--values ./rateit-chart/values.single-node.yaml)
+fi
 helm upgrade --install "$RELEASE_NAME" ./rateit-chart \
   --namespace "$NAMESPACE" --create-namespace \
-  --values ./rateit-chart/values.yaml \
-  --values ./rateit-chart/values.secret.yaml \
+  "${VALUES_ARGS[@]}" \
   --set backend.image=alexpetrusca/rateit-backend \
   --set backend.imageTag="$IMAGE_TAG" \
   --set-string backend.springProfiles="$BACKEND_SPRING_PROFILES" \

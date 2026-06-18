@@ -56,6 +56,14 @@ Deploy to Kubernetes:
 
 `deploy.sh` publishes the current backend image first, then rolls the Kubernetes release and uploads the frontend bundle.
 
+Single-node remote deploy:
+```bash
+./deploy.sh --single-node
+```
+
+That uses the reduced Helm values preset in `rateit-chart/values.single-node.yaml` so the cluster can run on a small remote node without the local-only mocker backend, ingress controller, metrics sidecars, Kafka, Prometheus, or Grafana.
+It exposes `critic-nginx` directly with a cloud `LoadBalancer` service.
+
 Fast local deploy:
 ```bash
 ./deploy.sh --local

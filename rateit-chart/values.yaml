@@ -10,6 +10,8 @@ nginx:
   enabled: true
   image: nginx:alpine
   replicaCount: 1
+  metrics:
+    enabled: true
   service:
     type: ClusterIP
     port: 80

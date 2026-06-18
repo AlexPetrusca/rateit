@@ -15,6 +15,11 @@ data:
         default_type  application/octet-stream;
         client_max_body_size 25m;
 
+        map $http_x_forwarded_proto $origin_proto {
+            default $http_x_forwarded_proto;
+            "" $scheme;
+        }
+
         upstream minio {
             server critic-minio:{{ .Values.minio.service.port }};
             keepalive 32;
@@ -25,12 +30,15 @@ data:
             keepalive 32;
         }
 
+        {{- if .Values.localBackend.enabled }}
         upstream backend_local {
             server critic-backend-local:{{ .Values.localBackend.service.port }};
             keepalive 32;
         }
+        {{- end }}
 
         # localhost traffic uses the mocker-backed API so local OTP does not hit Twilio.
+        {{- if .Values.localBackend.enabled }}
         server {
             listen 80;
             server_name localhost 127.0.0.1 ~^localhost:\d+$ ~^127\.0\.0\.1:\d+$;
@@ -49,7 +57,7 @@ data:
                 proxy_set_header Host $http_host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header X-Forwarded-Proto $origin_proto;
             }
 
             location /api/ {
@@ -57,7 +65,7 @@ data:
                 proxy_set_header Host $http_host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header X-Forwarded-Proto $origin_proto;
                 proxy_set_header X-Forwarded-Host $http_host;
             }
 
@@ -66,10 +74,11 @@ data:
                 proxy_set_header Host $http_host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header X-Forwarded-Proto $origin_proto;
                 proxy_set_header X-Forwarded-Host $http_host;
             }
         }
+        {{- end }}
 
         # serve public traffic
         server {
@@ -98,7 +107,7 @@ data:
                 proxy_set_header Host $http_host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header X-Forwarded-Proto $origin_proto;
             }
 
             location /api/ {
@@ -106,7 +115,7 @@ data:
                 proxy_set_header Host $http_host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header X-Forwarded-Proto $origin_proto;
                 proxy_set_header X-Forwarded-Host $http_host;
             }
 
@@ -115,7 +124,7 @@ data:
                 proxy_set_header Host $http_host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header X-Forwarded-Proto $origin_proto;
                 proxy_set_header X-Forwarded-Host $http_host;
             }
         }

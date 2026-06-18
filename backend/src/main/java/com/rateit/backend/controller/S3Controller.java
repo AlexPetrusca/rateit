@@ -83,22 +83,12 @@ public class S3Controller {
             return null;
         }
 
-        if (isLocalhost(host)) {
-            String proto = firstHeader(request, "X-Forwarded-Proto");
-            if (proto == null) {
-                proto = request.getScheme();
-            }
-            return proto + "://" + host;
+        String proto = firstHeader(request, "X-Forwarded-Proto");
+        if (proto == null) {
+            proto = request.getScheme();
         }
 
-        return "https://" + host;
-    }
-
-    private boolean isLocalhost(String host) {
-        return host.equalsIgnoreCase("localhost")
-            || host.startsWith("localhost:")
-            || host.startsWith("127.0.0.1")
-            || host.startsWith("[::1]");
+        return proto + "://" + host;
     }
 
     private String firstHeader(HttpServletRequest request, String name) {

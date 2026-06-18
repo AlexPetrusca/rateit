@@ -56,6 +56,10 @@ Do not use this file for:
 - The branding in Twilio Verify OTP text comes from the Verify service `friendlyName`, not from the app's OTP request payload.
 - Use the Verify service API directly for OTP delivery; do not wire the app to a separate Messaging Service sender pool for this flow.
 
+### Single-node hosting
+
+- For a cheap one-node remote deployment, disable `localBackend`, `mocker`, ingress controllers, metrics sidecars, `kafka`, `prometheus`, and `grafana`; expose the app nginx service directly with one cloud `LoadBalancer`.
+
 ## How To Update
 
 When you discover a reusable lesson during implementation, add it here and keep it short. Prefer a single sentence that captures the invariant or pitfall.

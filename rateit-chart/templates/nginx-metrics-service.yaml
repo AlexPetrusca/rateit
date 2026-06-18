@@ -1,4 +1,4 @@
-{{- if .Values.nginx.enabled -}}
+{{- if and .Values.nginx.enabled .Values.nginx.metrics.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
