@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Navigate, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import Home from './pages/Home';
@@ -29,6 +30,12 @@ import { useAuth } from './contexts/AuthContext';
 import { IconPackProvider } from './contexts/IconPackContext.jsx';
 import './App.css';
 
+const ScrollToTop = () => {
+    const { pathname } = useLocation();
+    useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+    return null;
+};
+
 const OwnProfileRedirect = () => {
     const { user } = useAuth();
     const currentUserId = user?.userId ?? user?.id;
@@ -46,6 +53,7 @@ function App() {
             <IconPackProvider>
             <NotificationProvider>
                 <Router>
+                    <ScrollToTop />
                     <Layout>
                         <Routes>
                             <Route path="/login" element={

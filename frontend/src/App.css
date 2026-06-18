@@ -599,10 +599,20 @@ button:disabled {
 
 .profile-nav-actions {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
     display: flex;
-    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    color: var(--text-secondary, #888);
+}
+
+.profile-nav-actions svg {
+    width: 100%;
+    height: 100%;
 }
 
 .profile-banner-copy {
@@ -630,40 +640,18 @@ button:disabled {
     font-size: 0.95rem;
 }
 
-.profile-action-button {
-    margin: 0;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    background: transparent;
-    border: 1px solid #ffffff;
-    color: var(--text-primary, #0f1419);
-}
-
-.profile-action-button:hover {
-    background: var(--surface-hover, #f7f9f9);
-}
-
-.profile-settings-btn {
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    background: transparent;
-    border: none;
-    color: var(--text-secondary, #888);
-    cursor: pointer;
-    padding: 4px;
+.profile-editor-nav-links {
     display: flex;
-    width: 36px;
-    height: 36px;
-    align-items: center;
-    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px 0;
 }
 
-.profile-settings-btn svg {
-    width: 100%;
-    height: 100%;
+.profile-editor-nav-links button {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid currentColor;
 }
 
 .profile-social-counts {
@@ -836,68 +824,42 @@ button:disabled {
     padding: 10px 0;
 }
 
-.profile-editor-cropper {
-    display: grid;
-    place-items: center;
-    width: 100%;
-}
-
-.profile-editor-crop-frame {
-    position: relative;
-    width: 260px;
-    height: 260px;
-    max-width: calc(100vw - 72px);
-    max-height: calc(100vw - 72px);
-    overflow: hidden;
-    border: 1px solid #cfd9de;
-    border-radius: 50%;
-    background: #eff3f4;
-}
-
-.profile-editor-crop-frame::after {
-    content: '';
-    position: absolute;
+.crop-modal-overlay {
+    position: fixed;
     inset: 0;
-    border: 999px solid rgba(15, 20, 25, 0.08);
+    background: rgba(0, 0, 0, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.crop-modal-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+}
+
+.crop-modal-stage {
+    position: relative;
+    width: 300px;
+    height: 300px;
     border-radius: 50%;
-    pointer-events: none;
+    overflow: hidden;
+    cursor: grab;
+    background: #111;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+    touch-action: none;
 }
 
-.profile-editor-crop-image {
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: block;
-    max-width: none;
-    transform-origin: top left;
-    user-select: none;
-    pointer-events: none;
+.crop-modal-stage:active {
+    cursor: grabbing;
 }
 
-.profile-editor-adjustments {
-    display: grid;
-    gap: 14px;
-    padding: 14px;
-    border: 1px solid #eff3f4;
-    border-radius: 8px;
-    background: #f7f9f9;
-}
-
-.profile-editor-slider {
-    display: grid;
-    gap: 6px;
-}
-
-.profile-editor-slider label {
-    margin: 0;
-    color: #536471;
-    font-size: 0.9rem;
-}
-
-.profile-editor-slider input[type="range"] {
-    width: 100%;
-    margin: 0;
-    accent-color: #0f1419;
+.crop-modal-actions {
+    display: flex;
+    gap: 16px;
 }
 
 .profile-editor-controls {
@@ -4320,7 +4282,6 @@ label {
     border-color: var(--border-subtle);
 }
 
-.profile-editor-crop-frame,
 .create-preview-frame,
 .account-setup-preview {
     background: var(--surface-soft);

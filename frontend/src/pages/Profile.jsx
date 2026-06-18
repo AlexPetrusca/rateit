@@ -578,12 +578,10 @@ const Profile = () => {
                     <>
                         <section className="profile-banner">
                             {isOwnProfile && (
-                                <div className="profile-nav-actions">
-                                    <button type="button" className="profile-action-button" onClick={() => navigate('/backlog')}>Backlog</button>
-                                    <button type="button" className="profile-action-button" onClick={() => navigate('/install')}>Install</button>
-                                </div>
+                                <button type="button" className="profile-nav-actions" aria-label="Settings" onClick={() => navigate('/profile/edit')}>
+                                    {iconPack === 'hand_drawn' ? <GearIconHD /> : <SettingsOutlinedIcon />}
+                                </button>
                             )}
-                            {isOwnProfile && <button type="button" className="profile-settings-btn" aria-label="Settings" onClick={() => navigate('/profile/edit')}>{iconPack === 'hand_drawn' ? <GearIconHD /> : <SettingsOutlinedIcon />}</button>}
                             <UserAvatar
                                 username={profile.username}
                                 profilePicUrl={profile.profilePicUrl}

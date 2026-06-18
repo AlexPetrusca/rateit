@@ -54,6 +54,7 @@ The `?react` suffix requires `vite-plugin-svgr` (already installed). It turns th
 | `full_heart.svg` | Post action – Like (liked state) |
 | `chat_bubble.svg` | Post action – Comments |
 | `reply.svg` | Post action – Reply |
+| `check_mark.svg` | Composer submit button |
 | `cycle.svg` | Post action – Re-rate |
 | `pencil.svg` | Post action – Edit |
 | `camera.svg` | File input – Take photo |
