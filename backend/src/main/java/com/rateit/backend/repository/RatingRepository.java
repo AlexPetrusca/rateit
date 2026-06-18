@@ -2,6 +2,7 @@ package com.rateit.backend.repository;
 
 import com.rateit.backend.entity.Rating;
 import com.rateit.backend.entity.User;
+import com.rateit.backend.entity.types.RatingStatus;
 import com.rateit.backend.entity.types.Visibility;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -148,6 +149,18 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     Double averageVisibleScoreByRateableItemIdAndVisibility(
         @Param("rateableItemId") Long rateableItemId,
         @Param("visibility") Visibility visibility
+    );
+
+    @Query("""
+        select r from Rating r
+        where r.authorUser = :authorUser
+          and r.status = :status
+          and r.deletedAt is null
+        order by r.updatedAt desc
+        """)
+    List<Rating> findDraftsByAuthorUser(
+        @Param("authorUser") User authorUser,
+        @Param("status") RatingStatus status
     );
 
     @Query(

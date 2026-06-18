@@ -1,5 +1,10 @@
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CheckIcon from '@mui/icons-material/Check';
+import BackIconHD from '../assets/icons/hand_drawn/back.svg?react';
+import CheckMarkHD from '../assets/icons/hand_drawn/check_mark.svg?react';
 import RichTextarea from './RichTextarea.jsx';
 import StarRating from './StarRating.jsx';
+import { useIconPack } from '../contexts/IconPackContext.jsx';
 import { FIVE_STAR_SCALE, formatScoreValue } from '../utils/ratingDisplay.js';
 
 const CommentComposer = ({
@@ -15,8 +20,11 @@ const CommentComposer = ({
     placeholder,
     submitLabel = 'Reply',
     onSubmit,
+    onClose,
     rows = 3
 }) => {
+    const { iconPack } = useIconPack();
+    const hd = iconPack === 'hand_drawn';
     const displayScore = previewScore ?? score;
     const classes = [
         className,
@@ -46,8 +54,13 @@ const CommentComposer = ({
                 rows={rows}
             />
             <div className="composer-actions">
-                <button type="button" onClick={onSubmit}>
-                    {submitLabel}
+                {onClose && (
+                    <button type="button" className="composer-icon-btn" onClick={onClose} aria-label="Close" title="Close">
+                        {hd ? <BackIconHD /> : <ArrowBackIcon />}
+                    </button>
+                )}
+                <button type="button" className="composer-icon-btn" onClick={onSubmit} aria-label={submitLabel} title={submitLabel}>
+                    {hd ? <CheckMarkHD /> : <CheckIcon />}
                 </button>
             </div>
         </div>

@@ -1,5 +1,6 @@
 package com.rateit.backend.entity;
 
+import com.rateit.backend.entity.types.RatingStatus;
 import com.rateit.backend.entity.types.Visibility;
 import jakarta.persistence.*;
 import lombok.*;
@@ -31,16 +32,29 @@ public class Rating extends BaseEntity {
     @JoinColumn(name = "author_user_id", nullable = false)
     private User authorUser;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "rateable_item_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "rateable_item_id", nullable = true)
     private RateableItem rateableItem;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "rating_scale_id", nullable = false)
     private RatingScale ratingScale;
 
-    @Column(name = "score", nullable = false, precision = 10, scale = 2)
+    @Column(name = "score", precision = 10, scale = 2)
     private BigDecimal score;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private RatingStatus status;
+
+    @Column(name = "draft_body", columnDefinition = "text")
+    private String draftBody;
+
+    @Column(name = "draft_media_key", length = 500)
+    private String draftMediaKey;
+
+    @Column(name = "draft_media_type", length = 100)
+    private String draftMediaType;
 
     @Column(name = "review_text", columnDefinition = "text")
     private String reviewText;

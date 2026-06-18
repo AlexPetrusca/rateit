@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import LinkIcon from '@mui/icons-material/Link';
 
 const FORMATS = [
@@ -9,6 +9,15 @@ const FORMATS = [
 
 const RichTextarea = ({ value = '', onChange, id, placeholder, rows, disabled }) => {
     const ref = useRef(null);
+
+    const resize = () => {
+        const el = ref.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+    };
+
+    useEffect(() => { resize(); }, [value]);
 
     const applyFormat = (marker) => {
         const el = ref.current;

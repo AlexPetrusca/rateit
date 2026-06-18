@@ -70,6 +70,7 @@ const Layout = ({ children }) => {
 
     const isLoginPage = location.pathname === '/login';
     const isTopicPage = location.pathname.startsWith('/topics/');
+    const isCreatePage = location.pathname === '/create' || location.pathname === '/drafts';
     const indicatorTop = isRefreshing ? PULL_THRESHOLD / 2 : pullDistance / 2;
 
     return (
@@ -95,7 +96,7 @@ const Layout = ({ children }) => {
                     {children}
                 </main>
             </div>
-            {!isLoginPage && !isTopicPage && <BottomBar />}
+            {!isLoginPage && !isTopicPage && !isCreatePage && <BottomBar />}
         </>
     );
 };

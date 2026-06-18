@@ -755,6 +755,46 @@ const BackendApiService = {
             throw new Error(data.message || 'Failed to delete suggestion');
         }
         return response.status === 204 ? null : await response.json();
+    },
+
+    getDrafts: async () => {
+        const response = await fetch('/api/feed/drafts', { credentials: 'include' });
+        if (!response.ok) throw new Error('Failed to fetch drafts');
+        return await response.json();
+    },
+
+    saveDraft: async ({ id, body, reviewText, score, mediaObjectKey, mediaContentType }) => {
+        const response = await fetch('/api/feed/drafts', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, body, reviewText, score, mediaObjectKey, mediaContentType })
+        });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to save draft');
+        }
+        return await response.json();
+    },
+
+    deleteDraft: async (draftId) => {
+        const response = await fetch(`/api/feed/drafts/${encodeURIComponent(draftId)}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Failed to delete draft');
+    },
+
+    publishDraft: async (draftId) => {
+        const response = await fetch(`/api/feed/drafts/${encodeURIComponent(draftId)}/publish`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to publish draft');
+        }
+        return await response.json();
     }
 };
 

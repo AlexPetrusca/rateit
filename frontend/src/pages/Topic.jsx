@@ -668,6 +668,7 @@ const Topic = () => {
                 placeholder={composerPlaceholder}
                 submitLabel={submitLabel}
                 onSubmit={() => submitComment(item, parentCommentId, editingComment)}
+                onClose={() => setActiveComposer(null)}
             />
         );
     };

@@ -333,6 +333,7 @@ const Home = ({ fetchFeed = BackendApiService.getFeed }) => {
                 placeholder={parentCommentId == null ? 'Add your take on this take' : 'Reply in thread'}
                 submitLabel="Reply"
                 onSubmit={() => submitComment(item, parentCommentId)}
+                onClose={() => setActiveComposer(null)}
             />
         );
     };
@@ -453,6 +454,7 @@ const Home = ({ fetchFeed = BackendApiService.getFeed }) => {
                 placeholder="Add your take on this topic"
                 submitLabel="Re-rate"
                 onSubmit={() => submitRerate(ratingId)}
+                onClose={() => setActiveComposer(null)}
             />
         );
     };

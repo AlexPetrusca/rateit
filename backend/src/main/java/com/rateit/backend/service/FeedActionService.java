@@ -10,14 +10,17 @@ import com.rateit.backend.entity.RatingScale;
 import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.dto.FeedItemDto;
 import com.rateit.backend.entity.dto.RatingCommentDto;
+import com.rateit.backend.entity.dto.DraftDto;
 import com.rateit.backend.entity.rest.CreateRatingRequest;
 import com.rateit.backend.entity.rest.CreateRatingCommentRequest;
 import com.rateit.backend.entity.rest.CreateRerateRequest;
+import com.rateit.backend.entity.rest.SaveDraftRequest;
 import com.rateit.backend.entity.rest.UpdateRatingCommentRequest;
 import com.rateit.backend.entity.rest.UpdateRatingRequest;
 import com.rateit.backend.entity.types.RateableItemType;
-import com.rateit.backend.entity.types.Resource;
 import com.rateit.backend.entity.types.RatingScaleType;
+import com.rateit.backend.entity.types.RatingStatus;
+import com.rateit.backend.entity.types.Resource;
 import com.rateit.backend.entity.types.Visibility;
 import com.rateit.backend.exception.BadRequestException;
 import com.rateit.backend.exception.AuthorizationException;
@@ -95,6 +98,7 @@ public class FeedActionService {
             .score(request.score())
             .reviewText(reviewText)
             .visibility(Visibility.PUBLIC)
+            .status(RatingStatus.PUBLISHED)
             .build());
 
         return FeedItemDto.fromRating(savedRating, 0, 0, false);
@@ -283,10 +287,115 @@ public class FeedActionService {
             .score(request.score())
             .reviewText(normalize(request.reviewText()))
             .visibility(sourceRating.getVisibility())
+            .status(RatingStatus.PUBLISHED)
             .build();
 
         Rating savedRating = ratingRepository.save(newRating);
         return FeedItemDto.fromRating(savedRating, 0, 0, false);
+    }
+
+    @Transactional
+    public DraftDto saveDraft(SaveDraftRequest request, String currentUserPhoneNumber) {
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+
+        Rating draft;
+        if (request.id() != null) {
+            draft = findRating(request.id());
+            if (!draft.getAuthorUser().getId().equals(currentUser.getId())) {
+                throw AuthorizationException.forbidden("You can only edit your own drafts");
+            }
+            if (draft.getStatus() != RatingStatus.DRAFT) {
+                throw BadRequestException.invalidRequest("Cannot overwrite a published rating as a draft");
+            }
+        } else {
+            draft = Rating.builder()
+                .authorUser(currentUser)
+                .ratingScale(resolveRatingScale())
+                .visibility(Visibility.PUBLIC)
+                .status(RatingStatus.DRAFT)
+                .build();
+        }
+
+        draft.setDraftBody(normalize(request.body()));
+        draft.setReviewText(normalize(request.reviewText()));
+        draft.setScore(request.score());
+        draft.setDraftMediaKey(normalize(request.mediaObjectKey()));
+        draft.setDraftMediaType(normalize(request.mediaContentType()));
+
+        return DraftDto.from(ratingRepository.save(draft));
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<DraftDto> listDrafts(String currentUserPhoneNumber) {
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+        return ratingRepository.findDraftsByAuthorUser(currentUser, RatingStatus.DRAFT)
+            .stream()
+            .map(DraftDto::from)
+            .toList();
+    }
+
+    @Transactional
+    public void deleteDraft(Long draftId, String currentUserPhoneNumber) {
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+        Rating draft = findRating(draftId);
+        if (!draft.getAuthorUser().getId().equals(currentUser.getId())) {
+            throw AuthorizationException.forbidden("You can only delete your own drafts");
+        }
+        if (draft.getStatus() != RatingStatus.DRAFT) {
+            throw BadRequestException.invalidRequest("Cannot delete a published rating as a draft");
+        }
+        ratingRepository.delete(draft);
+    }
+
+    @Transactional
+    public FeedItemDto publishDraft(Long draftId, String currentUserPhoneNumber) {
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+        Rating draft = findRating(draftId);
+
+        if (!draft.getAuthorUser().getId().equals(currentUser.getId())) {
+            throw AuthorizationException.forbidden("You can only publish your own drafts");
+        }
+        if (draft.getStatus() != RatingStatus.DRAFT) {
+            throw BadRequestException.invalidRequest("Rating is already published");
+        }
+
+        String body = draft.getDraftBody();
+        String mediaKey = draft.getDraftMediaKey();
+        boolean hasMedia = mediaKey != null;
+
+        if (!hasMedia && body == null) {
+            throw BadRequestException.invalidRating("Text posts need body text or an image");
+        }
+        if (draft.getScore() == null) {
+            throw BadRequestException.invalidRating("Score is required to publish");
+        }
+
+        MediaAsset mediaAsset = null;
+        if (hasMedia) {
+            mediaAsset = mediaAssetRepository.save(MediaAsset.builder()
+                .ownerUser(currentUser)
+                .bucket("images")
+                .objectKey(mediaKey)
+                .contentType(draft.getDraftMediaType())
+                .build());
+        }
+
+        RateableItem rateableItem = rateableItemRepository.save(RateableItem.builder()
+            .createdByUser(currentUser)
+            .itemType(hasMedia ? RateableItemType.PHOTO : RateableItemType.TEXT_POST)
+            .body(body)
+            .mediaAsset(mediaAsset)
+            .visibility(Visibility.PUBLIC)
+            .build());
+
+        draft.setRateableItem(rateableItem);
+        draft.setStatus(RatingStatus.PUBLISHED);
+        draft.setDraftBody(null);
+        draft.setDraftMediaKey(null);
+        draft.setDraftMediaType(null);
+
+        Rating published = ratingRepository.save(draft);
+        return FeedItemDto.fromRating(published, 0, 0, false);
     }
 
     private String normalize(String value) {

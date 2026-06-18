@@ -21,6 +21,7 @@ import PostRedirect from './pages/PostRedirect';
 import SearchUsers from './pages/SearchUsers';
 import FollowingFeed from './pages/FollowingFeed';
 import FollowList from './pages/FollowList';
+import Drafts from './pages/Drafts';
 import GuardedRoute from './components/GuardedRoute.jsx';
 import UnguardedRoute from "./components/UnguardedRoute.jsx";
 import Layout from './components/Layout.jsx';
@@ -58,6 +59,15 @@ function App() {
                                 element={
                                     <GuardedRoute>
                                         <Create />
+                                    </GuardedRoute>
+                                }
+                            />
+
+                            <Route
+                                path="/drafts"
+                                element={
+                                    <GuardedRoute>
+                                        <Drafts />
                                     </GuardedRoute>
                                 }
                             />

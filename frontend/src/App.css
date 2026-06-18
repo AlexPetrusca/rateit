@@ -435,6 +435,8 @@ label {
 .rich-textarea-wrapper textarea {
     border: none;
     border-radius: 4px;
+    resize: none;
+    overflow-y: hidden;
 }
 
 .rich-textarea-wrapper textarea:focus {
@@ -462,8 +464,7 @@ button:disabled {
 }
 
 .profile-editor-actions button,
-.create-actions button,
-.composer-actions button:not(.link-button):not(.destructive-link-button):not(.destructive-button) {
+.create-actions button {
     border: 1px solid #ffffff;
     border-radius: 6px;
 }
@@ -923,6 +924,12 @@ button:disabled {
     margin: 0;
 }
 
+.file-input-btn--lg {
+    width: 72px;
+    height: 72px;
+    padding: 14px;
+}
+
 .file-input-btn svg {
     width: 100%;
     height: 100%;
@@ -1183,8 +1190,100 @@ button:disabled {
     width: min(960px, 100%);
 }
 
+.page-content:has(.create-shell),
+.page-content:has(.drafts-header) {
+    padding-bottom: 0;
+}
+
+.create-photo-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.create-photo-label-row label {
+    margin-bottom: 0;
+}
+
+.create-drafts-btn {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border: 1px solid currentColor;
+    border-radius: 6px;
+}
+
 .create-form {
     padding: 16px;
+}
+
+.drafts-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.drafts-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.drafts-empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.drafts-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.draft-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+    gap: 12px;
+}
+
+.draft-item:hover {
+    background: var(--surface-2);
+}
+
+.draft-item-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+}
+
+.draft-item-title {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.draft-item-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.draft-item-delete {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    opacity: 0.6;
+}
+
+.draft-item-delete:hover {
+    opacity: 1;
 }
 
 .create-account-page {
@@ -1346,6 +1445,12 @@ button:disabled {
     white-space: pre-wrap;
 }
 
+.create-preview-divider {
+    border: none;
+    border-top: 1px solid #ffffff;
+    margin: 8px 0;
+}
+
 .score-group input[type="range"] {
     width: 100%;
     margin: 0;
@@ -1367,6 +1472,13 @@ button:disabled {
     justify-content: flex-start;
     gap: 10px;
     flex-wrap: wrap;
+}
+
+.create-preview-label {
+    text-align: center;
+    font-weight: 700;
+    margin: 12px 0 0;
+    color: var(--text-primary);
 }
 
 .post-editor-preview {
@@ -2565,7 +2677,7 @@ button:disabled {
     padding: 12px;
     border: 1px solid #eff3f4;
     border-radius: 12px;
-    background: #ffffff;
+    background: transparent;
 }
 
 .comment-panel {
@@ -2687,7 +2799,7 @@ button:disabled {
 }
 
 .composer-actions button {
-    width: 100%;
+    flex: 1;
     margin: 0;
     padding: 12px 16px;
     border-radius: 12px;
@@ -2696,6 +2808,15 @@ button:disabled {
     border: none;
     font-size: 1rem;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.composer-actions .composer-icon-btn svg {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
 }
 
 .composer-actions button:hover {
@@ -3857,7 +3978,7 @@ button:disabled {
 input,
 textarea,
 select {
-    background-color: var(--surface-2);
+    background-color: transparent;
     color: var(--text-primary);
     border-color: var(--border-subtle);
 }
@@ -3892,13 +4013,18 @@ label {
 .account-setup-form,
 .create-preview,
 .tweet-card,
-.feed-composer,
 .rating-object,
 .topic-summary-card,
 .deleted-post-placeholder,
 .twitter-shell,
 .timeline-header {
     background: var(--surface);
+    border-color: var(--border-subtle);
+    box-shadow: var(--shadow-elevated);
+}
+
+.feed-composer {
+    background: transparent;
     border-color: var(--border-subtle);
     box-shadow: var(--shadow-elevated);
 }
@@ -3979,6 +4105,12 @@ label {
 .login-status,
 .login-country-group-label {
     color: var(--text-secondary);
+}
+
+.tweet-body strong,
+.tweet-review strong,
+.create-preview-meta strong {
+    color: var(--text-primary);
 }
 
 .container,
@@ -4098,7 +4230,7 @@ label {
 .comment-composer textarea,
 .feed-composer textarea,
 .feed-composer input {
-    background: var(--surface-soft);
+    background: transparent;
     border-color: var(--border-subtle);
     color: var(--text-primary);
 }
@@ -4115,7 +4247,11 @@ label {
 
 .composer-actions button {
     background: transparent;
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .composer-actions button:hover,
