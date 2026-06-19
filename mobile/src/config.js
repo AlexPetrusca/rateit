@@ -1,7 +1,10 @@
+import { Platform } from 'react-native';
+import { resolveEmulatorLoopback } from './utils/network.js';
+
 const trimTrailingSlash = (value) => value.replace(/\/+$/, '');
 
 export const API_BASE_URL = trimTrailingSlash(
-  process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8080'
+  resolveEmulatorLoopback(process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8080', Platform.OS)
 );
 
 export const APP_PUBLIC_URL = trimTrailingSlash(

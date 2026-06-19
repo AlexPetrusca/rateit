@@ -6,7 +6,7 @@ import AppNavigator from './navigation/AppNavigator.jsx';
 const App = () => (
   <AuthProvider>
     <NotificationProvider>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <AppNavigator />
     </NotificationProvider>
   </AuthProvider>

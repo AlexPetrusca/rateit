@@ -56,11 +56,13 @@ const SearchUsersScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
     alignItems: 'flex-end'
   },
   searchInput: {
-    flex: 1
+    flex: 1,
+    minWidth: 190
   },
   list: {
     gap: spacing.md,
@@ -68,10 +70,12 @@ const styles = StyleSheet.create({
   },
   result: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   resultCopy: {
-    flex: 1
+    flex: 1,
+    minWidth: 120
   },
   name: text.h3,
   muted: text.muted

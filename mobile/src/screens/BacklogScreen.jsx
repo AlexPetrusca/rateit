@@ -40,8 +40,8 @@ const BacklogScreen = ({ navigation }) => {
       {backlogData.sections.map((section) => (
         <Card key={section.priority}>
           <Text style={styles.sectionTitle}>{section.priority}</Text>
-          {section.items.map((item) => (
-            <Text key={item} style={styles.item}>• {item}</Text>
+          {section.items.map((item, index) => (
+            <Text key={`${section.priority}:${index}`} style={styles.item}>• {item}</Text>
           ))}
         </Card>
       ))}

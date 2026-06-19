@@ -7,7 +7,7 @@ const palette = {
     color: colors.danger
   },
   warning: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: 'rgba(255, 176, 32, 0.14)',
     color: colors.warning
   },
   info: {

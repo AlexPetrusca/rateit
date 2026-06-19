@@ -1,22 +1,23 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { colors, spacing, text } from '../theme.js';
 
 const Screen = ({
-  title,
   subtitle,
   children,
   actions,
   scroll = true,
   contentStyle,
-  headerStyle
+  headerStyle,
+  safeTop = false
 }) => {
+  const { width } = useWindowDimensions();
+  const compact = width < 375;
   const content = (
-    <View style={[styles.content, contentStyle]}>
-      {(title || subtitle || actions) && (
+    <View style={[styles.content, compact && styles.compactContent, contentStyle]}>
+      {(subtitle || actions) && (
         <View style={[styles.header, headerStyle]}>
           <View style={styles.headerText}>
-            {title ? <Text style={styles.title}>{title}</Text> : null}
             {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
           </View>
           {actions ? <View style={styles.actions}>{actions}</View> : null}
@@ -27,9 +28,16 @@ const Screen = ({
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={safeTop ? ['top', 'left', 'right', 'bottom'] : ['left', 'right', 'bottom']} style={styles.safeArea}>
       {scroll ? (
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
+        <ScrollView
+          automaticallyAdjustKeyboardInsets
+          contentInsetAdjustmentBehavior="automatic"
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scroll}
+        >
           {content}
         </ScrollView>
       ) : content}
@@ -48,12 +56,16 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     width: '100%',
-    maxWidth: 760,
+    maxWidth: 640,
     alignSelf: 'center',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: 112,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
     gap: spacing.lg
+  },
+  compactContent: {
+    paddingHorizontal: spacing.md,
+    gap: spacing.md
   },
   header: {
     gap: spacing.md
@@ -61,7 +73,6 @@ const styles = StyleSheet.create({
   headerText: {
     gap: spacing.xs
   },
-  title: text.h1,
   subtitle: text.muted,
   actions: {
     flexDirection: 'row',

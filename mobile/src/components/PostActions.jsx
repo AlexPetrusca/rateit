@@ -1,5 +1,6 @@
 import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, spacing } from '../theme.js';
+import HandDrawnIcon from './HandDrawnIcon.jsx';
 
 const ActionButton = ({ icon, label, count, onPress, active = false, showCount = true }) => {
   if (!onPress) {
@@ -17,7 +18,7 @@ const ActionButton = ({ icon, label, count, onPress, active = false, showCount =
         pressed && styles.pressed
       ]}
     >
-      <Text style={[styles.icon, active && styles.activeText]}>{icon}</Text>
+      <HandDrawnIcon name={icon} color={active ? colors.accent : colors.textMuted} />
       {showCount ? <Text style={[styles.count, active && styles.activeText]}>{count || 0}</Text> : null}
     </Pressable>
   );
@@ -45,12 +46,12 @@ const PostActions = ({
 
   return (
     <View style={styles.container}>
-      <ActionButton icon={liked ? '♥' : '♡'} label={liked ? 'Unlike' : 'Like'} count={likeCount} onPress={onLike} active={liked} />
-      <ActionButton icon="↻" label="Re-rate" onPress={onRerate} showCount={false} />
-      <ActionButton icon="◌" label={commentLabel} count={commentCount} onPress={onComment} showCount={showCommentCount} />
-      <ActionButton icon="↪" label={replyLabel} onPress={onReply} showCount={false} />
-      <ActionButton icon="⇧" label="Share" onPress={shareUrl ? handleShare : undefined} showCount={false} />
-      <ActionButton icon="✎" label="Edit" onPress={onEdit} showCount={false} />
+      <ActionButton icon={liked ? 'fullHeart' : 'emptyHeart'} label={liked ? 'Unlike' : 'Like'} count={likeCount} onPress={onLike} active={liked} />
+      <ActionButton icon="cycle" label="Re-rate" onPress={onRerate} showCount={false} />
+      <ActionButton icon="chatBubble" label={commentLabel} count={commentCount} onPress={onComment} showCount={showCommentCount} />
+      <ActionButton icon="reply" label={replyLabel} onPress={onReply} showCount={false} />
+      <ActionButton icon="share" label="Share" onPress={shareUrl ? handleShare : undefined} showCount={false} />
+      <ActionButton icon="pencil" label="Edit" onPress={onEdit} showCount={false} />
     </View>
   );
 };
@@ -63,8 +64,8 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   action: {
-    minHeight: 34,
-    minWidth: 40,
+    minHeight: 44,
+    minWidth: 44,
     paddingHorizontal: spacing.sm,
     borderRadius: radius.pill,
     flexDirection: 'row',
@@ -77,11 +78,6 @@ const styles = StyleSheet.create({
   },
   active: {
     backgroundColor: colors.accentSoft
-  },
-  icon: {
-    color: colors.textMuted,
-    fontSize: 20,
-    fontWeight: '800'
   },
   count: {
     color: colors.textMuted,

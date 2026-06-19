@@ -124,7 +124,7 @@ const LoginScreen = () => {
   };
 
   return (
-    <Screen scroll contentStyle={styles.screen}>
+    <Screen safeTop scroll contentStyle={styles.screen}>
       <View style={styles.brand}>
         <Text style={styles.brandText}>EVERYONES</Text>
         <Text style={[styles.brandText, styles.brandAccent]}>A CRITIC</Text>
@@ -186,10 +186,10 @@ const styles = StyleSheet.create({
     gap: spacing.xs
   },
   brandText: {
-    fontSize: 46,
-    lineHeight: 48,
+    fontSize: 42,
+    lineHeight: 44,
     fontWeight: '900',
-    letterSpacing: 0,
+    letterSpacing: -1.5,
     color: colors.text
   },
   brandAccent: {

@@ -43,12 +43,12 @@ const styles = StyleSheet.create({
   fallback: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    backgroundColor: '#cfd9de'
+    backgroundColor: colors.accentSoft
   },
   initials: {
-    color: '#0f1419',
+    color: colors.accent,
     fontWeight: '800'
   }
 });

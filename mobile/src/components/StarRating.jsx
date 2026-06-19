@@ -1,7 +1,7 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, spacing } from '../theme.js';
-
-const stepValues = Array.from({ length: 10 }, (_, index) => (index + 1) / 2);
+import { colors } from '../theme.js';
+import { MAX_RATING_SCORE, MIN_RATING_SCORE, RATING_SCORE_STEP, ratingForPosition } from '../utils/ratingDisplay.js';
 
 const fillFor = (value, index) => {
   const fill = value - (index - 1);
@@ -32,23 +32,36 @@ const StarRating = ({
 }) => {
   const fontSize = size === 'lg' ? 34 : size === 'sm' ? 17 : 24;
   const roundedValue = Number(value) || 0;
+  const [controlWidth, setControlWidth] = useState(0);
 
   if (interactive) {
+    const updateFromTouch = ({ nativeEvent }) => {
+      onChange?.(ratingForPosition(nativeEvent.locationX, controlWidth));
+    };
+
+    const adjust = (direction) => {
+      const next = roundedValue + direction * RATING_SCORE_STEP;
+      onChange?.(Math.min(MAX_RATING_SCORE, Math.max(MIN_RATING_SCORE, next)));
+    };
+
     return (
-      <View accessibilityLabel={label} style={styles.interactive}>
-        {stepValues.map((score) => (
-          <Pressable
-            accessibilityRole="button"
-            key={score}
-            onPress={() => onChange?.(score)}
-            style={styles.hit}
-          >
-            <Text style={[styles.star, { fontSize, color: score <= roundedValue ? colors.star : colors.borderStrong }]}>
-              {score % 1 === 0 ? '★' : '·'}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <Pressable
+        accessibilityRole="adjustable"
+        accessibilityLabel={label || 'Rating'}
+        accessibilityValue={{ min: MIN_RATING_SCORE, max: MAX_RATING_SCORE, now: roundedValue, text: `${roundedValue} out of 5` }}
+        accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+        onAccessibilityAction={({ nativeEvent }) => adjust(nativeEvent.actionName === 'increment' ? 1 : -1)}
+        onLayout={({ nativeEvent }) => setControlWidth(nativeEvent.layout.width)}
+        onPress={updateFromTouch}
+        onTouchMove={updateFromTouch}
+        style={styles.interactive}
+      >
+        <View pointerEvents="none" style={styles.display}>
+          {[1, 2, 3, 4, 5].map((index) => (
+            <DisplayStar key={index} fill={fillFor(roundedValue, index)} fontSize={fontSize} />
+          ))}
+        </View>
+      </Pressable>
     );
   }
 
@@ -67,16 +80,11 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   interactive: {
-    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    paddingVertical: 4,
     alignItems: 'center',
-    flexWrap: 'wrap'
-  },
-  hit: {
-    minWidth: 20,
-    minHeight: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.xs
+    justifyContent: 'center'
   },
   star: {
     color: colors.star,

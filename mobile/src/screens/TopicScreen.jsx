@@ -11,6 +11,7 @@ import { useRatingInteractions } from '../hooks/useRatingInteractions.js';
 import { useResolvedImageUrl } from '../hooks/useResolvedImageUrl.js';
 import BackendApiService from '../services/BackendApiService.js';
 import { colors, spacing, text } from '../theme.js';
+import { mergeUniqueBy } from '../utils/lists.js';
 
 const PAGE_SIZE = 20;
 const TOPIC_PHOTO_CARD_PEEK = 100;
@@ -55,7 +56,7 @@ const TopicScreen = ({ navigation, route }) => {
         BackendApiService.getTopicRatings({ rateableItemId, page: 0, size: PAGE_SIZE })
       ]);
       setTopic(topicData);
-      setItems(ratings);
+      setItems(mergeUniqueBy([], ratings, (item) => item.ratingId));
     } catch (error) {
       notify({ message: error.message || 'Failed to load topic', type: 'error' });
     } finally {
@@ -86,12 +87,12 @@ const TopicScreen = ({ navigation, route }) => {
   const displayedItems = useMemo(() => [...items].reverse(), [items]);
   const ratingCount = topic?.ratingCount ?? items.length;
   const listTopPadding = Math.max(420, viewportHeight - TOPIC_PHOTO_CARD_PEEK);
-  const feedWidth = Math.min(360, Math.max(280, viewportWidth - 80));
+  const feedWidth = Math.min(420, Math.max(280, viewportWidth - 24));
   const topicTitleSize = useMemo(() => {
     const titleLength = topicTitle.trim().length;
 
     if (titleLength <= 12) {
-      return 46;
+      return viewportWidth < 375 ? 40 : 46;
     }
 
     if (titleLength <= 24) {
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
   },
   topicShell: {
     flex: 1,
-    backgroundColor: '#090d16',
+    backgroundColor: colors.background,
     position: 'relative',
     overflow: 'hidden'
   },
@@ -246,7 +247,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingHorizontal: spacing.xl,
     paddingBottom: TOPIC_PHOTO_CARD_PEEK + 18,
-    backgroundColor: '#090d16'
+    backgroundColor: colors.background
   },
   topicHeroNoPhoto: {
     backgroundColor: '#000000'
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
   },
   noPhotoGlow: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#090d16',
+    backgroundColor: '#3a0a0f',
     opacity: 0.55
   },
   topicHeroOverlay: {
@@ -297,14 +298,14 @@ const styles = StyleSheet.create({
     fontWeight: '800'
   },
   topicList: {
-    paddingBottom: 112,
+    paddingBottom: spacing.xxl,
     alignItems: 'center'
   },
   feedStatus: {
     marginBottom: 6,
     padding: spacing.lg,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     shadowColor: '#000',

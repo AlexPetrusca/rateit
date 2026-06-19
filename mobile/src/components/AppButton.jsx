@@ -26,7 +26,7 @@ const variants = {
 
 const AppButton = ({
   label,
-  children,
+  icon,
   onPress,
   disabled = false,
   loading = false,
@@ -39,6 +39,9 @@ const AppButton = ({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
+      android_ripple={{ color: variant === 'primary' ? 'rgba(255,255,255,0.18)' : colors.accentSoft }}
       disabled={disabled || loading}
       onPress={onPress}
       style={({ pressed }) => [
@@ -46,16 +49,19 @@ const AppButton = ({
         {
           backgroundColor: variantStyle.backgroundColor,
           borderColor: variantStyle.borderColor,
-          opacity: disabled ? 0.55 : pressed ? 0.78 : 1
+          opacity: disabled ? 0.45 : 1,
+          transform: [{ scale: pressed ? 0.98 : 1 }]
         },
         style
       ]}
     >
       {loading ? (
         <ActivityIndicator color={variantStyle.color} />
+      ) : icon ? (
+        icon
       ) : (
         <Text style={[styles.text, { color: variantStyle.color }, textStyle]}>
-          {children || label}
+          {label}
         </Text>
       )}
     </Pressable>
@@ -64,17 +70,19 @@ const AppButton = ({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 44,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: 1,
-    borderRadius: radius.sm,
+    minHeight: 50,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 13,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center'
   },
   text: {
-    fontSize: 15,
-    fontWeight: '700'
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '700',
+    letterSpacing: -0.1
   }
 });
 

@@ -4,6 +4,14 @@ export const MIN_RATING_SCORE = 0.5;
 export const MAX_RATING_SCORE = 5;
 export const RATING_SCORE_STEP = 0.5;
 
+export const ratingForPosition = (position, width) => {
+  if (!Number.isFinite(position) || !Number.isFinite(width) || width <= 0) {
+    return MIN_RATING_SCORE;
+  }
+
+  return Math.min(MAX_RATING_SCORE, Math.max(MIN_RATING_SCORE, Math.ceil((position / width) * 10) / 2));
+};
+
 export const formatScoreValue = (scoreValue, ratingScale = FIVE_STAR_SCALE) => {
   const score = Number(scoreValue);
   const max = Number(ratingScale?.max);

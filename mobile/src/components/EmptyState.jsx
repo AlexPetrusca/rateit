@@ -10,7 +10,8 @@ const EmptyState = ({ title = 'Nothing here yet.', message }) => (
 
 const styles = StyleSheet.create({
   container: {
-    padding: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 48,
     alignItems: 'center',
     gap: spacing.sm,
     backgroundColor: colors.background

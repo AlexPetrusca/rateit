@@ -1,4 +1,4 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import RichText from './RichText.jsx';
 import StarRating from './StarRating.jsx';
 import UserAvatar from './UserAvatar.jsx';
@@ -19,6 +19,9 @@ const PostCard = ({
   compact = false,
   style
 }) => {
+  const { width } = useWindowDimensions();
+  const isCompact = compact || width < 375;
+
   if (!post) {
     return null;
   }
@@ -28,7 +31,7 @@ const PostCard = ({
   const mediaUrl = useResolvedImageUrl(!isDeleted ? post.rateableItem?.mediaObjectKey : null);
 
   return (
-    <View style={[styles.card, compact && styles.compact, style]}>
+    <View style={[styles.card, isCompact && styles.compact, style]}>
       <View style={styles.main}>
         <View style={styles.meta}>
           <Pressable
@@ -36,15 +39,15 @@ const PostCard = ({
             onPress={() => onAuthorPress?.(post.author.userId)}
             style={styles.avatarButton}
           >
-            <UserAvatar username={post.author?.username} profilePicUrl={post.author?.profilePicUrl} size={compact ? 'sm' : 'md'} />
+            <UserAvatar username={post.author?.username} profilePicUrl={post.author?.profilePicUrl} size={isCompact ? 'sm' : 'md'} />
           </Pressable>
           <Pressable
             disabled={!post.author?.userId || !onAuthorPress}
             onPress={() => onAuthorPress?.(post.author.userId)}
             style={styles.authorText}
           >
-            <Text style={styles.name}>{post.author?.username || 'Someone'}</Text>
-            <Text style={styles.handle}>@{post.author?.username || 'unknown'}</Text>
+            <Text numberOfLines={1} style={styles.name}>{post.author?.username || 'Someone'}</Text>
+            <Text numberOfLines={1} style={styles.handle}>@{post.author?.username || 'unknown'}</Text>
           </Pressable>
           <Text style={styles.dot}>·</Text>
           {post.createdAt ? <Text style={styles.time}>{formatShortTimestamp(post.createdAt)}</Text> : null}
@@ -83,10 +86,10 @@ const PostCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    padding: spacing.md,
-    borderWidth: 1,
+    padding: spacing.lg,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    borderRadius: 8,
+    borderRadius: 20,
     backgroundColor: colors.surface,
     gap: spacing.md
   },
@@ -109,14 +112,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 6,
     alignItems: 'center',
-    flexShrink: 1
+    flex: 1,
+    minWidth: 0
   },
   name: {
     fontWeight: '800',
-    color: colors.text
+    color: colors.text,
+    flexShrink: 1
   },
   handle: {
-    color: colors.textMuted
+    color: colors.textMuted,
+    flexShrink: 2
   },
   time: {
     color: colors.textSubtle
@@ -126,8 +132,8 @@ const styles = StyleSheet.create({
   },
   media: {
     width: '100%',
-    height: 320,
-    borderRadius: 8,
+    aspectRatio: 4 / 3,
+    borderRadius: 14,
     backgroundColor: colors.surfaceMuted,
     marginBottom: spacing.sm
   },

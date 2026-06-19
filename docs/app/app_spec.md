@@ -61,10 +61,12 @@ Use the shared components below before creating new copies:
 
 ## Mobile Layout
 
-- The React Native app uses native stack navigation and a menu screen instead of the browser top bar.
+- The React Native app targets iOS and Android only and uses platform-native bottom tabs for Home, Following, Create, Search, and Profile, plus native stack headers and back gestures for detail screens.
+- On iOS 26 builds compiled with Xcode 26 or newer, the system tab bar adopts Liquid Glass automatically; Android uses its native bottom navigation view and interaction treatment.
+- The mobile visual system keeps Critic's near-black and red identity while using platform-sized controls, 44pt minimum action targets, safe-area-aware scrolling, and compact gutters below 375px.
 - Native screens should preserve the same functional contracts as the web pages even when the layout differs.
-- At phone widths, the top navigation stays compact by moving secondary destinations into the hamburger menu and keeping only the core actions visible.
-- Feed cards reduce avatar and gutter sizes, use short post dates, and allow action controls to wrap without creating horizontal page overflow.
+- Secondary destinations remain in the profile settings menu so the native tab bar stays at five items.
+- Feed cards reduce avatar and gutter sizes, use responsive media ratios and short dates, and allow action controls to wrap without creating horizontal overflow.
 - Search forms, profile headers, and composer actions stack vertically when their desktop layout no longer fits.
 
 ## Rating Rules
@@ -74,6 +76,7 @@ Use the shared components below before creating new copies:
 - New ratings accept half-star steps from `0.5` to `5`.
 - Feed, comment, and profile surfaces use the smaller picker.
 - On mobile, the interactive star picker supports sliding your finger across the control to set the score.
+- The mobile star picker is one native adjustable control with tap, drag, and VoiceOver/TalkBack half-step input.
 - Image posts and text posts should share the same rating presentation.
 - Review text should keep the same indented treatment across post types.
 - Re-rating an item creates a new rating row and does not block users who have already rated that item.

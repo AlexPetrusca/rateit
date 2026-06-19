@@ -63,10 +63,12 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   copy: {
-    flex: 1
+    flex: 1,
+    minWidth: 120
   },
   name: text.h3,
   muted: text.muted

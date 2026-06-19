@@ -118,7 +118,7 @@ const AdminJobsScreen = () => {
 
 const styles = StyleSheet.create({
   list: { gap: spacing.md, paddingBottom: spacing.xxl },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md },
   copy: { flex: 1 },
   title: text.h3,
   muted: text.muted,

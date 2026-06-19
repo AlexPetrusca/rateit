@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { colors, radius, spacing } from '../theme.js';
 
 const Card = ({ children, style }) => (
@@ -9,12 +9,21 @@ const Card = ({ children, style }) => (
 
 const styles = StyleSheet.create({
   card: {
-    padding: spacing.md,
-    borderWidth: 1,
+    padding: spacing.lg,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     backgroundColor: colors.surface,
-    gap: spacing.md
+    gap: spacing.md,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOpacity: 0.22,
+        shadowRadius: 18,
+        shadowOffset: { width: 0, height: 8 }
+      },
+      android: { elevation: 2 }
+    })
   }
 });
 

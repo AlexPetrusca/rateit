@@ -1,6 +1,7 @@
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 import EmptyState from './EmptyState.jsx';
 import { colors, spacing, text } from '../theme.js';
+import { isNearListEnd } from '../utils/lists.js';
 
 const FeedList = ({
   items,
@@ -37,7 +38,17 @@ const FeedList = ({
       refreshing={refreshing}
       onRefresh={onRefresh}
       onEndReached={onEndReached}
-      onEndReachedThreshold={0.4}
+      onEndReachedThreshold={0.8}
+      onScroll={({ nativeEvent }) => {
+        if (onEndReached && isNearListEnd({
+          visibleLength: nativeEvent.layoutMeasurement.height,
+          offset: nativeEvent.contentOffset.y,
+          contentLength: nativeEvent.contentSize.height
+        })) {
+          onEndReached();
+        }
+      }}
+      scrollEventThrottle={200}
       ListHeaderComponent={ListHeaderComponent}
       ListEmptyComponent={<EmptyState title={emptyTitle} message={emptyMessage} />}
       ListFooterComponent={(
@@ -53,7 +64,7 @@ const FeedList = ({
 
 const styles = StyleSheet.create({
   list: {
-    paddingBottom: 112,
+    paddingBottom: spacing.xl,
     flexGrow: 1
   },
   separator: {

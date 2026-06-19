@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import AppButton from '../components/AppButton.jsx';
 import Card from '../components/Card.jsx';
+import HandDrawnIcon from '../components/HandDrawnIcon.jsx';
 import FeedList from '../components/FeedList.jsx';
 import RatingFeedItem from '../components/RatingFeedItem.jsx';
 import Screen from '../components/Screen.jsx';
@@ -11,10 +12,12 @@ import { useNotifications } from '../contexts/NotificationContext.jsx';
 import { useRatingInteractions } from '../hooks/useRatingInteractions.js';
 import BackendApiService from '../services/BackendApiService.js';
 import { colors, spacing, text } from '../theme.js';
+import { mergeUniqueBy } from '../utils/lists.js';
 
 const PAGE_SIZE = 5;
 
 const ProfileScreen = ({ navigation, route }) => {
+  const { width } = useWindowDimensions();
   const { user } = useAuth();
   const { notify } = useNotifications();
   const currentUserId = user?.userId ?? user?.id;
@@ -25,6 +28,7 @@ const ProfileScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const loadingMoreRef = useRef(false);
 
   const isOwnProfile = useMemo(() => profileUserId != null && currentUserId === profileUserId, [profileUserId, currentUserId]);
 
@@ -44,7 +48,7 @@ const ProfileScreen = ({ navigation, route }) => {
         BackendApiService.getUserPosts({ userId: profileUserId, page: 0, size: PAGE_SIZE })
       ]);
       setProfile(nextProfile);
-      setPosts(postPage.content || []);
+      setPosts(mergeUniqueBy([], postPage.content || [], (item) => item.ratingId));
       setPage(0);
       setHasMore(((postPage.number || 0) + 1) * (postPage.size || PAGE_SIZE) < (postPage.totalElements || 0));
     } catch (error) {
@@ -59,19 +63,21 @@ const ProfileScreen = ({ navigation, route }) => {
   }, [loadProfile]);
 
   const loadMore = async () => {
-    if (loadingMore || !hasMore || profileUserId == null) {
+    if (loadingMoreRef.current || !hasMore || profileUserId == null) {
       return;
     }
+    loadingMoreRef.current = true;
     setLoadingMore(true);
     try {
       const nextPage = page + 1;
       const postPage = await BackendApiService.getUserPosts({ userId: profileUserId, page: nextPage, size: PAGE_SIZE });
-      setPosts((current) => [...current, ...(postPage.content || [])]);
+      setPosts((current) => mergeUniqueBy(current, postPage.content || [], (item) => item.ratingId));
       setPage(nextPage);
       setHasMore(((postPage.number || nextPage) + 1) * (postPage.size || PAGE_SIZE) < (postPage.totalElements || 0));
     } catch (error) {
       notify({ message: error.message || 'Failed to load posts', type: 'error' });
     } finally {
+      loadingMoreRef.current = false;
       setLoadingMore(false);
     }
   };
@@ -89,18 +95,18 @@ const ProfileScreen = ({ navigation, route }) => {
 
   const header = profile ? (
     <Card style={styles.profileCard}>
-      <UserAvatar username={profile.username} profilePicUrl={profile.profilePicUrl} size="xl" />
+      <UserAvatar username={profile.username} profilePicUrl={profile.profilePicUrl} size={width < 375 ? 'lg' : 'xl'} />
       <View style={styles.profileCopy}>
         <View style={styles.nameRow}>
           <Text style={styles.name}>{profile.username}</Text>
           {isOwnProfile ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Edit profile"
-              onPress={() => navigation.navigate('ProfileEditor')}
+              accessibilityLabel="Open settings"
+              onPress={() => navigation.navigate('Menu')}
               style={({ pressed }) => [styles.settingsButton, pressed && styles.settingsButtonPressed]}
             >
-              <Text style={styles.settingsIcon}>⚙</Text>
+              <HandDrawnIcon name="gear" color={colors.textMuted} />
             </Pressable>
           ) : null}
         </View>
@@ -129,6 +135,7 @@ const ProfileScreen = ({ navigation, route }) => {
         loading={loading}
         loadingMore={loadingMore}
         onEndReached={loadMore}
+        ListFooterExtra={hasMore ? <AppButton variant="ghost" label="Load more" onPress={loadMore} loading={loadingMore} /> : null}
         onRefresh={loadProfile}
         endMessage={hasMore ? '' : 'No more posts to show.'}
         emptyTitle="No posts to show."
@@ -158,11 +165,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 20,
-    padding: 20,
+    gap: spacing.lg,
+    padding: spacing.lg,
     backgroundColor: colors.surface,
     borderColor: colors.border,
-    borderRadius: 8
+    borderRadius: 20
   },
   profileCopy: {
     flex: 1,
@@ -198,19 +205,14 @@ const styles = StyleSheet.create({
     color: colors.textMuted
   },
   settingsButton: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 18
+    borderRadius: 22
   },
   settingsButtonPressed: {
     backgroundColor: colors.surfacePressed
-  },
-  settingsIcon: {
-    color: colors.textMuted,
-    fontSize: 21,
-    fontWeight: '800'
   }
 });
 

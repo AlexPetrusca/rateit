@@ -6,13 +6,15 @@ React Native + Expo app for Critic. Root repo instructions still apply.
 
 - `npm install`
 - `EXPO_PUBLIC_API_BASE_URL=http://localhost:8080 npm start`
+- Android emulator: `EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:8080 npm run android`
 - `npm run ios`
 - `npm run android`
-- `npm run web`
 - `npx expo install --check`
 - `npx expo export --platform android --output-dir dist-check`
 
 The Expo dev server is pinned to port `3002` in package scripts.
+
+The app targets iOS and Android only. Its native bottom-tab navigator is not available on web.
 
 Use a backend URL reachable from the simulator or device. A physical phone usually needs the host machine LAN address instead of `localhost`.
 

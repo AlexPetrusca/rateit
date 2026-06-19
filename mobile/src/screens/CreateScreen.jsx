@@ -4,6 +4,7 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 import AppButton from '../components/AppButton.jsx';
 import AppTextInput from '../components/AppTextInput.jsx';
 import Card from '../components/Card.jsx';
+import HandDrawnIcon from '../components/HandDrawnIcon.jsx';
 import RichText from '../components/RichText.jsx';
 import Screen from '../components/Screen.jsx';
 import StarRating from '../components/StarRating.jsx';
@@ -126,10 +127,10 @@ const CreateScreen = ({ navigation, route }) => {
           <AppButton variant="ghost" label="Drafts" onPress={() => navigation.navigate('Drafts')} />
         </View>
         <View style={styles.iconRow}>
-          <AppButton variant="secondary" label="⌕" onPress={() => pickImage(true)} style={styles.iconButton} textStyle={styles.iconText} />
-          <AppButton variant="secondary" label="⇧" onPress={() => pickImage(false)} style={styles.iconButton} textStyle={styles.iconText} />
+          <AppButton variant="secondary" label="Take photo" icon={<HandDrawnIcon name="camera" color={colors.text} />} onPress={() => pickImage(true)} style={styles.iconButton} />
+          <AppButton variant="secondary" label="Upload photo" icon={<HandDrawnIcon name="upload" color={colors.text} />} onPress={() => pickImage(false)} style={styles.iconButton} />
           {selectedFile ? (
-            <AppButton variant="secondary" label="×" onPress={() => setSelectedFile(null)} style={styles.iconButton} textStyle={styles.iconText} />
+            <AppButton variant="secondary" label="Remove photo" icon={<HandDrawnIcon name="x" color={colors.text} />} onPress={() => setSelectedFile(null)} style={styles.iconButton} />
           ) : null}
         </View>
         {selectedFile ? (
@@ -162,9 +163,9 @@ const CreateScreen = ({ navigation, route }) => {
           {reviewText.trim() ? <RichText style={styles.previewReview}>{reviewText.trim()}</RichText> : null}
         </View>
         <View style={styles.actionRow}>
-          <AppButton variant="secondary" label="←" onPress={() => navigation.goBack()} style={styles.composerButton} textStyle={styles.iconText} />
-          <AppButton variant="secondary" label="▱" onPress={saveDraft} loading={saving} style={styles.composerButton} textStyle={styles.iconText} />
-          <AppButton label="✓" onPress={submit} loading={saving} style={styles.composerButton} textStyle={styles.iconText} />
+          <AppButton variant="secondary" label="Back" icon={<HandDrawnIcon name="back" color={colors.text} />} onPress={() => navigation.goBack()} style={styles.composerButton} />
+          <AppButton variant="secondary" label="Save draft" icon={<HandDrawnIcon name="draft" color={colors.text} />} onPress={saveDraft} loading={saving} style={styles.composerButton} />
+          <AppButton label="Submit" icon={<HandDrawnIcon name="check" color="#ffffff" />} onPress={submit} loading={saving} style={styles.composerButton} />
         </View>
       </Card>
     </Screen>
@@ -182,22 +183,19 @@ const styles = StyleSheet.create({
   },
   iconRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md
   },
   iconButton: {
     width: 72,
     height: 72,
-    borderRadius: 6,
+    borderRadius: 20,
     paddingHorizontal: 0
-  },
-  iconText: {
-    fontSize: 24,
-    color: colors.text
   },
   preview: {
     width: '100%',
-    height: 240,
-    borderRadius: 8
+    aspectRatio: 4 / 3,
+    borderRadius: 16
   },
   scoreHeader: {
     flexDirection: 'row',
@@ -214,9 +212,9 @@ const styles = StyleSheet.create({
   },
   previewMeta: {
     padding: spacing.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    borderRadius: 8,
+    borderRadius: 16,
     backgroundColor: colors.surfaceSoft,
     gap: spacing.sm
   },
@@ -229,6 +227,7 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'flex-end',
     gap: spacing.md
   },

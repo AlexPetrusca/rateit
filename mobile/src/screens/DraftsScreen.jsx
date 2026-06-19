@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import AppButton from '../components/AppButton.jsx';
 import Card from '../components/Card.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import HandDrawnIcon from '../components/HandDrawnIcon.jsx';
 import Screen from '../components/Screen.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import BackendApiService from '../services/BackendApiService.js';
@@ -59,11 +60,11 @@ const DraftsScreen = ({ navigation }) => {
               </View>
               <AppButton
                 variant="ghost"
-                label="×"
+                label="Delete draft"
+                icon={<HandDrawnIcon name="x" color={colors.text} />}
                 loading={deletingId === item.id}
                 onPress={() => deleteDraft(item.id)}
                 style={styles.deleteButton}
-                textStyle={styles.deleteText}
               />
             </Card>
           </Pressable>
@@ -76,7 +77,7 @@ const DraftsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   list: {
     gap: spacing.md,
-    paddingBottom: 112
+    paddingBottom: spacing.xl
   },
   item: {
     flexDirection: 'row',
@@ -93,10 +94,6 @@ const styles = StyleSheet.create({
     width: 44,
     minWidth: 44,
     paddingHorizontal: 0
-  },
-  deleteText: {
-    fontSize: 24,
-    color: colors.text
   }
 });
 

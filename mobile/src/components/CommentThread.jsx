@@ -57,7 +57,7 @@ const CommentThread = ({
       const canEdit = Boolean(onEditPress) && currentUserId != null && comment.author?.userId === currentUserId;
 
       return (
-        <View key={comment.id} style={[styles.comment, depth > 1 && { marginLeft: Math.min(36, (depth - 1) * 10) }]}>
+        <View key={comment.id} style={[styles.comment, depth > 1 && { marginLeft: Math.min(24, (depth - 1) * 6) }]}>
           <View style={styles.row}>
             <UserAvatar username={comment.author?.username} profilePicUrl={comment.author?.profilePicUrl} size="sm" />
             <View style={styles.body}>
@@ -132,9 +132,9 @@ const styles = StyleSheet.create({
   },
   text: text.body,
   replies: {
-    marginLeft: 18,
+    marginLeft: spacing.xs,
     paddingLeft: spacing.sm,
-    borderLeftWidth: 2,
+    borderLeftWidth: StyleSheet.hairlineWidth,
     borderLeftColor: colors.border
   }
 });

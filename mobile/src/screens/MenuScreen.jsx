@@ -13,10 +13,11 @@ const MenuScreen = ({ navigation }) => {
     <Screen title="Menu" subtitle={user?.username ? `@${user.username}` : undefined}>
       <Card>
         <UserAvatar username={user?.username} profilePicUrl={user?.profilePicUrl} size="xl" />
-        <AppButton variant="secondary" label="Home" onPress={() => navigation.navigate('Home')} />
-        <AppButton variant="secondary" label="Create" onPress={() => navigation.navigate('Create')} />
-        <AppButton variant="secondary" label="Search users" onPress={() => navigation.navigate('SearchUsers')} />
-        <AppButton variant="secondary" label="Profile" onPress={() => navigation.navigate('Profile', { userId: currentUserId })} />
+        <AppButton label="Edit profile photo" onPress={() => navigation.navigate('ProfileEditor')} />
+        <AppButton variant="secondary" label="Home" onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} />
+        <AppButton variant="secondary" label="Create" onPress={() => navigation.navigate('MainTabs', { screen: 'Create' })} />
+        <AppButton variant="secondary" label="Search users" onPress={() => navigation.navigate('MainTabs', { screen: 'Search' })} />
+        <AppButton variant="secondary" label="Profile" onPress={() => navigation.navigate('MainTabs', { screen: 'Me', params: { userId: currentUserId } })} />
         <AppButton variant="secondary" label="Backlog" onPress={() => navigation.navigate('Backlog')} />
         <AppButton variant="secondary" label="Install" onPress={() => navigation.navigate('InstallInfo')} />
         {isAdmin ? <AppButton variant="secondary" label="Admin" onPress={() => navigation.navigate('AdminHome')} /> : null}
