@@ -128,5 +128,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Mobile navigation, post actions, create/draft controls, and profile settings now use the hand-drawn icon set at a consistent 24px size.
 - Mobile is now native-first on Expo 56, with iOS/Android system tab bars, native stack headers and gestures, iOS 26 Liquid Glass support, 44pt controls, responsive cards, and compact layouts for phones below 375px.
 - The Expo app now also builds for mobile web, using shared screens and JavaScript bottom tabs while preserving native tabs on iOS and Android.
+- The Expo login now mirrors the frontend animated wordmark, country picker, formatted phone, OTP, and inline profile-setup flow across native and mobile web.
+- The Expo profile now mirrors the frontend profile banner and posts summary, with follower/following navigation, follow controls, settings, and direct sign out.
 - Mobile home and profile feeds now paginate through native end detection plus measured scroll proximity, with a visible load-more fallback and duplicate-page protection.
 - Mobile image topics render as full-screen image, metadata, and review layers; reviews own the entire scroll surface while native blur is applied behind them.

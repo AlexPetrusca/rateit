@@ -18,15 +18,17 @@ const PAGE_SIZE = 5;
 
 const ProfileScreen = ({ navigation, route }) => {
   const { width } = useWindowDimensions();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { notify } = useNotifications();
   const currentUserId = user?.userId ?? user?.id;
   const profileUserId = route.params?.userId ?? currentUserId;
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(0);
+  const [postCount, setPostCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const loadingMoreRef = useRef(false);
 
@@ -50,6 +52,7 @@ const ProfileScreen = ({ navigation, route }) => {
       setProfile(nextProfile);
       setPosts(mergeUniqueBy([], postPage.content || [], (item) => item.ratingId));
       setPage(0);
+      setPostCount(postPage.totalElements || 0);
       setHasMore(((postPage.number || 0) + 1) * (postPage.size || PAGE_SIZE) < (postPage.totalElements || 0));
     } catch (error) {
       notify({ message: error.message || 'Failed to load profile', type: 'error' });
@@ -73,6 +76,7 @@ const ProfileScreen = ({ navigation, route }) => {
       const postPage = await BackendApiService.getUserPosts({ userId: profileUserId, page: nextPage, size: PAGE_SIZE });
       setPosts((current) => mergeUniqueBy(current, postPage.content || [], (item) => item.ratingId));
       setPage(nextPage);
+      setPostCount(postPage.totalElements || 0);
       setHasMore(((postPage.number || nextPage) + 1) * (postPage.size || PAGE_SIZE) < (postPage.totalElements || 0));
     } catch (error) {
       notify({ message: error.message || 'Failed to load posts', type: 'error' });
@@ -86,46 +90,65 @@ const ProfileScreen = ({ navigation, route }) => {
     if (!profile || isOwnProfile) {
       return;
     }
-    const following = profile.followRelation === 'FOLLOWING';
-    const nextProfile = following
-      ? await BackendApiService.unfollowUser(profile.userId)
-      : await BackendApiService.followUser(profile.userId);
-    setProfile(nextProfile);
+    setFollowLoading(true);
+    try {
+      const following = profile.followRelation === 'FOLLOWING';
+      const nextProfile = following
+        ? await BackendApiService.unfollowUser(profile.userId)
+        : await BackendApiService.followUser(profile.userId);
+      setProfile(nextProfile);
+    } catch (error) {
+      notify({ message: error.message || 'Failed to update follow', type: 'error' });
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   const header = profile ? (
-    <Card style={styles.profileCard}>
-      <UserAvatar username={profile.username} profilePicUrl={profile.profilePicUrl} size={width < 375 ? 'lg' : 'xl'} />
-      <View style={styles.profileCopy}>
-        <View style={styles.nameRow}>
-          <Text style={styles.name}>{profile.username}</Text>
-          {isOwnProfile ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Open settings"
-              onPress={() => navigation.navigate('Menu')}
-              style={({ pressed }) => [styles.settingsButton, pressed && styles.settingsButtonPressed]}
-            >
-              <HandDrawnIcon name="gear" color={colors.textMuted} />
-            </Pressable>
-          ) : null}
-        </View>
-        <Text style={styles.handle}>@{profile.username}</Text>
-        <View style={styles.counts}>
-          <Pressable onPress={() => navigation.navigate('FollowList', { userId: profile.userId, type: 'following' })} style={styles.countButton}>
-            <Text style={styles.countStrong}>{profile.followingCount || 0}</Text>
-            <Text style={styles.countLabel}>Following</Text>
+    <View style={styles.profileHeader}>
+      <Card style={styles.profileCard}>
+        {isOwnProfile ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open settings"
+            onPress={() => navigation.navigate('Menu')}
+            style={({ pressed }) => [styles.settingsButton, pressed && styles.settingsButtonPressed]}
+          >
+            <HandDrawnIcon name="gear" color={colors.textMuted} />
           </Pressable>
-          <Pressable onPress={() => navigation.navigate('FollowList', { userId: profile.userId, type: 'followers' })} style={styles.countButton}>
-            <Text style={styles.countStrong}>{profile.followerCount || 0}</Text>
-            <Text style={styles.countLabel}>Followers</Text>
-          </Pressable>
-        </View>
-        {!isOwnProfile ? (
-          <AppButton label={profile.followRelation === 'FOLLOWING' ? 'Following' : 'Follow'} onPress={toggleFollow} />
         ) : null}
+        <UserAvatar username={profile.username} profilePicUrl={profile.profilePicUrl} size={width < 375 ? 'lg' : 'xl'} />
+        <View style={[styles.profileCopy, isOwnProfile && styles.profileCopyOwn]}>
+          <Text style={styles.name}>{profile.username}</Text>
+          <Text style={styles.handle}>@{profile.username}</Text>
+          <View style={styles.counts}>
+            <Pressable onPress={() => navigation.navigate('FollowList', { userId: profile.userId, type: 'following' })} style={styles.countButton}>
+              <Text style={styles.countStrong}>{profile.followingCount || 0}</Text>
+              <Text style={styles.countLabel}>Following</Text>
+            </Pressable>
+            <Pressable onPress={() => navigation.navigate('FollowList', { userId: profile.userId, type: 'followers' })} style={styles.countButton}>
+              <Text style={styles.countStrong}>{profile.followerCount || 0}</Text>
+              <Text style={styles.countLabel}>Followers</Text>
+            </Pressable>
+          </View>
+          {isOwnProfile ? (
+            <AppButton label="Sign out" variant="ghost" onPress={logout} style={styles.profileAction} />
+          ) : (
+            <AppButton
+              label={profile.followRelation === 'FOLLOWING' ? 'Following' : 'Follow'}
+              variant={profile.followRelation === 'FOLLOWING' ? 'secondary' : 'primary'}
+              onPress={toggleFollow}
+              loading={followLoading}
+              style={styles.profileAction}
+            />
+          )}
+        </View>
+      </Card>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Posts</Text>
+        <Text style={styles.sectionCount}>{postCount} total</Text>
       </View>
-    </Card>
+    </View>
   ) : null;
 
   return (
@@ -139,30 +162,31 @@ const ProfileScreen = ({ navigation, route }) => {
         onRefresh={loadProfile}
         endMessage={hasMore ? '' : 'No more posts to show.'}
         emptyTitle="No posts to show."
-        renderItem={({ item, index }) => (
-          <View>
-            {index === 0 ? header : null}
-            <RatingFeedItem
-              item={item}
-              currentUserId={currentUserId}
-              interactions={interactions}
-              refresh={loadProfile}
-              onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
-              onTopicPress={(rateableItemId) => navigation.navigate('Topic', { rateableItemId })}
-              onCardPress={(post) => navigation.navigate('Topic', { rateableItemId: post.rateableItem?.id })}
-              onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
-            />
-          </View>
+        renderItem={({ item }) => (
+          <RatingFeedItem
+            item={item}
+            currentUserId={currentUserId}
+            interactions={interactions}
+            refresh={loadProfile}
+            onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
+            onTopicPress={(rateableItemId) => navigation.navigate('Topic', { rateableItemId })}
+            onCardPress={(post) => navigation.navigate('Topic', { rateableItemId: post.rateableItem?.id })}
+            onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
+          />
         )}
-        ListHeaderComponent={posts.length === 0 ? header : null}
+        ListHeaderComponent={header}
       />
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
+  profileHeader: {
+    gap: spacing.sm,
+    marginBottom: spacing.md
+  },
   profileCard: {
-    marginBottom: spacing.md,
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.lg,
@@ -174,17 +198,14 @@ const styles = StyleSheet.create({
   profileCopy: {
     flex: 1,
     minWidth: 0,
-    gap: spacing.sm
+    gap: spacing.sm,
+    paddingTop: 2
   },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm
+  profileCopyOwn: {
+    paddingRight: 34
   },
   name: {
-    ...text.h2,
-    flexShrink: 1
+    ...text.h2
   },
   handle: text.muted,
   counts: {
@@ -205,6 +226,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted
   },
   settingsButton: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
     width: 44,
     height: 44,
     alignItems: 'center',
@@ -213,6 +237,25 @@ const styles = StyleSheet.create({
   },
   settingsButtonPressed: {
     backgroundColor: colors.surfacePressed
+  },
+  profileAction: {
+    alignSelf: 'flex-start',
+    minHeight: 40,
+    paddingVertical: 9,
+    paddingHorizontal: spacing.lg
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xs,
+    paddingTop: spacing.sm
+  },
+  sectionTitle: {
+    ...text.h3
+  },
+  sectionCount: {
+    ...text.muted
   }
 });
 

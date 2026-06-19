@@ -8,11 +8,6 @@ CONTEXT="docker-desktop"
 pkill -f "[k]ubectl port-forward .*svc/critic-" || true
 
 kubectl port-forward --context "$CONTEXT" -n "$NAMESPACE" svc/critic-backend 8081:80 &
-if lsof -nP -iTCP:8080 -sTCP:LISTEN >/dev/null; then
-    echo "Port 8080 is already in use; skipping critic-backend-local."
-else
-    kubectl port-forward --context "$CONTEXT" -n "$NAMESPACE" svc/critic-backend-local 8080:80 &
-fi
 kubectl port-forward --context "$CONTEXT" -n "$NAMESPACE" svc/critic-postgresql 5432:5432 &
 kubectl port-forward --context "$CONTEXT" -n "$NAMESPACE" svc/critic-minio 9000:9000 &
 kubectl port-forward --context "$CONTEXT" -n "$NAMESPACE" svc/critic-minio-console 9001:9001 &

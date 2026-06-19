@@ -87,11 +87,12 @@ Use the shared components below before creating new copies:
 ## User Behavior Rules
 
 - Unauthenticated users who land on `/` are sent directly to `/login` rather than seeing a guest home placeholder.
-- The login page uses a full-screen DM Sans `EVERYONES A CRITIC` background text treatment with the phone-number entry layered above it; the phone field has a clickable flag that opens a searchable country-code menu, completing a valid 10-digit number sends the OTP without a visible Send Code button, the verification-code field replaces the phone field in place, and verified users who still need a profile see an inline username and profile-picture setup form on the same page after the app has a brief chance to resolve the current session before entering the app.
+- The frontend and Expo login screens share the full-screen `EVERYONES A CRITIC` background treatment with smoothly eased, lightly staggered cycling rows and the phone-number entry layered above it; duplicate wordmark tracks keep row cycles continuous without a reset flash, motion stops when reduced motion is enabled, the phone field has a searchable country-code menu, completing a valid 10-digit number sends the OTP, the verification-code field replaces the phone field in place, and verified users who still need a profile see inline username and profile-picture setup after the app briefly retries current-session resolution.
 - `/create-account` now redirects into `/login` instead of acting as a standalone page.
 - Clicking an avatar or username should navigate to the user profile.
 - Clicking a post opens the shared topic page for that rated item.
 - User profiles expose only public-safe profile information: avatar, username, handle, and visible posts.
+- Mobile profiles mirror the frontend banner with avatar, username, handle, follower/following counts, a post total, settings for the signed-in user, and a directly accessible sign-out action.
 - The profile editor starts as a focused page for updating the signed-in user's profile picture, including square crop/size controls before upload.
 - The post editor lets the signed-in author update the topic text, review text, and rating score, and it conditionally tombstones the post only when comment threads still need to stay intact.
 - The backlog page renders the `To Do` section from `wiki/build-status.md` as a readable in-app project board.
