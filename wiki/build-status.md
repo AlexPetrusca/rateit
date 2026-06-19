@@ -11,6 +11,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Local backend auto-refresh is available with `cd backend && ./scripts/dev.sh`; the script recompiles changed Java/resources so Spring Boot devtools restarts the running app.
 - Mocker verification codes can be read from the mocker API.
 - Local login now routes through the mocker backend on `localhost:3001` instead of hitting Twilio.
+- The Helm chart now includes `metrics-server`, so `kubectl top` and `kp top` work after chart install when the cluster supports the Metrics API.
 - Deploying the full stack takes about 5 minutes, so prefer the repo deploy path only when the live image actually needs to change.
 
 ## To Do

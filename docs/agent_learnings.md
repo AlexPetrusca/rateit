@@ -60,6 +60,11 @@ Do not use this file for:
 
 - For a cheap one-node remote deployment, disable `localBackend`, `mocker`, ingress controllers, metrics sidecars, `kafka`, `prometheus`, and `grafana`; expose the app nginx service directly with one cloud `LoadBalancer`.
 
+### Helm chart
+
+- `helm dependency update` refreshes every range-pinned dependency in `rateit-chart/Chart.lock`, so adding one chart can also bump other lockfile versions.
+- `helm lint rateit-chart` needs `rateit-chart/values.secret.yaml`; `templates/secrets.yaml` dereferences secret values directly.
+
 ## How To Update
 
 When you discover a reusable lesson during implementation, add it here and keep it short. Prefer a single sentence that captures the invariant or pitfall.

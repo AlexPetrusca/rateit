@@ -54,6 +54,9 @@ mocker:
     port: 8098
     targetPort: 8092
 
+metrics-server:
+  enabled: true
+
 ingress:
   enabled: true
   className: "nginx"

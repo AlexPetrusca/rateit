@@ -7,7 +7,7 @@ dependencies:
   version: 5.4.0
 - name: postgresql
   repository: https://charts.bitnami.com/bitnami
-  version: 18.6.7
+  version: 18.7.6
 - name: redis
   repository: https://charts.bitnami.com/bitnami
   version: 25.5.3
@@ -23,5 +23,8 @@ dependencies:
 - name: mocker
   repository: oci://ghcr.io/alexpetrusca
   version: 1.0.2
-digest: sha256:184ca2d38c887b14f771d240653995b971f854da6790cd13bc03d70ffdb2b25f
-generated: "2026-05-18T21:53:11.82769197-07:00"
+- name: metrics-server
+  repository: https://kubernetes-sigs.github.io/metrics-server/
+  version: 3.13.1
+digest: sha256:ed68178f3142a23a2e581d6ecfefa8b6105112c4550b88aa5c1aa1c7b46749b0
+generated: "2026-06-18T16:41:22.463954-07:00"

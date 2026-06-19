@@ -39,3 +39,7 @@ dependencies:
     version: "1.x.x"
     repository: "oci://ghcr.io/alexpetrusca"
     condition: mocker.enabled
+  - name: metrics-server
+    version: "3.13.1"
+    repository: "https://kubernetes-sigs.github.io/metrics-server/"
+    condition: metrics-server.enabled
