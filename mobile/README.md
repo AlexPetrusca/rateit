@@ -20,7 +20,7 @@ The app uses React Navigation's native bottom tabs and supports iOS and Android,
 
 Use a backend or nginx URL the simulator can reach. For a physical phone, use the machine's LAN IP instead of `localhost`.
 Android emulator builds also rewrite `localhost` and `127.0.0.1` API URLs to `10.0.2.2` automatically.
-For the local Kubernetes backend, run `./port-forward.sh` from the repo root; it exposes `critic-backend-local` on host port `8080`.
+Run `./port-forward.sh` from the repo root for Kubernetes dependencies. It exposes `critic-backend-local` on `8080` only when a source backend is not already using that port.
 
 Set `EXPO_PUBLIC_APP_PUBLIC_URL` when shared post links should point somewhere other than the current Expo web origin, for example a LAN URL when testing from a phone.
 

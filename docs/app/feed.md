@@ -65,6 +65,8 @@ The no-photo topic layout now also reuses the same dark thread and composer card
 
 The no-photo hero also uses the same scroll-driven blur effect, but blurs an abstract red-tinted gradient background instead of an actual image.
 
+On mobile, the topic background and metadata remain fixed full-screen layers while the review list owns the entire gesture surface above them. The first review enters in the lower portion of the viewport, and scrolling applies native blur to the layers behind the reviews.
+
 The topic page now resets scroll to the top on entry so the hero starts crisp and only begins blurring once the user actually scrolls the page.
 
 On feed cards, clicking the attached photo now opens the shared topic page instead of only expanding the image in place.

@@ -37,8 +37,6 @@ const FeedList = ({
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       refreshing={refreshing}
       onRefresh={onRefresh}
-      onEndReached={onEndReached}
-      onEndReachedThreshold={0.8}
       onScroll={({ nativeEvent }) => {
         if (onEndReached && isNearListEnd({
           visibleLength: nativeEvent.layoutMeasurement.height,

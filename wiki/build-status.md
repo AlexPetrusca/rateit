@@ -128,4 +128,4 @@ Maintenance rule: keep this page current when features are started, completed, d
 - Mobile navigation, post actions, create/draft controls, and profile settings now use the hand-drawn icon set at a consistent 24px size.
 - Mobile is now native-first on Expo 56, with iOS/Android system tab bars, native stack headers and gestures, iOS 26 Liquid Glass support, 44pt controls, responsive cards, and compact layouts for phones below 375px.
 - Mobile home and profile feeds now paginate through native end detection plus measured scroll proximity, with a visible load-more fallback and duplicate-page protection.
-- Mobile topic screen now mirrors the frontend topic layout with a fixed full-screen background image, scroll-driven blur, raised narrow rating cards, and matching topic composer treatment.
+- Mobile image topics render as full-screen image, metadata, and review layers; reviews own the entire scroll surface while native blur is applied behind them.

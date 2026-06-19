@@ -67,6 +67,7 @@ Use the shared components below before creating new copies:
 - Native screens should preserve the same functional contracts as the web pages even when the layout differs.
 - Secondary destinations remain in the profile settings menu so the native tab bar stays at five items.
 - Feed cards reduce avatar and gutter sizes, use responsive media ratios and short dates, and allow action controls to wrap without creating horizontal overflow.
+- Mobile image topics use three full-screen layers: a cover image, fixed topic metadata, and an edge-to-edge review list; scrolling reviews applies native blur above the image and metadata without blurring the cards.
 - Search forms, profile headers, and composer actions stack vertically when their desktop layout no longer fits.
 
 ## Rating Rules

@@ -29,8 +29,8 @@ Do not use this file for:
 - Native tab icons use 24px base images with `@2x` and `@3x` variants; passing the 72px content assets directly makes iOS render them at 72pt.
 - The mobile app is iOS/Android-only on Expo 56; native bottom tabs need `react-native-screens` 4.25+, and Liquid Glass appears on iOS 26 only when compiled with Xcode 26+.
 - Android emulators reach services on the development host through `10.0.2.2`, not `localhost`; mobile config rewrites loopback API URLs automatically on Android.
-- `port-forward.sh` exposes the mocker-backed `critic-backend-local` service on host port `8080` for mobile simulator development.
-- Mobile paginated feeds must synchronously lock load-more requests and merge by `ratingId`; React state flags alone can allow duplicate pages before the next render.
+- `port-forward.sh` must leave an existing source backend as the sole owner of port `8080`; forwarding `critic-backend-local` there at the same time makes simulator routing inconsistent.
+- Mobile paginated feeds use one measured scroll-end trigger, synchronously lock load-more requests, and merge by `ratingId`; combining it with FlatList's native end trigger causes runaway pagination.
 
 ### Admin
 
