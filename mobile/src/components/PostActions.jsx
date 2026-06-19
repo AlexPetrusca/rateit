@@ -1,4 +1,5 @@
 import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import Icon from './Icon.jsx';
 import { colors, radius, spacing } from '../theme.js';
 
 const ActionButton = ({ icon, label, count, onPress, active = false, showCount = true }) => {
@@ -17,7 +18,7 @@ const ActionButton = ({ icon, label, count, onPress, active = false, showCount =
         pressed && styles.pressed
       ]}
     >
-      <Text style={[styles.icon, active && styles.activeText]}>{icon}</Text>
+      <Icon name={icon} size={20} color={active ? colors.accent : colors.textMuted} />
       {showCount ? <Text style={[styles.count, active && styles.activeText]}>{count || 0}</Text> : null}
     </Pressable>
   );
@@ -45,12 +46,12 @@ const PostActions = ({
 
   return (
     <View style={styles.container}>
-      <ActionButton icon={liked ? '♥' : '♡'} label={liked ? 'Unlike' : 'Like'} count={likeCount} onPress={onLike} active={liked} />
-      <ActionButton icon="↻" label="Re-rate" onPress={onRerate} showCount={false} />
-      <ActionButton icon="◌" label={commentLabel} count={commentCount} onPress={onComment} showCount={showCommentCount} />
-      <ActionButton icon="↪" label={replyLabel} onPress={onReply} showCount={false} />
-      <ActionButton icon="⇧" label="Share" onPress={shareUrl ? handleShare : undefined} showCount={false} />
-      <ActionButton icon="✎" label="Edit" onPress={onEdit} showCount={false} />
+      <ActionButton icon={liked ? 'full_heart' : 'empty_heart'} label={liked ? 'Unlike' : 'Like'} count={likeCount} onPress={onLike} active={liked} />
+      <ActionButton icon="cycle" label="Re-rate" onPress={onRerate} showCount={false} />
+      <ActionButton icon="chat_bubble" label={commentLabel} count={commentCount} onPress={onComment} showCount={showCommentCount} />
+      <ActionButton icon="reply" label={replyLabel} onPress={onReply} showCount={false} />
+      <ActionButton icon="share" label="Share" onPress={shareUrl ? handleShare : undefined} showCount={false} />
+      <ActionButton icon="pencil" label="Edit" onPress={onEdit} showCount={false} />
     </View>
   );
 };

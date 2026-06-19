@@ -1,20 +1,23 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { useBottomBar } from '../contexts/BottomBarContext.jsx';
 import { colors } from '../theme.js';
+import Icon from './Icon.jsx';
 
 const tabsFor = (profileUserId) => [
-  { route: 'Home', label: 'Home', icon: '⌂', match: ['Home'] },
-  { route: 'Following', label: 'Following', icon: '♟', match: ['Following'] },
-  { route: 'Create', label: 'Create', icon: '+', match: ['Create', 'Drafts'] },
-  { route: 'SearchUsers', label: 'Search', icon: '⌕', match: ['SearchUsers'] },
-  { route: 'Profile', label: 'Profile', icon: '◉', params: { userId: profileUserId }, match: ['Profile', 'ProfileEditor', 'FollowList'] }
+  { route: 'Home', label: 'Home', icon: 'home', match: ['Home'] },
+  { route: 'Following', label: 'Following', icon: 'following', match: ['Following'] },
+  { route: 'Create', label: 'Create', icon: 'create', match: ['Create', 'Drafts'] },
+  { route: 'SearchUsers', label: 'Search', icon: 'search', match: ['SearchUsers'] },
+  { route: 'Profile', label: 'Profile', icon: 'profile', params: { userId: profileUserId }, match: ['Profile', 'ProfileEditor', 'FollowList'] }
 ];
 
 const BottomBar = ({ user, activeRouteName, onNavigate }) => {
   const profileUserId = user?.userId ?? user?.id;
   const tabs = tabsFor(profileUserId);
+  const { translateY } = useBottomBar();
 
   return (
-    <View pointerEvents="box-none" style={styles.wrap}>
+    <Animated.View pointerEvents="box-none" style={[styles.wrap, { transform: [{ translateY }] }]}>
       <View style={styles.bar}>
         {tabs.map((tab) => {
           const active = tab.match.includes(activeRouteName);
@@ -30,12 +33,12 @@ const BottomBar = ({ user, activeRouteName, onNavigate }) => {
                 pressed && !active && styles.pressed
               ]}
             >
-              <Text style={[styles.icon, active && styles.activeIcon]}>{tab.icon}</Text>
+              <Icon name={tab.icon} size={26} color={active ? '#ffffff' : colors.navText} />
             </Pressable>
           );
         })}
       </View>
-    </View>
+    </Animated.View>
   );
 };
 

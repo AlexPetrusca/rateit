@@ -1,4 +1,5 @@
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { useBottomBar } from '../contexts/BottomBarContext.jsx';
 import EmptyState from './EmptyState.jsx';
 import { colors, spacing, text } from '../theme.js';
 
@@ -18,6 +19,8 @@ const FeedList = ({
   ListFooterExtra,
   contentContainerStyle
 }) => {
+  const { onScroll } = useBottomBar();
+
   if (loading && !items?.length) {
     return (
       <View style={styles.center}>
@@ -32,6 +35,9 @@ const FeedList = ({
       data={items}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
+      style={styles.flatList}
+      onScroll={onScroll}
+      scrollEventThrottle={1}
       contentContainerStyle={[styles.list, contentContainerStyle]}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       refreshing={refreshing}
@@ -52,7 +58,14 @@ const FeedList = ({
 };
 
 const styles = StyleSheet.create({
+  flatList: {
+    flex: 1
+  },
   list: {
+    width: '100%',
+    maxWidth: 760,
+    alignSelf: 'center',
+    paddingHorizontal: spacing.lg,
     paddingBottom: 112,
     flexGrow: 1
   },

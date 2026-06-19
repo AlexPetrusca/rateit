@@ -24,6 +24,7 @@ import SearchUsersScreen from '../screens/SearchUsersScreen.jsx';
 import SuggestionSubmitScreen from '../screens/SuggestionSubmitScreen.jsx';
 import TopicScreen from '../screens/TopicScreen.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { BottomBarProvider } from '../contexts/BottomBarContext.jsx';
 import { colors } from '../theme.js';
 
 const Stack = createNativeStackNavigator();
@@ -44,54 +45,57 @@ const AppNavigator = () => {
   }
 
   return (
-    <NavigationContainer
-      ref={navigationRef}
-      onReady={() => setActiveRouteName(navigationRef.getCurrentRoute()?.name || 'Home')}
-      onStateChange={() => setActiveRouteName(navigationRef.getCurrentRoute()?.name || 'Home')}
-    >
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isAuthenticated ? (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="InstallInfo" component={InstallInfoScreen} options={{ headerShown: true, title: 'Install' }} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="Following" component={HomeScreen} initialParams={{ feedType: 'following' }} />
-            <Stack.Screen name="Menu" component={MenuScreen} />
-            <Stack.Screen name="Create" component={CreateScreen} />
-            <Stack.Screen name="Drafts" component={DraftsScreen} />
-            <Stack.Screen name="Profile" component={ProfileScreen} />
-            <Stack.Screen name="ProfileEditor" component={ProfileEditorScreen} options={{ title: 'Profile Photo' }} />
-            <Stack.Screen name="PostEditor" component={PostEditorScreen} options={{ title: 'Edit Post' }} />
-            <Stack.Screen name="Topic" component={TopicScreen} />
-            <Stack.Screen name="SearchUsers" component={SearchUsersScreen} options={{ title: 'Search' }} />
-            <Stack.Screen name="FollowList" component={FollowListScreen} options={{ title: 'People' }} />
-            <Stack.Screen name="Backlog" component={BacklogScreen} />
-            <Stack.Screen name="SuggestionSubmit" component={SuggestionSubmitScreen} options={{ title: 'Suggestion' }} />
-            <Stack.Screen name="InstallInfo" component={InstallInfoScreen} options={{ title: 'Install' }} />
-            {isAdmin ? (
-              <>
-                <Stack.Screen name="AdminHome" component={AdminHomeScreen} options={{ title: 'Admin' }} />
-                <Stack.Screen name="AdminUsers" component={AdminUsersScreen} options={{ title: 'Admin Users' }} />
-                <Stack.Screen name="AdminPosts" component={AdminPostsScreen} options={{ title: 'Admin Posts' }} />
-                <Stack.Screen name="AdminComments" component={AdminCommentsScreen} options={{ title: 'Admin Comments' }} />
-                <Stack.Screen name="AdminSuggestions" component={AdminSuggestionsScreen} options={{ title: 'Admin Suggestions' }} />
-                <Stack.Screen name="AdminJobs" component={AdminJobsScreen} options={{ title: 'Admin Jobs' }} />
-              </>
-            ) : null}
-          </>
-        )}
-      </Stack.Navigator>
-      {isAuthenticated && !hideBottomBar ? (
-        <BottomBar
-          user={user}
-          activeRouteName={activeRouteName}
-          onNavigate={(route, params) => navigationRef.navigate(route, params)}
-        />
-      ) : null}
-    </NavigationContainer>
+    <BottomBarProvider>
+      <NavigationContainer
+        ref={navigationRef}
+        theme={{ colors: { background: colors.background } }}
+        onReady={() => setActiveRouteName(navigationRef.getCurrentRoute()?.name || 'Home')}
+        onStateChange={() => setActiveRouteName(navigationRef.getCurrentRoute()?.name || 'Home')}
+      >
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {!isAuthenticated ? (
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="InstallInfo" component={InstallInfoScreen} options={{ headerShown: true, title: 'Install' }} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="Home" component={HomeScreen} />
+              <Stack.Screen name="Following" component={HomeScreen} initialParams={{ feedType: 'following' }} />
+              <Stack.Screen name="Menu" component={MenuScreen} />
+              <Stack.Screen name="Create" component={CreateScreen} />
+              <Stack.Screen name="Drafts" component={DraftsScreen} />
+              <Stack.Screen name="Profile" component={ProfileScreen} />
+              <Stack.Screen name="ProfileEditor" component={ProfileEditorScreen} options={{ title: 'Profile Photo' }} />
+              <Stack.Screen name="PostEditor" component={PostEditorScreen} options={{ title: 'Edit Post' }} />
+              <Stack.Screen name="Topic" component={TopicScreen} />
+              <Stack.Screen name="SearchUsers" component={SearchUsersScreen} options={{ title: 'Search' }} />
+              <Stack.Screen name="FollowList" component={FollowListScreen} options={{ title: 'People' }} />
+              <Stack.Screen name="Backlog" component={BacklogScreen} />
+              <Stack.Screen name="SuggestionSubmit" component={SuggestionSubmitScreen} options={{ title: 'Suggestion' }} />
+              <Stack.Screen name="InstallInfo" component={InstallInfoScreen} options={{ title: 'Install' }} />
+              {isAdmin ? (
+                <>
+                  <Stack.Screen name="AdminHome" component={AdminHomeScreen} options={{ title: 'Admin' }} />
+                  <Stack.Screen name="AdminUsers" component={AdminUsersScreen} options={{ title: 'Admin Users' }} />
+                  <Stack.Screen name="AdminPosts" component={AdminPostsScreen} options={{ title: 'Admin Posts' }} />
+                  <Stack.Screen name="AdminComments" component={AdminCommentsScreen} options={{ title: 'Admin Comments' }} />
+                  <Stack.Screen name="AdminSuggestions" component={AdminSuggestionsScreen} options={{ title: 'Admin Suggestions' }} />
+                  <Stack.Screen name="AdminJobs" component={AdminJobsScreen} options={{ title: 'Admin Jobs' }} />
+                </>
+              ) : null}
+            </>
+          )}
+        </Stack.Navigator>
+        {isAuthenticated && !hideBottomBar ? (
+          <BottomBar
+            user={user}
+            activeRouteName={activeRouteName}
+            onNavigate={(route, params) => navigationRef.navigate(route, params)}
+          />
+        ) : null}
+      </NavigationContainer>
+    </BottomBarProvider>
   );
 };
 

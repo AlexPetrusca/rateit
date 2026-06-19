@@ -1,5 +1,5 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { colors, spacing, text } from '../theme.js';
 
 const Screen = ({
@@ -11,28 +11,36 @@ const Screen = ({
   contentStyle,
   headerStyle
 }) => {
-  const content = (
-    <View style={[styles.content, contentStyle]}>
-      {(title || subtitle || actions) && (
-        <View style={[styles.header, headerStyle]}>
-          <View style={styles.headerText}>
-            {title ? <Text style={styles.title}>{title}</Text> : null}
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-          </View>
-          {actions ? <View style={styles.actions}>{actions}</View> : null}
-        </View>
-      )}
-      {children}
+  const { height } = useWindowDimensions();
+  const header = (title || subtitle || actions) ? (
+    <View style={[styles.header, headerStyle]}>
+      <View style={styles.headerText}>
+        {title ? <Text style={styles.title}>{title}</Text> : null}
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      </View>
+      {actions ? <View style={styles.actions}>{actions}</View> : null}
     </View>
-  );
+  ) : null;
+
+  if (!scroll) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { height }]}>
+        <View style={[styles.fillContent, contentStyle]}>
+          {header}
+          {children}
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {scroll ? (
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
-          {content}
-        </ScrollView>
-      ) : content}
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
+        <View style={[styles.content, contentStyle]}>
+          {header}
+          {children}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -44,6 +52,9 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 1
+  },
+  fillContent: {
+    flex: 1
   },
   content: {
     flex: 1,
