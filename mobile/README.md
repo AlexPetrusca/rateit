@@ -16,7 +16,13 @@ EXPO_PUBLIC_API_BASE_URL=http://localhost:8080 npm run ios
 EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:8080 npm run android
 ```
 
-The app uses React Navigation's native bottom tabs and supports iOS and Android, not web. On iOS 26, Liquid Glass requires a native build compiled with Xcode 26 or newer.
+Run the mobile web app with:
+
+```sh
+EXPO_PUBLIC_API_BASE_URL=http://localhost:8080 npm run web
+```
+
+The app uses native bottom tabs on iOS and Android and JavaScript bottom tabs on web. On iOS 26, Liquid Glass requires a native build compiled with Xcode 26 or newer.
 
 Use a backend or nginx URL the simulator can reach. For a physical phone, use the machine's LAN IP instead of `localhost`.
 Android emulator builds also rewrite `localhost` and `127.0.0.1` API URLs to `10.0.2.2` automatically.

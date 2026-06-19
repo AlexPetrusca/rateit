@@ -52,7 +52,6 @@ const FeedList = ({
       ListFooterComponent={(
         <View style={styles.footer}>
           {ListFooterExtra}
-          {loadingMore ? <ActivityIndicator color={colors.accent} /> : null}
           {!loadingMore && endMessage ? <Text style={styles.message}>{endMessage}</Text> : null}
         </View>
       )}

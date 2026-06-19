@@ -61,7 +61,9 @@ Use the shared components below before creating new copies:
 
 ## Mobile Layout
 
-- The React Native app targets iOS and Android only and uses platform-native bottom tabs for Home, Following, Create, Search, and Profile, plus native stack headers and back gestures for detail screens.
+- The React Native app targets iOS, Android, and mobile web. Native builds use platform-native bottom tabs for Home, Following, Create, Search, and Profile, while web uses JavaScript bottom tabs; detail screens retain stack navigation.
+- Full-screen native detail routes expose their stack header on web so browser users always have a visible back action.
+- Local mobile-web development may use any localhost port while sending credentialed API requests to the local backend.
 - On iOS 26 builds compiled with Xcode 26 or newer, the system tab bar adopts Liquid Glass automatically; Android uses its native bottom navigation view and interaction treatment.
 - The mobile visual system keeps Critic's near-black and red identity while using platform-sized controls, 44pt minimum action targets, safe-area-aware scrolling, and compact gutters below 375px.
 - Native screens should preserve the same functional contracts as the web pages even when the layout differs.

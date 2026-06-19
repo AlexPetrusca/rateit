@@ -15,7 +15,7 @@ Critic is a React + Spring Boot app with a separate Expo React Native mobile app
 - Admin-only APIs under `/api/admin/**` guarded by `ROLE_ADMIN`.
 - Infinite-scroll home feed with pagination in chunks of 5.
 - Shared feed/post/comment UI components used across home, profile, and topic pages.
-- A React Native mobile app lives in `mobile/` and mirrors the same user-facing and admin surfaces with native reusable components.
+- A React Native app lives in `mobile/` and covers iOS, Android, and mobile web with shared user-facing and admin components.
 - User profile pages with user info and that user’s posts.
 - Profile editor page at `/profile/edit` for updating the signed-in user's profile picture.
 - The old create-account handoff now reuses the same setup form inline on `/login` after OTP verification, and `/create-account` is now just a redirect back to `/login`.

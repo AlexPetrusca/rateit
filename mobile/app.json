@@ -17,6 +17,10 @@
         "backgroundColor": "#08080a"
       }
     },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
     "extra": {
       "apiBaseUrl": ""
     },

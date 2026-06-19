@@ -27,8 +27,9 @@ Do not use this file for:
 - Use `sx` for MUI layout styling unless the component API clearly expects a different prop.
 - Mobile hand-drawn icons are 72px PNG assets rendered through `HandDrawnIcon` at 24px, avoiding an SVG runtime and Metro transformer.
 - Native tab icons use 24px base images with `@2x` and `@3x` variants; passing the 72px content assets directly makes iOS render them at 72pt.
-- The mobile app is iOS/Android-only on Expo 56; native bottom tabs need `react-native-screens` 4.25+, and Liquid Glass appears on iOS 26 only when compiled with Xcode 26+.
+- The Expo 56 app supports iOS, Android, and mobile web; native bottom tabs require `react-native-screens` 4.25+, web selects JavaScript bottom tabs, and Liquid Glass appears on iOS 26 only when compiled with Xcode 26+.
 - Android emulators reach services on the development host through `10.0.2.2`, not `localhost`; mobile config rewrites loopback API URLs automatically on Android.
+- Backend CORS allows credentialed development origins on any `localhost` or `127.0.0.1` port, but must continue rejecting remote origins.
 - `port-forward.sh` must leave an existing source backend as the sole owner of port `8080`; forwarding `critic-backend-local` there at the same time makes simulator routing inconsistent.
 - Mobile paginated feeds use one measured scroll-end trigger, synchronously lock load-more requests, and merge by `ratingId`; combining it with FlatList's native end trigger causes runaway pagination.
 
