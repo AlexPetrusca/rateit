@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import AppButton from '../components/AppButton.jsx';
 import Card from '../components/Card.jsx';
 import HandDrawnIcon from '../components/HandDrawnIcon.jsx';
@@ -19,11 +19,13 @@ import { buildCreateRatingRequest, formatFiveStarScore, validateCreateRatingDraf
 const CreateScreen = ({ navigation, route }) => {
   const { notify } = useNotifications();
   const incomingDraft = route.params?.draft;
+  const incomingMode = route.params?.mode;
   const [draftId, setDraftId] = useState(incomingDraft?.id ?? null);
   const [body, setBody] = useState(incomingDraft?.body ?? '');
   const [reviewText, setReviewText] = useState(incomingDraft?.reviewText ?? '');
   const [score, setScore] = useState(incomingDraft?.score ?? 4);
   const [previewScore, setPreviewScore] = useState(null);
+  const [postMode, setPostMode] = useState('rate');
   const [selectedFile, setSelectedFile] = useState(null);
   const [existingMedia, setExistingMedia] = useState({
     mediaObjectKey: incomingDraft?.mediaObjectKey ?? null,
@@ -50,12 +52,20 @@ const CreateScreen = ({ navigation, route }) => {
     navigation.setParams({ draft: undefined });
   }, [incomingDraft, navigation]);
 
+  useEffect(() => {
+    if (incomingMode === 'prompt') {
+      setPostMode('prompt');
+      navigation.setParams({ mode: undefined });
+    }
+  }, [incomingMode, navigation]);
+
   useFocusEffect(useCallback(() => () => {
     setDraftId(null);
     setBody('');
     setReviewText('');
     setScore(4);
     setPreviewScore(null);
+    setPostMode('rate');
     setSelectedFile(null);
     setExistingMedia({ mediaObjectKey: null, mediaContentType: null });
     setSaving(false);
@@ -94,26 +104,29 @@ const CreateScreen = ({ navigation, route }) => {
       if (draftId) {
         await BackendApiService.publishDraft(draftId);
       } else {
-        const validationError = validateCreateRatingDraft({
-          body,
-          selectedFile: selectedFile || existingMedia.mediaObjectKey,
-          score
-        });
+        const hasMedia = selectedFile || existingMedia.mediaObjectKey;
+        const validationError = postMode === 'prompt'
+          ? (!body.trim() && !hasMedia ? 'Add text or a photo to create a prompt.' : '')
+          : validateCreateRatingDraft({ body, selectedFile: hasMedia, score });
         if (validationError) {
           setError(validationError);
           return;
         }
 
         const { mediaObjectKey, mediaContentType } = await uploadMedia();
-        await BackendApiService.createRating(buildCreateRatingRequest({
-          body,
-          reviewText,
-          score,
-          mediaObjectKey,
-          mediaContentType
-        }));
+        if (postMode === 'prompt') {
+          await BackendApiService.createPrompt({ body, mediaObjectKey, mediaContentType });
+        } else {
+          await BackendApiService.createRating(buildCreateRatingRequest({
+            body,
+            reviewText,
+            score,
+            mediaObjectKey,
+            mediaContentType
+          }));
+        }
       }
-      notify({ message: 'Rating posted.', type: 'info' });
+      notify({ message: postMode === 'prompt' ? 'Prompt posted.' : 'Rating posted.', type: 'info' });
       navigation.navigate('Home');
     } catch (err) {
       setError(err.message || 'Failed to post rating');
@@ -151,6 +164,24 @@ const CreateScreen = ({ navigation, route }) => {
 
   return (
     <Screen title="Create" subtitle="Rate text or a photo.">
+      <View style={styles.modeToggle}>
+        {['rate', 'prompt'].map((mode) => {
+          const selected = postMode === mode;
+          return (
+            <Pressable
+              key={mode}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              onPress={() => setPostMode(mode)}
+              style={[styles.modeOption, selected && styles.modeOptionSelected]}
+            >
+              <Text style={[styles.modeText, selected && styles.modeTextSelected]}>
+                {mode === 'rate' ? 'Rate' : 'Prompt'}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
       <StatusMessage message={error} type="error" />
       <Card>
         <View style={styles.photoHeader}>
@@ -184,21 +215,29 @@ const CreateScreen = ({ navigation, route }) => {
           onChangeText={setBody}
           placeholder="Write the thing you want to rate, or add a caption for your photo"
         />
-        <RichTextInput
-          label="Your review"
-          value={reviewText}
-          onChangeText={setReviewText}
-          placeholder="Add your rating context"
-        />
-        <View style={styles.scoreHeader}>
-          <Text style={styles.sectionTitle}>Rating</Text>
-          <Text style={styles.score}>{formatFiveStarScore(previewScore ?? score)}</Text>
-        </View>
-        <StarRating value={score} interactive size="lg" onChange={setScore} onPreviewChange={setPreviewScore} />
+        {postMode === 'rate' ? (
+          <RichTextInput
+            label="Your review"
+            value={reviewText}
+            onChangeText={setReviewText}
+            placeholder="Add your rating context"
+          />
+        ) : null}
+        {postMode === 'rate' ? (
+          <>
+            <View style={styles.scoreHeader}>
+              <Text style={styles.sectionTitle}>Rating</Text>
+              <Text style={styles.score}>{formatFiveStarScore(previewScore ?? score)}</Text>
+            </View>
+            <StarRating value={score} interactive size="lg" onChange={setScore} onPreviewChange={setPreviewScore} />
+          </>
+        ) : null}
         <Text style={styles.previewLabel}>How it will look:</Text>
         <View style={styles.previewMeta}>
           {body.trim() ? <RichText style={styles.previewText}>{body.trim()}</RichText> : null}
-          {reviewText.trim() ? <RichText style={styles.previewReview}>{reviewText.trim()}</RichText> : null}
+          {postMode === 'rate' && reviewText.trim() ? (
+            <RichText style={styles.previewReview}>{reviewText.trim()}</RichText>
+          ) : null}
         </View>
         <View style={styles.actionRow}>
           <AppButton variant="secondary" label="Back" icon={<HandDrawnIcon name="back" color={colors.text} />} onPress={() => navigation.goBack()} style={styles.composerButton} />
@@ -211,6 +250,32 @@ const CreateScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  modeToggle: {
+    flexDirection: 'row',
+    padding: 3,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.borderStrong,
+    borderRadius: 15,
+    backgroundColor: colors.surfaceSoft
+  },
+  modeOption: {
+    flex: 1,
+    minHeight: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12
+  },
+  modeOptionSelected: {
+    backgroundColor: colors.surfacePressed
+  },
+  modeText: {
+    color: colors.textMuted,
+    fontSize: 15,
+    fontWeight: '700'
+  },
+  modeTextSelected: {
+    color: colors.text
+  },
   previewWrap: {
     gap: spacing.sm
   },

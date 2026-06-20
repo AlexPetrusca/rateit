@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import AppButton from './AppButton.jsx';
 import AppTextInput from './AppTextInput.jsx';
 import Card from './Card.jsx';
+import RichTextInput from './RichTextInput.jsx';
 import StarRating from './StarRating.jsx';
 import { colors, spacing, text } from '../theme.js';
 import { formatFiveStarScore } from '../utils/ratingDisplay.js';
@@ -17,7 +18,8 @@ const RatingComposer = ({
   onSubmit,
   loading = false,
   multilineLabel = 'Review',
-  cardStyle
+  cardStyle,
+  richText = false
 }) => {
   const numericScore = Number(score || 0);
 
@@ -28,13 +30,22 @@ const RatingComposer = ({
         <Text style={styles.scoreLabel}>{formatFiveStarScore(numericScore)}</Text>
       </View>
       <StarRating value={numericScore} interactive onChange={onScoreChange} size="lg" />
-      <AppTextInput
-        label={multilineLabel}
-        value={textValue}
-        onChangeText={onTextChange}
-        placeholder={placeholder}
-        multiline
-      />
+      {richText ? (
+        <RichTextInput
+          label={multilineLabel}
+          value={textValue}
+          onChangeText={onTextChange}
+          placeholder={placeholder}
+        />
+      ) : (
+        <AppTextInput
+          label={multilineLabel}
+          value={textValue}
+          onChangeText={onTextChange}
+          placeholder={placeholder}
+          multiline
+        />
+      )}
       <AppButton label={submitLabel} onPress={onSubmit} loading={loading} />
     </Card>
   );

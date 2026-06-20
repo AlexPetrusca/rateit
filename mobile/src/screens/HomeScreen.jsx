@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import AppButton from '../components/AppButton.jsx';
 import FeedList from '../components/FeedList.jsx';
 import RatingFeedItem from '../components/RatingFeedItem.jsx';
 import Screen from '../components/Screen.jsx';
+import StoryBar from '../components/StoryBar.jsx';
 import { getRatingShareUrl } from '../config.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
@@ -22,6 +24,7 @@ const HomeScreen = ({ navigation, route }) => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [storyPeople, setStoryPeople] = useState([]);
   const loadingMoreRef = useRef(false);
 
   const updateItem = useCallback((ratingId, updater) => {
@@ -60,6 +63,18 @@ const HomeScreen = ({ navigation, route }) => {
     loadPage(0, false);
   }, [loadPage]);
 
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    BackendApiService.getAllRecentPrompts()
+      .then((prompts) => active && setStoryPeople(prompts.map((prompt) => ({
+        userId: prompt.authorUserId,
+        username: prompt.authorUsername,
+        profilePicUrl: prompt.authorProfilePicUrl
+      }))))
+      .catch(() => active && setStoryPeople([]));
+    return () => { active = false; };
+  }, []));
+
   const refresh = () => {
     setRefreshing(true);
     return loadPage(0, false);
@@ -86,6 +101,19 @@ const HomeScreen = ({ navigation, route }) => {
         refreshing={refreshing}
         onRefresh={refresh}
         onEndReached={loadMore}
+        ListHeaderComponent={(
+          <StoryBar
+            user={user}
+            people={storyPeople}
+            items={items}
+            onAddStory={() => navigation.navigate('Create', { mode: 'prompt' })}
+            onOpenOwnStories={() => navigation.navigate('Prompts', { own: true, username: user?.username })}
+            onOpenStories={(person) => navigation.navigate('Prompts', {
+              userId: person.userId ?? person.id,
+              username: person.username
+            })}
+          />
+        )}
         ListFooterExtra={hasMore ? <AppButton variant="ghost" label="Load more" onPress={loadMore} loading={loadingMore} /> : null}
         endMessage={hasMore ? '' : 'You reached the end of the feed.'}
         emptyTitle="No ratings yet."
@@ -96,6 +124,7 @@ const HomeScreen = ({ navigation, route }) => {
             interactions={interactions}
             reviewNumberOfLines={6}
             openCardOnlyWhenTruncated
+            showReply={false}
             refresh={refresh}
             onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
             onTopicPress={(rateableItemId) => navigation.navigate('Topic', { rateableItemId })}

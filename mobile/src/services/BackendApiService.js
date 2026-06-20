@@ -104,6 +104,30 @@ const BackendApiService = {
 
   getTopic: (rateableItemId) => request(`/api/topics/${encodeURIComponent(rateableItemId)}`, {}, 'Failed to fetch topic'),
 
+  getRecentPrompts: (userId) => request(
+    `/api/prompts/users/${encodeURIComponent(userId)}/recent`,
+    {},
+    'Failed to fetch prompts'
+  ),
+
+  getMyRecentPrompts: () => request('/api/prompts/me/recent', {}, 'Failed to fetch your prompts'),
+
+  getAllRecentPrompts: () => request('/api/prompts/recent', {}, 'Failed to fetch prompts'),
+
+  createPrompt: ({ body, mediaObjectKey, mediaContentType }) => request('/api/prompts', {
+    method: 'POST',
+    body: jsonBody({ body, mediaObjectKey, mediaContentType })
+  }, 'Failed to create prompt'),
+
+  rateTopic: (rateableItemId, score, reviewText) => request(
+    `/api/topics/${encodeURIComponent(rateableItemId)}/ratings`,
+    {
+      method: 'POST',
+      body: jsonBody({ score, reviewText })
+    },
+    'Failed to rate prompt'
+  ),
+
   getRating: (ratingId) => request(`/api/feed/ratings/${encodeURIComponent(ratingId)}`, {}, 'Failed to fetch post'),
 
   likeRating: (ratingId) => request(`/api/feed/ratings/${encodeURIComponent(ratingId)}/like`, {

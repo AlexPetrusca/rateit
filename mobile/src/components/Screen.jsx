@@ -1,5 +1,6 @@
+import { useRef } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { colors, spacing, text } from '../theme.js';
 
 const Screen = ({
@@ -13,6 +14,7 @@ const Screen = ({
   safeBottom = true
 }) => {
   const { width } = useWindowDimensions();
+  const lastOffset = useRef(0);
   const compact = width < 375;
   const content = (
     <View style={[styles.content, compact && styles.compactContent, contentStyle]}>
@@ -38,6 +40,16 @@ const Screen = ({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scroll}
+          onScroll={({ nativeEvent }) => {
+            const offset = nativeEvent.contentOffset.y;
+            if (Platform.OS === 'web' && (offset <= 8 || Math.abs(offset - lastOffset.current) > 6)) {
+              window.dispatchEvent(new CustomEvent('rateit-scroll-direction', {
+                detail: offset <= 8 || offset < lastOffset.current ? 'up' : 'down'
+              }));
+            }
+            lastOffset.current = offset;
+          }}
+          scrollEventThrottle={100}
         >
           {content}
         </ScrollView>

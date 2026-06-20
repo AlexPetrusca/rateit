@@ -20,6 +20,7 @@ const CommentComposer = ({
     onSubmit={onSubmit}
     loading={loading}
     multilineLabel="Comment"
+    richText
   />
 );
 

@@ -1,4 +1,5 @@
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { useRef } from 'react';
+import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import EmptyState from './EmptyState.jsx';
 import { colors, spacing, text } from '../theme.js';
 import { isNearListEnd } from '../utils/lists.js';
@@ -19,6 +20,8 @@ const FeedList = ({
   ListFooterExtra,
   contentContainerStyle
 }) => {
+  const lastOffset = useRef(0);
+
   if (loading && !items?.length) {
     return (
       <View style={styles.center}>
@@ -36,9 +39,24 @@ const FeedList = ({
       style={styles.flatList}
       contentContainerStyle={[styles.list, contentContainerStyle]}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
-      refreshing={refreshing}
-      onRefresh={onRefresh}
+      refreshControl={onRefresh ? (
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.accent}
+          colors={[colors.accent]}
+          progressBackgroundColor={colors.surfaceElevated}
+        />
+      ) : undefined}
       onScroll={({ nativeEvent }) => {
+        const offset = nativeEvent.contentOffset.y;
+        if (Platform.OS === 'web' && (offset <= 8 || Math.abs(offset - lastOffset.current) > 6)) {
+          window.dispatchEvent(new CustomEvent('rateit-scroll-direction', {
+            detail: offset <= 8 || offset < lastOffset.current ? 'up' : 'down'
+          }));
+        }
+        lastOffset.current = offset;
+
         if (onEndReached && isNearListEnd({
           visibleLength: nativeEvent.layoutMeasurement.height,
           offset: nativeEvent.contentOffset.y,

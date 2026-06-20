@@ -9,9 +9,11 @@ import com.rateit.backend.entity.RatingLike;
 import com.rateit.backend.entity.RatingScale;
 import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.dto.FeedItemDto;
+import com.rateit.backend.entity.dto.PromptDto;
 import com.rateit.backend.entity.dto.RatingCommentDto;
 import com.rateit.backend.entity.dto.DraftDto;
 import com.rateit.backend.entity.rest.CreateRatingRequest;
+import com.rateit.backend.entity.rest.CreatePromptRequest;
 import com.rateit.backend.entity.rest.CreateRatingCommentRequest;
 import com.rateit.backend.entity.rest.CreateRerateRequest;
 import com.rateit.backend.entity.rest.SaveDraftRequest;
@@ -102,6 +104,35 @@ public class FeedActionService {
             .build());
 
         return FeedItemDto.fromRating(savedRating, 0, 0, false);
+    }
+
+    @Transactional
+    public PromptDto createPrompt(CreatePromptRequest request, String currentUserPhoneNumber) {
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+        String body = normalize(request.body());
+        String mediaObjectKey = normalize(request.mediaObjectKey());
+
+        if (body == null && mediaObjectKey == null) {
+            throw BadRequestException.invalidRequest("Prompts need text or an image");
+        }
+
+        MediaAsset mediaAsset = null;
+        if (mediaObjectKey != null) {
+            mediaAsset = mediaAssetRepository.save(MediaAsset.builder()
+                .ownerUser(currentUser)
+                .bucket("images")
+                .objectKey(mediaObjectKey)
+                .contentType(normalize(request.mediaContentType()))
+                .build());
+        }
+
+        return PromptDto.from(rateableItemRepository.save(RateableItem.builder()
+            .createdByUser(currentUser)
+            .itemType(RateableItemType.PROMPT)
+            .body(body)
+            .mediaAsset(mediaAsset)
+            .visibility(Visibility.PUBLIC)
+            .build()));
     }
 
     @Transactional
@@ -291,6 +322,32 @@ public class FeedActionService {
             .build();
 
         Rating savedRating = ratingRepository.save(newRating);
+        return FeedItemDto.fromRating(savedRating, 0, 0, false);
+    }
+
+    @Transactional
+    public FeedItemDto rateTopic(Long rateableItemId, CreateRerateRequest request, String currentUserPhoneNumber) {
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+        RateableItem item = rateableItemRepository.findById(rateableItemId)
+            .orElseThrow(() -> ResourceNotFoundException.resource(Resource.RATEABLE_ITEM, rateableItemId));
+        RatingScale scale = resolveRatingScale();
+
+        if (request.score().compareTo(scale.getMinValue()) < 0 || request.score().compareTo(scale.getMaxValue()) > 0) {
+            throw BadRequestException.invalidRating(
+                String.format("Score must be between %s and %s", scale.getMinValue(), scale.getMaxValue())
+            );
+        }
+
+        Rating savedRating = ratingRepository.save(Rating.builder()
+            .authorUser(currentUser)
+            .rateableItem(item)
+            .ratingScale(scale)
+            .score(request.score())
+            .reviewText(normalize(request.reviewText()))
+            .visibility(Visibility.PUBLIC)
+            .status(RatingStatus.PUBLISHED)
+            .build());
+
         return FeedItemDto.fromRating(savedRating, 0, 0, false);
     }
 

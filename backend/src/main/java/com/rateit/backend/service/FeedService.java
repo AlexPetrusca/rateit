@@ -2,7 +2,9 @@ package com.rateit.backend.service;
 
 import com.rateit.backend.entity.dto.FeedItemDto;
 import com.rateit.backend.entity.dto.TopicDto;
+import com.rateit.backend.entity.dto.PromptDto;
 import com.rateit.backend.entity.types.Visibility;
+import com.rateit.backend.entity.types.RateableItemType;
 import com.rateit.backend.entity.RateableItem;
 import com.rateit.backend.entity.Rating;
 import com.rateit.backend.repository.RateableItemRepository;
@@ -152,6 +154,46 @@ public class FeedService {
             ratingCount,
             averageScore == null ? null : java.math.BigDecimal.valueOf(averageScore)
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<PromptDto> getRecentPrompts(long userId, String currentUserPhoneNumber) {
+        userService.findByPhoneNumber(currentUserPhoneNumber);
+        return rateableItemRepository
+            .findByCreatedByUserIdAndItemTypeAndVisibilityAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+                userId,
+                RateableItemType.PROMPT,
+                Visibility.PUBLIC,
+                java.time.Instant.now().minus(java.time.Duration.ofHours(24))
+            )
+            .stream()
+            .map(PromptDto::from)
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PromptDto> getMyRecentPrompts(String currentUserPhoneNumber) {
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+        return recentPrompts()
+            .filter(prompt -> prompt.authorUserId().equals(currentUser.getId()))
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PromptDto> getRecentPrompts(String currentUserPhoneNumber) {
+        userService.findByPhoneNumber(currentUserPhoneNumber);
+        return recentPrompts().toList();
+    }
+
+    private java.util.stream.Stream<PromptDto> recentPrompts() {
+        return rateableItemRepository
+            .findByItemTypeAndVisibilityAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+                RateableItemType.PROMPT,
+                Visibility.PUBLIC,
+                java.time.Instant.now().minus(java.time.Duration.ofHours(24))
+            )
+            .stream()
+            .map(PromptDto::from);
     }
 
     private List<FeedItemDto> toFeedItems(List<Rating> ratings, User currentUser) {

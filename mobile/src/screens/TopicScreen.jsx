@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RatingComposer from '../components/RatingComposer.jsx';
 import RatingFeedItem from '../components/RatingFeedItem.jsx';
+import HandDrawnIcon from '../components/HandDrawnIcon.jsx';
 import PostCard from '../components/PostCard.jsx';
 import RichText from '../components/RichText.jsx';
 import StarRating from '../components/StarRating.jsx';
@@ -16,8 +17,8 @@ import { colors, spacing, text } from '../theme.js';
 import { mergeUniqueBy } from '../utils/lists.js';
 
 const PAGE_SIZE = 20;
-const REVIEW_PEEK = 140;
-const METADATA_GAP = -50;
+const REVIEW_PEEK = 78;
+const METADATA_GAP = 10;
 const PHOTO_HERO_LAYER = 'radial-gradient(circle at top left, rgba(255, 255, 255, 0.18), transparent 28%), radial-gradient(circle at bottom right, rgba(255, 48, 58, 0.16), transparent 34%), linear-gradient(180deg, rgba(9, 13, 22, 0.08) 0%, rgba(9, 13, 22, 0.26) 42%, rgba(9, 13, 22, 0.86) 100%)';
 const FALLBACK_HERO_LAYER = 'radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 28%), radial-gradient(circle at bottom right, rgba(255, 48, 58, 0.40), transparent 34%), radial-gradient(circle at center, rgba(255, 48, 58, 0.12), transparent 42%), linear-gradient(180deg, rgba(9, 13, 22, 0.18) 0%, rgba(0, 0, 0, 0.36) 42%, rgba(0, 0, 0, 0.92) 100%)';
 
@@ -90,6 +91,9 @@ const TopicScreen = ({ navigation, route }) => {
   const heroLayerStyle = Platform.OS === 'web'
     ? { backgroundImage: heroLayer }
     : { experimental_backgroundImage: heroLayer };
+  const fallbackLayerStyle = Platform.OS === 'web'
+    ? { backgroundImage: FALLBACK_HERO_LAYER }
+    : { experimental_backgroundImage: FALLBACK_HERO_LAYER };
   const averageScore = useMemo(() => {
     if (topic?.averageScore != null || topic?.averageRating != null) {
       return Number(topic.averageScore ?? topic.averageRating);
@@ -105,13 +109,9 @@ const TopicScreen = ({ navigation, route }) => {
   const titleSize = topicTitle.length <= 12 ? 46 : topicTitle.length <= 24 ? 40 : topicTitle.length <= 40 ? 34 : 29;
 
   const submitTopicRating = async () => {
-    const sourceRatingId = items.find((item) => !item.deleted && !item.deletedAt)?.ratingId;
-    if (sourceRatingId == null) {
-      return;
-    }
     setSaving(true);
     try {
-      await BackendApiService.rerate(sourceRatingId, composerScore, composerText || '');
+      await BackendApiService.rateTopic(rateableItemId, composerScore, composerText || '');
       setComposerText('');
       await loadTopic();
     } catch (error) {
@@ -122,8 +122,11 @@ const TopicScreen = ({ navigation, route }) => {
   };
 
   const closeReview = () => setOpenReview(null);
+  const closeTopic = () => navigation.canGoBack()
+    ? navigation.goBack()
+    : navigation.navigate('MainTabs', { screen: 'Home' });
 
-  const footer = items.length ? (
+  const footer = (
     <View style={[styles.footer, { width: feedWidth }]}>
       <RatingComposer
         title="Add your rating"
@@ -135,23 +138,23 @@ const TopicScreen = ({ navigation, route }) => {
         submitLabel="Add rating"
         onSubmit={submitTopicRating}
         loading={saving}
+        richText
       />
     </View>
-  ) : null;
+  );
 
   return (
     <View style={styles.screen}>
       <View pointerEvents="none" style={styles.backgroundLayer}>
+        <View style={[styles.backgroundFallback, fallbackLayerStyle]} />
         {hasTopicPhoto ? (
           <Image
             source={{ uri: mediaUrl }}
-            resizeMode="cover"
+            resizeMode="contain"
             onError={() => setImageFailed(true)}
             style={styles.backgroundImage}
           />
-        ) : (
-          <View style={styles.backgroundFallback} />
-        )}
+        ) : null}
         <View style={[styles.heroLayer, heroLayerStyle]} />
       </View>
 
@@ -214,14 +217,35 @@ const TopicScreen = ({ navigation, route }) => {
         )}
         ListFooterComponent={footer}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
-        refreshing={loading && items.length > 0}
-        onRefresh={loadTopic}
+        refreshControl={(
+          <RefreshControl
+            refreshing={loading && items.length > 0}
+            onRefresh={loadTopic}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+            progressBackgroundColor={colors.surfaceElevated}
+          />
+        )}
         onScroll={({ nativeEvent }) => {
           setBlurIntensity(Math.min(70, Math.max(0, nativeEvent.contentOffset.y / 8)));
         }}
         scrollEventThrottle={32}
         showsVerticalScrollIndicator={false}
       />
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Close topic"
+        hitSlop={8}
+        onPress={closeTopic}
+        style={({ pressed }) => [
+          styles.closeTopic,
+          { top: insets.top + spacing.sm },
+          pressed && styles.closeTopicPressed
+        ]}
+      >
+        <HandDrawnIcon name="x" color="#ffffff" size={20} />
+      </Pressable>
 
       <Modal
         animationType="fade"
@@ -267,7 +291,7 @@ const styles = StyleSheet.create({
     height: '100%'
   },
   backgroundFallback: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#090d16'
   },
   heroLayer: {
@@ -322,6 +346,20 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0
+  },
+  closeTopic: {
+    position: 'absolute',
+    right: spacing.lg,
+    zIndex: 20,
+    elevation: 20,
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10
+  },
+  closeTopicPressed: {
+    opacity: 0.65
   },
   reviewWrap: {
     alignSelf: 'center'

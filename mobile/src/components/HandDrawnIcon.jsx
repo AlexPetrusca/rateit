@@ -1,4 +1,6 @@
 import { Image } from 'react-native';
+import { Asset } from 'expo-asset';
+import { SvgUri } from 'react-native-svg';
 
 const icons = {
   back: require('../../assets/icons/back.png'),
@@ -22,8 +24,19 @@ const icons = {
   x: require('../../assets/icons/x.png')
 };
 
-const HandDrawnIcon = ({ name, color, size = 24 }) => (
-  <Image source={icons[name]} resizeMode="contain" style={{ width: size, height: size, tintColor: color }} />
-);
+const svgIcons = {
+  bold: require('../../assets/icons/bold.svg'),
+  italic: require('../../assets/icons/italic.svg'),
+  link: require('../../assets/icons/link.svg'),
+  underline: require('../../assets/icons/underline.svg')
+};
+
+const HandDrawnIcon = ({ name, color, size = 24 }) => {
+  if (svgIcons[name]) {
+    return <SvgUri uri={Asset.fromModule(svgIcons[name]).uri} width={size} height={size} color={color} />;
+  }
+
+  return <Image source={icons[name]} resizeMode="contain" style={{ width: size, height: size, tintColor: color }} />;
+};
 
 export default HandDrawnIcon;

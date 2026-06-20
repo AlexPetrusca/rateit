@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import AppTextInput from './AppTextInput.jsx';
+import HandDrawnIcon from './HandDrawnIcon.jsx';
 import { colors, spacing, text } from '../theme.js';
 import { insertLink, wrapSelection } from '../utils/richTextEditing.js';
 
 const FORMATS = [
-  { marker: '**', label: 'B', accessibilityLabel: 'Bold', styleName: 'bold' },
-  { marker: '_', label: 'I', accessibilityLabel: 'Italic', styleName: 'italic' },
-  { marker: '~', label: 'U', accessibilityLabel: 'Underline', styleName: 'underline' }
+  { marker: '**', icon: 'bold', accessibilityLabel: 'Bold' },
+  { marker: '_', icon: 'italic', accessibilityLabel: 'Italic' },
+  { marker: '~', icon: 'underline', accessibilityLabel: 'Underline' }
 ];
 
 const RichTextInput = ({ label, value = '', onChangeText, ...props }) => {
@@ -33,7 +34,7 @@ const RichTextInput = ({ label, value = '', onChangeText, ...props }) => {
             onPress={() => applyEdit(wrapSelection(value, selection, format.marker))}
             style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
           >
-            <Text style={[styles.buttonText, styles[format.styleName]]}>{format.label}</Text>
+            <HandDrawnIcon name={format.icon} color={colors.textMuted} size={18} />
           </Pressable>
         ))}
         <Pressable
@@ -42,7 +43,7 @@ const RichTextInput = ({ label, value = '', onChangeText, ...props }) => {
           onPress={() => applyEdit(insertLink(value, selection))}
           style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
         >
-          <Text style={styles.link}>⌁</Text>
+          <HandDrawnIcon name="link" color={colors.textMuted} size={18} />
         </Pressable>
       </View>
       <AppTextInput
@@ -81,24 +82,6 @@ const styles = StyleSheet.create({
   buttonPressed: {
     backgroundColor: colors.surfacePressed
   },
-  buttonText: {
-    color: colors.textMuted,
-    fontSize: 15
-  },
-  bold: {
-    fontWeight: '900'
-  },
-  italic: {
-    fontStyle: 'italic'
-  },
-  underline: {
-    textDecorationLine: 'underline'
-  },
-  link: {
-    color: colors.textMuted,
-    fontSize: 22,
-    lineHeight: 24
-  }
 });
 
 export default RichTextInput;

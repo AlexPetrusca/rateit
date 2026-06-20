@@ -5,7 +5,6 @@ import CommentThread from './CommentThread.jsx';
 import PostActions from './PostActions.jsx';
 import PostCard from './PostCard.jsx';
 import RatingComposer from './RatingComposer.jsx';
-import EmptyState from './EmptyState.jsx';
 import BackendApiService from '../services/BackendApiService.js';
 
 const RatingFeedItem = ({
@@ -22,6 +21,7 @@ const RatingFeedItem = ({
   showTopicText = true,
   reviewNumberOfLines,
   openCardOnlyWhenTruncated = false,
+  showReply = true,
   cardStyle
 }) => {
   const [activeEditKey, setActiveEditKey] = useState(null);
@@ -32,6 +32,17 @@ const RatingFeedItem = ({
   const isRootComposerOpen = interactions.activeComposer === rootComposerKey;
   const rerateKey = interactions.getComposerKey(item.ratingId, 'rerate');
   const canEdit = item.author?.userId != null && currentUserId != null && item.author.userId === currentUserId && !item.deleted && !item.deletedAt;
+
+  const toggleComments = () => {
+    if (isCommentsOpen) {
+      interactions.toggleComments(item.ratingId);
+      if (interactions.activeComposer?.startsWith(`${item.ratingId}:comment`)) {
+        interactions.setActiveComposer(null);
+      }
+      return;
+    }
+    interactions.openCommentComposer(item.ratingId);
+  };
 
   const renderCommentComposer = (parentCommentId = null) => {
     const draft = interactions.getDraft(item.ratingId, parentCommentId);
@@ -84,7 +95,7 @@ const RatingFeedItem = ({
     );
   };
 
-  const expandedContent = isCommentsOpen ? (
+  const expandedContent = isCommentsOpen && (comments.length > 0 || isRootComposerOpen) ? (
     <View style={{ gap: 8 }}>
       {comments.length > 0 ? (
         <CommentThread
@@ -124,8 +135,6 @@ const RatingFeedItem = ({
           expandedReplyKeys={interactions.expandedReplyKeys}
           onToggleReplies={interactions.toggleReplies}
         />
-      ) : !isRootComposerOpen ? (
-        <EmptyState title="No comments yet." />
       ) : null}
       {isRootComposerOpen ? renderCommentComposer() : null}
     </View>
@@ -170,8 +179,8 @@ const RatingFeedItem = ({
             commentCount={item.commentCount}
             onLike={() => interactions.toggleLike(item)}
             onRerate={() => interactions.toggleRerateComposer(item)}
-            onComment={() => interactions.toggleComments(item.ratingId)}
-            onReply={() => interactions.openCommentComposer(item.ratingId)}
+            onComment={toggleComments}
+            onReply={showReply ? () => interactions.openCommentComposer(item.ratingId) : undefined}
             onEdit={canEdit ? () => onEditPress?.(item.ratingId) : undefined}
             shareUrl={shareUrl}
             commentLabel={isCommentsOpen ? 'Hide comments' : 'Comments'}
