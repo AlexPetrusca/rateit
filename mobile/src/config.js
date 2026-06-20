@@ -15,6 +15,10 @@ export const APP_PUBLIC_URL = trimTrailingSlash(
   )
 );
 
+export const getRatingShareUrl = (rateableItemId, ratingId) => (
+  `${APP_PUBLIC_URL}/topics/${encodeURIComponent(rateableItemId)}?openReviewId=${encodeURIComponent(ratingId)}`
+);
+
 export const getApiUrl = (path) => {
   if (!path) {
     return API_BASE_URL;

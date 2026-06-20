@@ -9,7 +9,8 @@ const Screen = ({
   scroll = true,
   contentStyle,
   headerStyle,
-  safeTop = false
+  safeTop = false,
+  safeBottom = true
 }) => {
   const { width } = useWindowDimensions();
   const compact = width < 375;
@@ -28,7 +29,7 @@ const Screen = ({
   );
 
   return (
-    <SafeAreaView edges={safeTop ? ['top', 'left', 'right', 'bottom'] : ['left', 'right', 'bottom']} style={styles.safeArea}>
+    <SafeAreaView edges={[...(safeTop ? ['top'] : []), 'left', 'right', ...(safeBottom ? ['bottom'] : [])]} style={styles.safeArea}>
       {scroll ? (
         <ScrollView
           automaticallyAdjustKeyboardInsets

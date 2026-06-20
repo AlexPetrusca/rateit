@@ -64,8 +64,8 @@ export const parseRichText = (value) => {
   return segments.length > 0 ? segments : value;
 };
 
-const RichText = ({ children, style }) => (
-  <Text style={style}>{parseRichText(children)}</Text>
+const RichText = ({ children, style, ...props }) => (
+  <Text style={style} {...props}>{parseRichText(children)}</Text>
 );
 
 const styles = {

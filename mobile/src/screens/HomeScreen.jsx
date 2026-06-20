@@ -3,7 +3,7 @@ import AppButton from '../components/AppButton.jsx';
 import FeedList from '../components/FeedList.jsx';
 import RatingFeedItem from '../components/RatingFeedItem.jsx';
 import Screen from '../components/Screen.jsx';
-import { APP_PUBLIC_URL } from '../config.js';
+import { getRatingShareUrl } from '../config.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import { useRatingInteractions } from '../hooks/useRatingInteractions.js';
@@ -76,6 +76,8 @@ const HomeScreen = ({ navigation, route }) => {
       title={null}
       scroll={false}
       actions={null}
+      safeBottom={false}
+      contentStyle={{ paddingBottom: 0 }}
     >
       <FeedList
         items={items}
@@ -92,12 +94,17 @@ const HomeScreen = ({ navigation, route }) => {
             item={item}
             currentUserId={user?.userId ?? user?.id}
             interactions={interactions}
+            reviewNumberOfLines={6}
+            openCardOnlyWhenTruncated
             refresh={refresh}
             onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
             onTopicPress={(rateableItemId) => navigation.navigate('Topic', { rateableItemId })}
-            onCardPress={(post) => navigation.navigate('Topic', { rateableItemId: post.rateableItem?.id })}
+            onCardPress={(post) => navigation.navigate('Topic', {
+              rateableItemId: post.rateableItem?.id,
+              openReviewId: post.ratingId
+            })}
             onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
-            shareUrl={`${APP_PUBLIC_URL}/posts/${item.ratingId}`}
+            shareUrl={getRatingShareUrl(item.rateableItem?.id, item.ratingId)}
           />
         )}
       />

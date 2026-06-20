@@ -111,15 +111,23 @@ export const useRatingInteractions = ({ notify, updateItem }) => {
     }
   }, [notify, updateItem]);
 
-  const toggleRerateComposer = useCallback((ratingId) => {
+  const toggleRerateComposer = useCallback((item) => {
+    const ratingId = item.ratingId;
     const key = getComposerKey(ratingId, 'rerate');
+    setRerateDrafts((current) => ({
+      ...current,
+      [ratingId]: current[ratingId] || {
+        score: String(item.score || 4),
+        reviewText: ''
+      }
+    }));
     setActiveComposer((current) => (current === key ? null : key));
   }, []);
 
   const submitRerate = useCallback(async (ratingId, refresh) => {
     const draft = rerateDrafts[ratingId] || {};
     const score = Number(draft.score);
-    if (!score) {
+    if (!isFiveStarScoreInRange(score)) {
       notify?.({ message: 'Add a score before re-rating.', type: 'warning' });
       return;
     }

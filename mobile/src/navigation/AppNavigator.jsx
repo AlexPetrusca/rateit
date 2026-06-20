@@ -23,11 +23,40 @@ import ProfileScreen from '../screens/ProfileScreen.jsx';
 import SearchUsersScreen from '../screens/SearchUsersScreen.jsx';
 import SuggestionSubmitScreen from '../screens/SuggestionSubmitScreen.jsx';
 import TopicScreen from '../screens/TopicScreen.jsx';
+import { APP_PUBLIC_URL } from '../config.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { colors } from '../theme.js';
 
 const Stack = createNativeStackNavigator();
 const Tab = Platform.OS === 'web' ? createBottomTabNavigator() : createNativeBottomTabNavigator();
+
+const linking = {
+  prefixes: [APP_PUBLIC_URL],
+  config: {
+    screens: {
+      MainTabs: {
+        path: '',
+        screens: {
+          Home: '',
+          Following: 'following',
+          Create: 'create',
+          Search: 'search',
+          Me: 'me'
+        }
+      },
+      Topic: 'topics/:rateableItemId',
+      Profile: 'users/:userId',
+      ProfileEditor: 'profile/edit',
+      PostEditor: 'posts/:ratingId/edit',
+      Drafts: 'drafts',
+      FollowList: 'people',
+      Menu: 'menu',
+      Backlog: 'backlog',
+      SuggestionSubmit: 'suggestions/new',
+      InstallInfo: 'install'
+    }
+  }
+};
 
 const tabIcons = {
   Home: require('../../assets/tab-icons/home.png'),
@@ -119,7 +148,7 @@ const AppNavigator = () => {
   };
 
   return (
-    <NavigationContainer theme={theme}>
+    <NavigationContainer linking={linking} theme={theme}>
       <Stack.Navigator screenOptions={stackOptions}>
         {!isAuthenticated ? (
           <>
@@ -132,7 +161,7 @@ const AppNavigator = () => {
               {() => <MainTabs user={user} />}
             </Stack.Screen>
             <Stack.Screen name="Profile" component={ProfileScreen} />
-            <Stack.Screen name="ProfileEditor" component={ProfileEditorScreen} options={{ title: 'Profile photo' }} />
+            <Stack.Screen name="ProfileEditor" component={ProfileEditorScreen} options={{ title: 'Edit Profile' }} />
             <Stack.Screen name="PostEditor" component={PostEditorScreen} options={{ title: 'Edit post' }} />
             <Stack.Screen name="Topic" component={TopicScreen} options={{ headerShown: Platform.OS === 'web', title: 'Topic' }} />
             <Stack.Screen name="Drafts" component={DraftsScreen} />

@@ -33,6 +33,7 @@ const FeedList = ({
       data={items}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
+      style={styles.flatList}
       contentContainerStyle={[styles.list, contentContainerStyle]}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       refreshing={refreshing}
@@ -60,6 +61,9 @@ const FeedList = ({
 };
 
 const styles = StyleSheet.create({
+  flatList: {
+    flex: 1
+  },
   list: {
     paddingBottom: spacing.xl,
     flexGrow: 1

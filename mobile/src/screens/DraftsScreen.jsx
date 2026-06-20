@@ -52,7 +52,10 @@ const DraftsScreen = ({ navigation }) => {
         contentContainerStyle={styles.list}
         ListEmptyComponent={!loading ? <EmptyState title="No saved drafts." /> : null}
         renderItem={({ item }) => (
-          <Pressable onPress={() => navigation.navigate('Create', { draft: item })}>
+          <Pressable onPress={() => navigation.navigate('MainTabs', {
+            screen: 'Create',
+            params: { draft: item }
+          })}>
             <Card style={styles.item}>
               <View style={styles.copy}>
                 <Text style={styles.title}>{item.body || '(no title)'}</Text>

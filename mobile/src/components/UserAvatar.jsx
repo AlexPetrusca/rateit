@@ -15,7 +15,7 @@ const initialsFor = (username, fallbackText) => {
 };
 
 const UserAvatar = ({ username, profilePicUrl, size = 'md', fallbackText }) => {
-  const dimension = sizes[size] || sizes.md;
+  const dimension = typeof size === 'number' ? size : sizes[size] || sizes.md;
   const imageUrl = useResolvedImageUrl(profilePicUrl);
 
   if (imageUrl) {

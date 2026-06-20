@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import AppButton from '../components/AppButton.jsx';
-import AppTextInput from '../components/AppTextInput.jsx';
 import Card from '../components/Card.jsx';
 import HandDrawnIcon from '../components/HandDrawnIcon.jsx';
 import RichText from '../components/RichText.jsx';
+import RichTextInput from '../components/RichTextInput.jsx';
 import Screen from '../components/Screen.jsx';
 import StarRating from '../components/StarRating.jsx';
 import StatusMessage from '../components/StatusMessage.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
+import { useResolvedImageUrl } from '../hooks/useResolvedImageUrl.js';
 import BackendApiService from '../services/BackendApiService.js';
 import { colors, spacing, text } from '../theme.js';
 import { buildCreateRatingRequest, formatFiveStarScore, validateCreateRatingDraft } from '../utils/ratingDisplay.js';
@@ -21,9 +23,15 @@ const CreateScreen = ({ navigation, route }) => {
   const [body, setBody] = useState(incomingDraft?.body ?? '');
   const [reviewText, setReviewText] = useState(incomingDraft?.reviewText ?? '');
   const [score, setScore] = useState(incomingDraft?.score ?? 4);
+  const [previewScore, setPreviewScore] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [existingMedia, setExistingMedia] = useState({
+    mediaObjectKey: incomingDraft?.mediaObjectKey ?? null,
+    mediaContentType: incomingDraft?.mediaContentType ?? null
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const existingMediaUrl = useResolvedImageUrl(existingMedia.mediaObjectKey);
 
   useEffect(() => {
     if (!incomingDraft) {
@@ -33,7 +41,26 @@ const CreateScreen = ({ navigation, route }) => {
     setBody(incomingDraft.body ?? '');
     setReviewText(incomingDraft.reviewText ?? '');
     setScore(incomingDraft.score ?? 4);
-  }, [incomingDraft]);
+    setPreviewScore(null);
+    setSelectedFile(null);
+    setExistingMedia({
+      mediaObjectKey: incomingDraft.mediaObjectKey ?? null,
+      mediaContentType: incomingDraft.mediaContentType ?? null
+    });
+    navigation.setParams({ draft: undefined });
+  }, [incomingDraft, navigation]);
+
+  useFocusEffect(useCallback(() => () => {
+    setDraftId(null);
+    setBody('');
+    setReviewText('');
+    setScore(4);
+    setPreviewScore(null);
+    setSelectedFile(null);
+    setExistingMedia({ mediaObjectKey: null, mediaContentType: null });
+    setSaving(false);
+    setError('');
+  }, []));
 
   const pickImage = async (camera = false) => {
     const launcher = camera ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync;
@@ -53,7 +80,7 @@ const CreateScreen = ({ navigation, route }) => {
 
   const uploadMedia = async () => {
     if (!selectedFile) {
-      return { mediaObjectKey: null, mediaContentType: null };
+      return existingMedia;
     }
     const { uploadUrl, key } = await BackendApiService.getUploadUrl(selectedFile.name, selectedFile.type);
     await BackendApiService.uploadFileToS3(uploadUrl, selectedFile);
@@ -67,7 +94,11 @@ const CreateScreen = ({ navigation, route }) => {
       if (draftId) {
         await BackendApiService.publishDraft(draftId);
       } else {
-        const validationError = validateCreateRatingDraft({ body, selectedFile, score });
+        const validationError = validateCreateRatingDraft({
+          body,
+          selectedFile: selectedFile || existingMedia.mediaObjectKey,
+          score
+        });
         if (validationError) {
           setError(validationError);
           return;
@@ -129,37 +160,44 @@ const CreateScreen = ({ navigation, route }) => {
         <View style={styles.iconRow}>
           <AppButton variant="secondary" label="Take photo" icon={<HandDrawnIcon name="camera" color={colors.text} />} onPress={() => pickImage(true)} style={styles.iconButton} />
           <AppButton variant="secondary" label="Upload photo" icon={<HandDrawnIcon name="upload" color={colors.text} />} onPress={() => pickImage(false)} style={styles.iconButton} />
-          {selectedFile ? (
-            <AppButton variant="secondary" label="Remove photo" icon={<HandDrawnIcon name="x" color={colors.text} />} onPress={() => setSelectedFile(null)} style={styles.iconButton} />
+          {selectedFile || existingMediaUrl ? (
+            <AppButton
+              variant="secondary"
+              label="Remove photo"
+              icon={<HandDrawnIcon name="x" color={colors.text} />}
+              onPress={() => {
+                setSelectedFile(null);
+                setExistingMedia({ mediaObjectKey: null, mediaContentType: null });
+              }}
+              style={styles.iconButton}
+            />
           ) : null}
         </View>
-        {selectedFile ? (
+        {selectedFile || existingMediaUrl ? (
           <View style={styles.previewWrap}>
-            <Image source={{ uri: selectedFile.uri }} style={styles.preview} />
+            <Image source={{ uri: selectedFile?.uri || existingMediaUrl }} style={styles.preview} />
           </View>
         ) : null}
-        <AppTextInput
-          label={selectedFile ? 'Title' : 'Topic'}
+        <RichTextInput
+          label={selectedFile || existingMedia.mediaObjectKey ? 'Title' : 'Topic'}
           value={body}
           onChangeText={setBody}
-          placeholder="Write the thing you want to rate"
-          multiline
+          placeholder="Write the thing you want to rate, or add a caption for your photo"
         />
-        <AppTextInput
+        <RichTextInput
           label="Your review"
           value={reviewText}
           onChangeText={setReviewText}
-          placeholder="Add rating context"
-          multiline
+          placeholder="Add your rating context"
         />
         <View style={styles.scoreHeader}>
           <Text style={styles.sectionTitle}>Rating</Text>
-          <Text style={styles.score}>{formatFiveStarScore(score)}</Text>
+          <Text style={styles.score}>{formatFiveStarScore(previewScore ?? score)}</Text>
         </View>
-        <StarRating value={score} interactive size="lg" onChange={setScore} />
+        <StarRating value={score} interactive size="lg" onChange={setScore} onPreviewChange={setPreviewScore} />
         <Text style={styles.previewLabel}>How it will look:</Text>
         <View style={styles.previewMeta}>
-          <RichText style={styles.previewText}>{body.trim() || 'Add text to describe the thing you are rating.'}</RichText>
+          {body.trim() ? <RichText style={styles.previewText}>{body.trim()}</RichText> : null}
           {reviewText.trim() ? <RichText style={styles.previewReview}>{reviewText.trim()}</RichText> : null}
         </View>
         <View style={styles.actionRow}>
@@ -211,6 +249,7 @@ const styles = StyleSheet.create({
     fontWeight: '800'
   },
   previewMeta: {
+    minHeight: 64,
     padding: spacing.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,

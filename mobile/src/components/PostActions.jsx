@@ -1,4 +1,5 @@
-import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { useNotifications } from '../contexts/NotificationContext.jsx';
 import { colors, radius, spacing } from '../theme.js';
 import HandDrawnIcon from './HandDrawnIcon.jsx';
 
@@ -38,9 +39,18 @@ const PostActions = ({
   replyLabel = 'Reply',
   showCommentCount = true
 }) => {
-  const handleShare = () => {
-    if (shareUrl) {
-      Share.share({ message: shareUrl, url: shareUrl });
+  const { notify } = useNotifications();
+
+  const handleShare = async () => {
+    try {
+      if (Platform.OS === 'web' && navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+        notify({ message: 'Added to clipboard', type: 'info' });
+        return;
+      }
+      await Share.share({ message: shareUrl, url: shareUrl });
+    } catch (error) {
+      notify({ message: error.message || 'Failed to share post', type: 'error' });
     }
   };
 

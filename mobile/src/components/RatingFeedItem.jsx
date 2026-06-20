@@ -20,6 +20,8 @@ const RatingFeedItem = ({
   refresh,
   showMedia = true,
   showTopicText = true,
+  reviewNumberOfLines,
+  openCardOnlyWhenTruncated = false,
   cardStyle
 }) => {
   const [activeEditKey, setActiveEditKey] = useState(null);
@@ -27,6 +29,7 @@ const RatingFeedItem = ({
   const comments = interactions.commentsByRating[item.ratingId] || [];
   const isCommentsOpen = interactions.expandedRatings.includes(item.ratingId);
   const rootComposerKey = interactions.getComposerKey(item.ratingId, 'comment');
+  const isRootComposerOpen = interactions.activeComposer === rootComposerKey;
   const rerateKey = interactions.getComposerKey(item.ratingId, 'rerate');
   const canEdit = item.author?.userId != null && currentUserId != null && item.author.userId === currentUserId && !item.deleted && !item.deletedAt;
 
@@ -69,28 +72,36 @@ const RatingFeedItem = ({
         submitLabel="Save"
         multilineLabel="Comment"
         onSubmit={async () => {
-          await BackendApiService.updateRatingComment(comment.id, draft.text, Number(draft.score));
-          await interactions.loadComments(item.ratingId, true);
-          setActiveEditKey(null);
+          try {
+            await BackendApiService.updateRatingComment(comment.id, draft.text, Number(draft.score));
+            await interactions.loadComments(item.ratingId, true);
+            setActiveEditKey(null);
+          } catch (error) {
+            interactions.notify?.({ message: error.message || 'Failed to edit comment', type: 'error' });
+          }
         }}
       />
     );
   };
 
   const expandedContent = isCommentsOpen ? (
-    <View>
+    <View style={{ gap: 8 }}>
       {comments.length > 0 ? (
         <CommentThread
           comments={comments}
           currentUserId={currentUserId}
           onAuthorPress={onAuthorPress}
           onLikePress={async (comment) => {
-            if (comment.likedByCurrentUser) {
-              await BackendApiService.unlikeComment(comment.id);
-            } else {
-              await BackendApiService.likeComment(comment.id);
+            try {
+              if (comment.likedByCurrentUser) {
+                await BackendApiService.unlikeComment(comment.id);
+              } else {
+                await BackendApiService.likeComment(comment.id);
+              }
+              await interactions.loadComments(item.ratingId, true);
+            } catch (error) {
+              interactions.notify?.({ message: error.message || 'Failed to like comment', type: 'error' });
             }
-            await interactions.loadComments(item.ratingId, true);
           }}
           onReplyPress={(comment) => {
             const replyKey = interactions.getReplyKey(item.ratingId, comment.id);
@@ -113,10 +124,10 @@ const RatingFeedItem = ({
           expandedReplyKeys={interactions.expandedReplyKeys}
           onToggleReplies={interactions.toggleReplies}
         />
-      ) : (
+      ) : !isRootComposerOpen ? (
         <EmptyState title="No comments yet." />
-      )}
-      {interactions.activeComposer === rootComposerKey ? renderCommentComposer() : null}
+      ) : null}
+      {isRootComposerOpen ? renderCommentComposer() : null}
     </View>
   ) : null;
 
@@ -149,6 +160,8 @@ const RatingFeedItem = ({
         onCardPress={onCardPress}
         showMedia={showMedia}
         showTopicText={showTopicText}
+        reviewNumberOfLines={reviewNumberOfLines}
+        openCardOnlyWhenTruncated={openCardOnlyWhenTruncated}
         style={cardStyle}
         actions={(
           <PostActions
@@ -156,7 +169,7 @@ const RatingFeedItem = ({
             likeCount={item.likeCount}
             commentCount={item.commentCount}
             onLike={() => interactions.toggleLike(item)}
-            onRerate={() => interactions.toggleRerateComposer(item.ratingId)}
+            onRerate={() => interactions.toggleRerateComposer(item)}
             onComment={() => interactions.toggleComments(item.ratingId)}
             onReply={() => interactions.openCommentComposer(item.ratingId)}
             onEdit={canEdit ? () => onEditPress?.(item.ratingId) : undefined}
@@ -167,7 +180,7 @@ const RatingFeedItem = ({
         )}
         expandedContent={expandedContent}
       />
-      {rerateComposer}
+      {rerateComposer ? <View style={{ marginTop: 16 }}>{rerateComposer}</View> : null}
     </View>
   );
 };

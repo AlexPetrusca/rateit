@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, spacing } from '../theme.js';
 
 const NotificationContext = createContext(null);
@@ -50,22 +50,47 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: spacing.lg,
     right: spacing.lg,
-    bottom: spacing.xl,
-    gap: spacing.sm
+    bottom: 88,
+    zIndex: 1000,
+    alignItems: 'center',
+    gap: spacing.sm,
+    elevation: 20
   },
   toast: {
-    padding: spacing.md,
+    width: '100%',
+    maxWidth: 420,
+    minHeight: 48,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderLeftWidth: 4,
+    borderColor: colors.borderStrong,
+    borderLeftColor: colors.accent,
     borderRadius: radius.md,
-    backgroundColor: colors.text
+    backgroundColor: colors.surfaceElevated,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOpacity: 0.38,
+        shadowRadius: 18,
+        shadowOffset: { width: 0, height: 8 }
+      },
+      web: {
+        boxShadow: '0 12px 36px rgba(0, 0, 0, 0.42)'
+      }
+    })
   },
   error: {
-    backgroundColor: colors.danger
+    borderLeftColor: colors.danger
   },
   warning: {
-    backgroundColor: colors.warning
+    borderLeftColor: colors.warning
   },
   text: {
-    color: '#ffffff',
-    fontWeight: '800'
+    color: colors.text,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '700'
   }
 });

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { forwardRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors, radius, spacing, text } from '../theme.js';
 
-const AppTextInput = ({
+const AppTextInput = forwardRef(({
   label,
   value,
   onChangeText,
@@ -12,14 +12,17 @@ const AppTextInput = ({
   secureTextEntry = false,
   autoCapitalize = 'sentences',
   style,
-  inputStyle
-}) => {
+  inputStyle,
+  ...inputProps
+}, ref) => {
   const [focused, setFocused] = useState(false);
 
   return (
     <View style={[styles.field, style]}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <TextInput
+        ref={ref}
+        {...inputProps}
         value={value}
         onChangeText={onChangeText}
         onFocus={() => setFocused(true)}
@@ -38,7 +41,9 @@ const AppTextInput = ({
       />
     </View>
   );
-};
+});
+
+AppTextInput.displayName = 'AppTextInput';
 
 const styles = StyleSheet.create({
   field: {
@@ -58,11 +63,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: colors.surface,
     color: colors.text,
-    fontSize: 16
+    fontSize: 16,
+    outlineStyle: 'none'
   },
   focused: {
-    borderColor: colors.accent,
-    backgroundColor: colors.surfaceElevated
+    borderColor: colors.text,
+    backgroundColor: colors.surface
   },
   multiline: {
     minHeight: 96

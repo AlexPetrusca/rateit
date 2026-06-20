@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RatingComposer from '../components/RatingComposer.jsx';
 import RatingFeedItem from '../components/RatingFeedItem.jsx';
+import PostCard from '../components/PostCard.jsx';
 import RichText from '../components/RichText.jsx';
 import StarRating from '../components/StarRating.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -15,6 +16,10 @@ import { colors, spacing, text } from '../theme.js';
 import { mergeUniqueBy } from '../utils/lists.js';
 
 const PAGE_SIZE = 20;
+const REVIEW_PEEK = 140;
+const METADATA_GAP = -50;
+const PHOTO_HERO_LAYER = 'radial-gradient(circle at top left, rgba(255, 255, 255, 0.18), transparent 28%), radial-gradient(circle at bottom right, rgba(255, 48, 58, 0.16), transparent 34%), linear-gradient(180deg, rgba(9, 13, 22, 0.08) 0%, rgba(9, 13, 22, 0.26) 42%, rgba(9, 13, 22, 0.86) 100%)';
+const FALLBACK_HERO_LAYER = 'radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 28%), radial-gradient(circle at bottom right, rgba(255, 48, 58, 0.40), transparent 34%), radial-gradient(circle at center, rgba(255, 48, 58, 0.12), transparent 42%), linear-gradient(180deg, rgba(9, 13, 22, 0.18) 0%, rgba(0, 0, 0, 0.36) 42%, rgba(0, 0, 0, 0.92) 100%)';
 
 const formatAverageRating = (value) => {
   const score = Number(value);
@@ -37,6 +42,7 @@ const TopicScreen = ({ navigation, route }) => {
   const [composerScore, setComposerScore] = useState(4);
   const [composerText, setComposerText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [openReview, setOpenReview] = useState(null);
 
   const updateItem = useCallback((ratingId, updater) => {
     setItems((current) => current.map((item) => (item.ratingId === ratingId ? updater(item) : item)));
@@ -68,10 +74,22 @@ const TopicScreen = ({ navigation, route }) => {
     loadTopic();
   }, [loadTopic]);
 
+  useEffect(() => {
+    const openReviewId = route.params?.openReviewId;
+    const review = items.find((item) => String(item.ratingId) === String(openReviewId));
+    if (review) {
+      setOpenReview(review);
+    }
+  }, [items, route.params?.openReviewId]);
+
   const topicTitle = topic?.title || topic?.body || items[0]?.rateableItem?.title || items[0]?.rateableItem?.body || 'Topic';
   const mediaObjectKey = topic?.mediaObjectKey || items[0]?.rateableItem?.mediaObjectKey;
   const mediaUrl = useResolvedImageUrl(mediaObjectKey);
   const hasTopicPhoto = Boolean(mediaUrl && !imageFailed);
+  const heroLayer = hasTopicPhoto ? PHOTO_HERO_LAYER : FALLBACK_HERO_LAYER;
+  const heroLayerStyle = Platform.OS === 'web'
+    ? { backgroundImage: heroLayer }
+    : { experimental_backgroundImage: heroLayer };
   const averageScore = useMemo(() => {
     if (topic?.averageScore != null || topic?.averageRating != null) {
       return Number(topic.averageScore ?? topic.averageRating);
@@ -83,7 +101,7 @@ const TopicScreen = ({ navigation, route }) => {
   const displayedItems = useMemo(() => [...items].reverse(), [items]);
   const ratingCount = topic?.ratingCount ?? items.length;
   const feedWidth = Math.min(420, viewportWidth - 24);
-  const listTopPadding = Math.max(360, viewportHeight - 72);
+  const listTopPadding = Math.max(360, viewportHeight - REVIEW_PEEK);
   const titleSize = topicTitle.length <= 12 ? 46 : topicTitle.length <= 24 ? 40 : topicTitle.length <= 40 ? 34 : 29;
 
   const submitTopicRating = async () => {
@@ -102,6 +120,8 @@ const TopicScreen = ({ navigation, route }) => {
       setSaving(false);
     }
   };
+
+  const closeReview = () => setOpenReview(null);
 
   const footer = items.length ? (
     <View style={[styles.footer, { width: feedWidth }]}>
@@ -132,10 +152,10 @@ const TopicScreen = ({ navigation, route }) => {
         ) : (
           <View style={styles.backgroundFallback} />
         )}
-        <View style={styles.backgroundShade} />
+        <View style={[styles.heroLayer, heroLayerStyle]} />
       </View>
 
-      <View pointerEvents="none" style={[styles.metadataLayer, { paddingBottom: viewportHeight * 0.29 }]}>
+      <View pointerEvents="none" style={[styles.metadataLayer, { paddingBottom: REVIEW_PEEK + METADATA_GAP }]}>
         <RichText style={[styles.title, { fontSize: titleSize, lineHeight: titleSize * 0.96 }]}>
           {topicTitle}
         </RichText>
@@ -146,9 +166,17 @@ const TopicScreen = ({ navigation, route }) => {
         <Text style={styles.count}>{ratingCount} {ratingCount === 1 ? 'rating' : 'ratings'}</Text>
       </View>
 
-      {blurIntensity > 0 ? (
+      {Platform.OS === 'web' ? (
+        <View
+          pointerEvents="none"
+          style={[styles.blurLayer, {
+            backdropFilter: `blur(${blurIntensity * 0.2}px)`,
+            WebkitBackdropFilter: `blur(${blurIntensity * 0.2}px)`
+          }]}
+        />
+      ) : (
         <BlurView pointerEvents="none" intensity={blurIntensity} tint="dark" style={styles.blurLayer} />
-      ) : null}
+      )}
 
       <FlatList
         style={styles.reviewsLayer}
@@ -167,10 +195,11 @@ const TopicScreen = ({ navigation, route }) => {
               item={item}
               currentUserId={user?.userId ?? user?.id}
               interactions={interactions}
+              reviewNumberOfLines={6}
               refresh={loadTopic}
               onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
               onTopicPress={() => null}
-              onCardPress={() => interactions.toggleComments(item.ratingId)}
+              onCardPress={() => setOpenReview(item)}
               onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
               showMedia={false}
               showTopicText={false}
@@ -193,6 +222,30 @@ const TopicScreen = ({ navigation, route }) => {
         scrollEventThrottle={32}
         showsVerticalScrollIndicator={false}
       />
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={Boolean(openReview)}
+        onRequestClose={closeReview}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={closeReview}>
+          <Pressable style={styles.modalContent} onPress={(event) => event.stopPropagation()}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScroll}>
+              <PostCard post={openReview} style={styles.modalCard} />
+            </ScrollView>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close review"
+              hitSlop={12}
+              onPress={closeReview}
+              style={styles.modalClose}
+            >
+              <Text style={styles.modalCloseText}>×</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -215,15 +268,14 @@ const styles = StyleSheet.create({
   },
   backgroundFallback: {
     flex: 1,
-    backgroundColor: '#26070b'
+    backgroundColor: '#090d16'
   },
-  backgroundShade: {
+  heroLayer: {
     position: 'absolute',
     top: 0,
     right: 0,
     bottom: 0,
-    left: 0,
-    backgroundColor: 'rgba(4, 6, 12, 0.3)'
+    left: 0
   },
   metadataLayer: {
     position: 'absolute',
@@ -237,7 +289,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#ffffff',
-    fontWeight: '900',
+    fontFamily: 'PlayfairDisplay_400Regular',
     letterSpacing: -1.5,
     textShadowColor: 'rgba(0, 0, 0, 0.55)',
     textShadowOffset: { width: 0, height: 4 },
@@ -251,11 +303,11 @@ const styles = StyleSheet.create({
   average: {
     color: '#ffffff',
     fontSize: 19,
-    fontWeight: '800'
+    fontWeight: 'normal'
   },
   count: {
     color: 'rgba(255,255,255,0.72)',
-    fontWeight: '700'
+    fontWeight: 'normal'
   },
   blurLayer: {
     position: 'absolute',
@@ -288,6 +340,41 @@ const styles = StyleSheet.create({
   footer: {
     alignSelf: 'center',
     marginTop: spacing.md
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: spacing.lg,
+    backgroundColor: 'rgba(0, 0, 0, 0.82)'
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 520,
+    maxHeight: '86%',
+    alignSelf: 'center'
+  },
+  modalScroll: {
+    flexGrow: 1,
+    justifyContent: 'center'
+  },
+  modalCard: {
+    backgroundColor: 'rgba(22, 22, 25, 0.98)'
+  },
+  modalClose: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.72)'
+  },
+  modalCloseText: {
+    color: colors.text,
+    fontSize: 28,
+    lineHeight: 30
   }
 });
 

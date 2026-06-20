@@ -111,7 +111,7 @@ const ProfileScreen = ({ navigation, route }) => {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Open settings"
-            onPress={() => navigation.navigate('Menu')}
+            onPress={() => (navigation.getParent() || navigation).navigate('ProfileEditor')}
             style={({ pressed }) => [styles.settingsButton, pressed && styles.settingsButtonPressed]}
           >
             <HandDrawnIcon name="gear" color={colors.textMuted} />
@@ -170,7 +170,10 @@ const ProfileScreen = ({ navigation, route }) => {
             refresh={loadProfile}
             onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
             onTopicPress={(rateableItemId) => navigation.navigate('Topic', { rateableItemId })}
-            onCardPress={(post) => navigation.navigate('Topic', { rateableItemId: post.rateableItem?.id })}
+            onCardPress={(post) => navigation.navigate('Topic', {
+              rateableItemId: post.rateableItem?.id,
+              openReviewId: post.ratingId
+            })}
             onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
           />
         )}
@@ -227,6 +230,8 @@ const styles = StyleSheet.create({
   },
   settingsButton: {
     position: 'absolute',
+    zIndex: 1,
+    elevation: 1,
     top: spacing.sm,
     right: spacing.sm,
     width: 44,

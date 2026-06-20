@@ -3,9 +3,9 @@ import { colors, radius, spacing } from '../theme.js';
 
 const variants = {
   primary: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-    color: '#ffffff'
+    backgroundColor: 'transparent',
+    borderColor: colors.text,
+    color: colors.text
   },
   secondary: {
     backgroundColor: 'transparent',
@@ -47,7 +47,7 @@ const AppButton = ({
       style={({ pressed }) => [
         styles.button,
         {
-          backgroundColor: variantStyle.backgroundColor,
+          backgroundColor: pressed ? colors.surfacePressed : variantStyle.backgroundColor,
           borderColor: variantStyle.borderColor,
           opacity: disabled ? 0.45 : 1,
           transform: [{ scale: pressed ? 0.98 : 1 }]
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: 13,
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center'
   },

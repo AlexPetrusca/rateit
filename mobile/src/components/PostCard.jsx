@@ -1,4 +1,5 @@
-import { Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Image, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import RichText from './RichText.jsx';
 import StarRating from './StarRating.jsx';
 import UserAvatar from './UserAvatar.jsx';
@@ -16,19 +17,41 @@ const PostCard = ({
   onCardPress,
   showTopicText = true,
   showMedia = true,
+  reviewNumberOfLines,
+  openCardOnlyWhenTruncated = false,
   compact = false,
   style
 }) => {
   const { width } = useWindowDimensions();
   const isCompact = compact || width < 375;
+  const isDeleted = Boolean(post?.deleted || post?.deletedAt);
+  const mediaUrl = useResolvedImageUrl(!isDeleted ? post?.rateableItem?.mediaObjectKey : null);
+  const [isReviewTruncated, setIsReviewTruncated] = useState(false);
+  const [reviewHeights, setReviewHeights] = useState({ visible: 0, full: 0 });
+
+  useEffect(() => {
+    setIsReviewTruncated(false);
+    setReviewHeights({ visible: 0, full: 0 });
+  }, [post?.ratingId, post?.reviewText, reviewNumberOfLines]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && reviewHeights.visible && reviewHeights.full) {
+      setIsReviewTruncated(reviewHeights.full > reviewHeights.visible + 1);
+    }
+  }, [reviewHeights]);
 
   if (!post) {
     return null;
   }
 
-  const isDeleted = Boolean(post.deleted || post.deletedAt);
   const topicLabel = post.rateableItem?.title || post.rateableItem?.body || '';
-  const mediaUrl = useResolvedImageUrl(!isDeleted ? post.rateableItem?.mediaObjectKey : null);
+  const openPost = () => {
+    if (onCardPress && (!openCardOnlyWhenTruncated || !reviewNumberOfLines || isReviewTruncated)) {
+      onCardPress(post);
+      return;
+    }
+    onTopicPress?.(post.rateableItem?.id);
+  };
 
   return (
     <View style={[styles.card, isCompact && styles.compact, style]}>
@@ -54,12 +77,12 @@ const PostCard = ({
         </View>
 
         {showMedia && mediaUrl ? (
-          <Pressable disabled={!onCardPress && !onTopicPress} onPress={() => onCardPress?.(post) || onTopicPress?.(post.rateableItem?.id)}>
+          <Pressable disabled={!onCardPress && !onTopicPress} onPress={openPost}>
             <Image source={{ uri: mediaUrl }} style={styles.media} resizeMode="cover" />
           </Pressable>
         ) : null}
 
-        <Pressable disabled={!onCardPress && !onTopicPress} onPress={() => onCardPress?.(post) || onTopicPress?.(post.rateableItem?.id)}>
+        <Pressable disabled={!onCardPress && !onTopicPress} onPress={openPost}>
           {isDeleted ? (
             <Text style={styles.deleted}>This post has been deleted.</Text>
           ) : (
@@ -72,7 +95,42 @@ const PostCard = ({
                 <StarRating value={post.score} size="sm" label={formatScoreValue(post.score, post.ratingScale)} />
               </View>
 
-              {post.reviewText ? <RichText style={styles.review}>{post.reviewText}</RichText> : null}
+              {post.reviewText ? (
+                <View>
+                  <RichText
+                    numberOfLines={reviewNumberOfLines}
+                    ellipsizeMode="tail"
+                    onLayout={Platform.OS === 'web' ? ({ nativeEvent }) => {
+                      setReviewHeights((current) => ({
+                        ...current,
+                        visible: nativeEvent.layout.height
+                      }));
+                    } : undefined}
+                    style={styles.review}
+                  >
+                    {post.reviewText}
+                  </RichText>
+                  {reviewNumberOfLines ? (
+                    <RichText
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                      onLayout={Platform.OS === 'web' ? ({ nativeEvent }) => {
+                        setReviewHeights((current) => ({
+                          ...current,
+                          full: nativeEvent.layout.height
+                        }));
+                      } : undefined}
+                      onTextLayout={Platform.OS !== 'web' ? ({ nativeEvent }) => {
+                        setIsReviewTruncated(nativeEvent.lines.length > reviewNumberOfLines);
+                      } : undefined}
+                      pointerEvents="none"
+                      style={[styles.review, styles.reviewMeasure]}
+                    >
+                      {post.reviewText}
+                    </RichText>
+                  ) : null}
+                </View>
+              ) : null}
             </>
           )}
         </Pressable>
@@ -149,6 +207,12 @@ const styles = StyleSheet.create({
   },
   review: {
     ...text.body
+  },
+  reviewMeasure: {
+    position: 'absolute',
+    right: 0,
+    left: 0,
+    opacity: 0
   },
   deleted: {
     ...text.muted,
