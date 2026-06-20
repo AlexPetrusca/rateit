@@ -2,6 +2,7 @@ import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeBottomTabNavigator } from '@react-navigation/bottom-tabs/unstable';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Platform, StyleSheet, View } from 'react-native';
 import AdminCommentsScreen from '../screens/admin/AdminCommentsScreen.jsx';
 import AdminHomeScreen from '../screens/admin/AdminHomeScreen.jsx';
@@ -20,6 +21,7 @@ import MenuScreen from '../screens/MenuScreen.jsx';
 import PostEditorScreen from '../screens/PostEditorScreen.jsx';
 import ProfileEditorScreen from '../screens/ProfileEditorScreen.jsx';
 import ProfileScreen from '../screens/ProfileScreen.jsx';
+import PromptScreen from '../screens/PromptScreen.jsx';
 import SearchUsersScreen from '../screens/SearchUsersScreen.jsx';
 import SuggestionSubmitScreen from '../screens/SuggestionSubmitScreen.jsx';
 import TopicScreen from '../screens/TopicScreen.jsx';
@@ -45,6 +47,7 @@ const linking = {
         }
       },
       Topic: 'topics/:rateableItemId',
+      Prompts: 'prompts/users/:userId',
       Profile: 'users/:userId',
       ProfileEditor: 'profile/edit',
       PostEditor: 'posts/:ratingId/edit',
@@ -66,9 +69,9 @@ const tabIcons = {
   Me: require('../../assets/tab-icons/profile.png')
 };
 
-const tabOptions = ({ route }) => {
+const tabOptions = ({ route }, hidden = false) => {
   const common = {
-    headerShown: true,
+    headerShown: false,
     headerShadowVisible: false,
     headerStyle: { backgroundColor: colors.background },
     headerTintColor: colors.text,
@@ -80,10 +83,15 @@ const tabOptions = ({ route }) => {
   if (Platform.OS === 'web') {
     return {
       ...common,
-      tabBarIcon: ({ color }) => (
-        <Image source={tabIcons[route.name]} style={[styles.webTabIcon, { tintColor: color }]} />
+      tabBarIcon: ({ focused }) => (
+        <View style={[styles.webTabIconWrap, focused && styles.webTabIconActive]}>
+          <Image source={tabIcons[route.name]} style={styles.webTabIcon} />
+        </View>
       ),
-      tabBarStyle: styles.webTabBar
+      tabBarShowLabel: false,
+      tabBarLabelPosition: 'beside-icon',
+      tabBarItemStyle: styles.webTabItem,
+      tabBarStyle: [styles.webTabBar, hidden && styles.webTabBarHidden]
     };
   }
 
@@ -102,9 +110,23 @@ const tabOptions = ({ route }) => {
 
 const MainTabs = ({ user }) => {
   const userId = user?.userId ?? user?.id;
+  const [webTabHidden, setWebTabHidden] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') {
+      return undefined;
+    }
+    const handleScrollDirection = ({ detail }) => setWebTabHidden(detail === 'down');
+    window.addEventListener('rateit-scroll-direction', handleScrollDirection);
+    return () => window.removeEventListener('rateit-scroll-direction', handleScrollDirection);
+  }, []);
 
   return (
-    <Tab.Navigator backBehavior="history" screenOptions={tabOptions}>
+    <Tab.Navigator
+      backBehavior="history"
+      screenOptions={(options) => tabOptions(options, webTabHidden)}
+      screenListeners={{ tabPress: () => setWebTabHidden(false) }}
+    >
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Critic', tabBarLabel: 'Home' }} />
       <Tab.Screen name="Following" component={HomeScreen} initialParams={{ feedType: 'following' }} />
       <Tab.Screen name="Create" component={CreateScreen} />
@@ -115,6 +137,7 @@ const MainTabs = ({ user }) => {
 };
 
 const stackOptions = {
+  headerShown: false,
   headerStyle: { backgroundColor: colors.background },
   headerTintColor: colors.text,
   headerShadowVisible: false,
@@ -163,7 +186,8 @@ const AppNavigator = () => {
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="ProfileEditor" component={ProfileEditorScreen} options={{ title: 'Edit Profile' }} />
             <Stack.Screen name="PostEditor" component={PostEditorScreen} options={{ title: 'Edit post' }} />
-            <Stack.Screen name="Topic" component={TopicScreen} options={{ headerShown: Platform.OS === 'web', title: 'Topic' }} />
+            <Stack.Screen name="Topic" component={TopicScreen} />
+            <Stack.Screen name="Prompts" component={PromptScreen} />
             <Stack.Screen name="Drafts" component={DraftsScreen} />
             <Stack.Screen name="FollowList" component={FollowListScreen} options={{ title: 'People' }} />
             <Stack.Screen name="Menu" component={MenuScreen} />
@@ -195,14 +219,50 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background
   },
   webTabBar: {
-    height: 68,
-    paddingTop: 6,
-    backgroundColor: colors.surface,
-    borderTopColor: colors.border
+    position: 'absolute',
+    left: '50%',
+    bottom: 18,
+    width: 320,
+    height: 58,
+    marginLeft: -160,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderTopWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: 30,
+    backgroundColor: 'rgba(24, 24, 28, 0.9)',
+    backdropFilter: 'blur(14px)',
+    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.42)',
+    transform: [{ translateY: 0 }],
+    opacity: 1,
+    transitionProperty: 'transform, opacity',
+    transitionDuration: '360ms'
+  },
+  webTabBarHidden: {
+    transform: [{ translateY: 65 }],
+    opacity: 1
+  },
+  webTabItem: {
+    flex: 1,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  webTabIconWrap: {
+    width: 40,
+    height: 40,
+    marginVertical: 'auto',
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  webTabIconActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.18)'
   },
   webTabIcon: {
-    width: 24,
-    height: 24
+    width: 22,
+    height: 22,
+    tintColor: colors.text
   }
 });
 
