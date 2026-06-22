@@ -1,9 +1,9 @@
-import { DarkTheme, NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeBottomTabNavigator } from '@react-navigation/bottom-tabs/unstable';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Platform, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, View } from 'react-native';
 import AdminCommentsScreen from '../screens/admin/AdminCommentsScreen.jsx';
 import AdminHomeScreen from '../screens/admin/AdminHomeScreen.jsx';
 import AdminJobsScreen from '../screens/admin/AdminJobsScreen.jsx';
@@ -69,7 +69,7 @@ const tabIcons = {
   Me: require('../../assets/tab-icons/profile.png')
 };
 
-const tabOptions = ({ route }, hidden = false) => {
+const tabOptions = ({ route }) => {
   const common = {
     headerShown: false,
     headerShadowVisible: false,
@@ -83,15 +83,7 @@ const tabOptions = ({ route }, hidden = false) => {
   if (Platform.OS === 'web') {
     return {
       ...common,
-      tabBarIcon: ({ focused }) => (
-        <View style={[styles.webTabIconWrap, focused && styles.webTabIconActive]}>
-          <Image source={tabIcons[route.name]} style={styles.webTabIcon} />
-        </View>
-      ),
-      tabBarShowLabel: false,
-      tabBarLabelPosition: 'beside-icon',
-      tabBarItemStyle: styles.webTabItem,
-      tabBarStyle: [styles.webTabBar, hidden && styles.webTabBarHidden]
+      tabBarStyle: { display: 'none' }
     };
   }
 
@@ -108,24 +100,39 @@ const tabOptions = ({ route }, hidden = false) => {
   };
 };
 
-const MainTabs = ({ user }) => {
-  const userId = user?.userId ?? user?.id;
-  const [webTabHidden, setWebTabHidden] = useState(false);
+const WebNavBar = ({ activeTab, onNavigate }) => {
+  const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    if (Platform.OS !== 'web') {
-      return undefined;
-    }
-    const handleScrollDirection = ({ detail }) => setWebTabHidden(detail === 'down');
-    window.addEventListener('rateit-scroll-direction', handleScrollDirection);
-    return () => window.removeEventListener('rateit-scroll-direction', handleScrollDirection);
+    const handler = ({ detail }) => setHidden(detail === 'down');
+    window.addEventListener('rateit-scroll-direction', handler);
+    return () => window.removeEventListener('rateit-scroll-direction', handler);
   }, []);
+
+  return (
+    <View style={[styles.webTabBar, hidden && styles.webTabBarHidden]}>
+      {Object.keys(tabIcons).map(name => (
+        <Pressable
+          key={name}
+          style={styles.webTabItem}
+          onPress={() => { setHidden(false); onNavigate(name); }}
+        >
+          <View style={[styles.webTabIconWrap, activeTab === name && styles.webTabIconActive]}>
+            <Image source={tabIcons[name]} style={styles.webTabIcon} />
+          </View>
+        </Pressable>
+      ))}
+    </View>
+  );
+};
+
+const MainTabs = ({ user }) => {
+  const userId = user?.userId ?? user?.id;
 
   return (
     <Tab.Navigator
       backBehavior="history"
-      screenOptions={(options) => tabOptions(options, webTabHidden)}
-      screenListeners={{ tabPress: () => setWebTabHidden(false) }}
+      screenOptions={tabOptions}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Critic', tabBarLabel: 'Home' }} />
       <Tab.Screen name="Following" component={HomeScreen} initialParams={{ feedType: 'following' }} />
@@ -148,6 +155,25 @@ const stackOptions = {
 const AppNavigator = () => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const isAdmin = user?.role === 'ROLE_ADMIN';
+  const navigationRef = useNavigationContainerRef();
+  const [activeTab, setActiveTab] = useState('Home');
+  const [showNav, setShowNav] = useState(true);
+
+  const handleStateChange = useCallback((state) => {
+    const mainTabs = state?.routes?.find(r => r.name === 'MainTabs');
+    let tab = 'Home';
+    if (mainTabs?.state) {
+      const { routes, index } = mainTabs.state;
+      tab = routes[index ?? 0]?.name ?? 'Home';
+    }
+    setActiveTab(tab);
+    const topRoute = state?.routes?.[state?.index ?? 0]?.name;
+    setShowNav(topRoute !== 'Topic' && topRoute !== 'PostEditor' && !(topRoute === 'MainTabs' && tab === 'Create'));
+  }, []);
+
+  const navigateToTab = useCallback((name) => {
+    navigationRef.navigate('MainTabs', { screen: name });
+  }, [navigationRef]);
 
   if (isLoading) {
     return (
@@ -171,7 +197,7 @@ const AppNavigator = () => {
   };
 
   return (
-    <NavigationContainer linking={linking} theme={theme}>
+    <NavigationContainer ref={navigationRef} linking={linking} theme={theme} onStateChange={handleStateChange}>
       <Stack.Navigator screenOptions={stackOptions}>
         {!isAuthenticated ? (
           <>
@@ -207,6 +233,7 @@ const AppNavigator = () => {
           </>
         )}
       </Stack.Navigator>
+      {Platform.OS === 'web' && isAuthenticated && showNav && <WebNavBar activeTab={activeTab} onNavigate={navigateToTab} />}
     </NavigationContainer>
   );
 };
@@ -225,6 +252,8 @@ const styles = StyleSheet.create({
     width: 320,
     height: 58,
     marginLeft: -160,
+    zIndex: 9999,
+    flexDirection: 'row',
     paddingVertical: 5,
     borderWidth: 1,
     borderTopWidth: 1,

@@ -1,4 +1,4 @@
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import UserAvatar from './UserAvatar.jsx';
 import { colors, spacing } from '../theme.js';
 
@@ -20,30 +20,25 @@ const Story = ({ person, own = false, onPress, onAddStory }) => (
     ]}>
       <UserAvatar username={person?.username} profilePicUrl={person?.profilePicUrl} size={60} />
       {own ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Create prompt"
-          hitSlop={6}
-          onPress={(event) => {
-            event.stopPropagation();
-            onAddStory?.();
-          }}
+        <View
+          onTouchEnd={(event) => { event.stopPropagation(); onAddStory?.(); }}
+          onClick={(event) => { event.stopPropagation(); onAddStory?.(); }}
           style={styles.plusBadge}
         >
-          <Text style={styles.plus}>+</Text>
-        </Pressable>
+          <Image source={require('../../assets/icons/create.png')} style={styles.plusIcon} />
+        </View>
       ) : null}
     </View>
     <Text numberOfLines={1} style={styles.label}>{own ? 'Your story' : person?.username}</Text>
   </Pressable>
 );
 
-const StoryBar = ({ user, people = [], items = [], onAddStory, onOpenStories, onOpenOwnStories }) => {
+const StoryBar = ({ user, people = [], onAddStory, onOpenStories, onOpenOwnStories }) => {
   const currentUserId = user?.userId ?? user?.id;
   const seen = new Set([currentUserId]);
   const storyPeople = [];
 
-  [...people, ...items.map((item) => item.author)].forEach((person) => {
+  people.forEach((person) => {
     const userId = person?.userId ?? person?.id;
     if (userId != null && !seen.has(userId)) {
       seen.add(userId);
@@ -125,11 +120,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.accent
   },
-  plus: {
-    color: '#ffffff',
-    fontSize: 19,
-    lineHeight: 19,
-    fontWeight: '800'
+  plusIcon: {
+    width: 12,
+    height: 12,
+    tintColor: '#ffffff'
   },
   label: {
     width: '100%',

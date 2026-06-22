@@ -105,7 +105,6 @@ const HomeScreen = ({ navigation, route }) => {
           <StoryBar
             user={user}
             people={storyPeople}
-            items={items}
             onAddStory={() => navigation.navigate('Create', { mode: 'prompt' })}
             onOpenOwnStories={() => navigation.navigate('Prompts', { own: true, username: user?.username })}
             onOpenStories={(person) => navigation.navigate('Prompts', {
