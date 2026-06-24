@@ -100,8 +100,13 @@ const tabOptions = ({ route }) => {
   };
 };
 
+const TAB_NAMES = Object.keys(tabIcons);
+const SLOT_W = 320 / TAB_NAMES.length; // 64
+const BUBBLE_W = 40;
+
 const WebNavBar = ({ activeTab, onNavigate }) => {
   const [hidden, setHidden] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(() => Math.max(0, TAB_NAMES.indexOf(activeTab)));
 
   useEffect(() => {
     const handler = ({ detail }) => setHidden(detail === 'down');
@@ -109,15 +114,22 @@ const WebNavBar = ({ activeTab, onNavigate }) => {
     return () => window.removeEventListener('rateit-scroll-direction', handler);
   }, []);
 
+  // Sync bubble to nav state for back/forward + deep links; press sets it instantly.
+  useEffect(() => {
+    const idx = TAB_NAMES.indexOf(activeTab);
+    if (idx >= 0) setActiveIndex(idx);
+  }, [activeTab]);
+
   return (
     <View style={[styles.webTabBar, hidden && styles.webTabBarHidden]}>
-      {Object.keys(tabIcons).map(name => (
+      <View style={[styles.bubble, { transform: [{ translateX: activeIndex * SLOT_W }] }]} />
+      {TAB_NAMES.map((name, i) => (
         <Pressable
           key={name}
           style={styles.webTabItem}
-          onPress={() => { setHidden(false); onNavigate(name); }}
+          onPress={() => { setHidden(false); setActiveIndex(i); onNavigate(name); }}
         >
-          <View style={[styles.webTabIconWrap, activeTab === name && styles.webTabIconActive]}>
+          <View style={styles.webTabIconWrap}>
             <Image source={tabIcons[name]} style={styles.webTabIcon} />
           </View>
         </Pressable>
@@ -277,6 +289,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
+  bubble: {
+    position: 'absolute',
+    top: 9,
+    left: (SLOT_W - BUBBLE_W) / 2,
+    width: BUBBLE_W,
+    height: BUBBLE_W,
+    borderRadius: BUBBLE_W / 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    transitionProperty: 'transform',
+    transitionDuration: '240ms',
+    transitionTimingFunction: 'ease-out'
+  },
   webTabIconWrap: {
     width: 40,
     height: 40,
@@ -284,9 +308,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center'
-  },
-  webTabIconActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.18)'
   },
   webTabIcon: {
     width: 22,

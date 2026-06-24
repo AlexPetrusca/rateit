@@ -7,7 +7,8 @@ import AppNavigator from './navigation/AppNavigator.jsx';
 const App = () => {
   const [fontsLoaded, fontError] = useFonts({
     PlayfairDisplay_900Black: require('@expo-google-fonts/playfair-display/900Black/PlayfairDisplay_900Black.ttf'),
-    PlayfairDisplay_400Regular: require('@expo-google-fonts/playfair-display/400Regular/PlayfairDisplay_400Regular.ttf')
+    PlayfairDisplay_400Regular: require('@expo-google-fonts/playfair-display/400Regular/PlayfairDisplay_400Regular.ttf'),
+    Gelasio_400Regular: require('@expo-google-fonts/gelasio/400Regular/Gelasio_400Regular.ttf')
   });
 
   if (!fontsLoaded && !fontError) {

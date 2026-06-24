@@ -25,6 +25,7 @@ const HomeScreen = ({ navigation, route }) => {
   const [hasMore, setHasMore] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [storyPeople, setStoryPeople] = useState([]);
+  const [hasOwnPrompt, setHasOwnPrompt] = useState(false);
   const loadingMoreRef = useRef(false);
 
   const updateItem = useCallback((ratingId, updater) => {
@@ -65,15 +66,20 @@ const HomeScreen = ({ navigation, route }) => {
 
   useFocusEffect(useCallback(() => {
     let active = true;
+    const currentUserId = user?.userId ?? user?.id;
     BackendApiService.getAllRecentPrompts()
-      .then((prompts) => active && setStoryPeople(prompts.map((prompt) => ({
-        userId: prompt.authorUserId,
-        username: prompt.authorUsername,
-        profilePicUrl: prompt.authorProfilePicUrl
-      }))))
-      .catch(() => active && setStoryPeople([]));
+      .then((prompts) => {
+        if (!active) return;
+        setHasOwnPrompt(prompts.some((prompt) => prompt.authorUserId === currentUserId));
+        setStoryPeople(prompts.map((prompt) => ({
+          userId: prompt.authorUserId,
+          username: prompt.authorUsername,
+          profilePicUrl: prompt.authorProfilePicUrl
+        })));
+      })
+      .catch(() => { if (active) { setStoryPeople([]); setHasOwnPrompt(false); } });
     return () => { active = false; };
-  }, []));
+  }, [user]));
 
   const refresh = () => {
     setRefreshing(true);
@@ -105,6 +111,7 @@ const HomeScreen = ({ navigation, route }) => {
           <StoryBar
             user={user}
             people={storyPeople}
+            ownHasPrompt={hasOwnPrompt}
             onAddStory={() => navigation.navigate('Create', { mode: 'prompt' })}
             onOpenOwnStories={() => navigation.navigate('Prompts', { own: true, username: user?.username })}
             onOpenStories={(person) => navigation.navigate('Prompts', {

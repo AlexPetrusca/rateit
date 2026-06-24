@@ -77,10 +77,10 @@ const WORDMARK_ROWS = [
   ['EVERYONESACRITICEVERYONESACRITICEVERYONESACRITIC'],
   ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERY'],
   ['CRITICEVERYONESACRITICEVERYONESACRITICEVERYONESACRITICEVERYONESA'],
-  ['ONESACRITICEVERYONESACRITICEVERYONESACRITICEVERY'],
-  ['RYONESACRITICEVERYONESACRITICEVERYONESACRITICEVE'],
-  ['TICEVERYONESACRITICEVERYONESACRITICEVERYONESACRITICEVERYONESACRI'],
-  ['ACRITICEVERYONESACRITICEVERYONESACRITICEVERY']
+  ['ITICEVERYONESACRITICEVERYONESACRITICEVERY'],
+  ['EVERYONESACRITICEVERYONESACRITICEVERYONESACRITICEVE'],
+  ['ACRITICEVERYONESACRITICEVERYONESACRITIC'],
+  ['RYONESACRITICEVERYONESACRITICEVERY']
 ];
 
 const displayCode = (country) => country.displayCode || country.code;
@@ -92,6 +92,8 @@ const LoginScreen = () => {
   const insets = useSafeAreaInsets();
   const panelEntry = useRef(new Animated.Value(0)).current;
   const wordmarkAnimations = useRef(WORDMARK_ROWS.map(() => new Animated.Value(0))).current;
+  const ballAnim = useRef(new Animated.Value(0)).current;
+  const [fieldSize, setFieldSize] = useState({ width: 0, height: 0 });
   const lastSentPhone = useRef('');
   const lastVerifiedCode = useRef('');
   const hasEditedPhone = useRef(false);
@@ -108,6 +110,7 @@ const LoginScreen = () => {
   const [countrySearch, setCountrySearch] = useState('');
   const [reduceMotion, setReduceMotion] = useState(false);
   const [wordmarkWidths, setWordmarkWidths] = useState(() => WORDMARK_ROWS.map(() => 0));
+  const [enterVisible, setEnterVisible] = useState(false);
 
   const selectedCountry = COUNTRY_OPTIONS.find((country) => country.value === countryValue) || COUNTRY_OPTIONS[0];
   const filteredCountries = useMemo(() => {
@@ -157,16 +160,48 @@ const LoginScreen = () => {
   }, [panelEntry, reduceMotion]);
 
   useEffect(() => {
+    if (isLoading && step === 'phone') {
+      Animated.loop(
+        Animated.timing(ballAnim, {
+          toValue: 1,
+          duration: 1400,
+          easing: Easing.linear,
+          useNativeDriver: false
+        })
+      ).start();
+    } else {
+      ballAnim.stopAnimation();
+      ballAnim.setValue(0);
+    }
+  }, [isLoading, step, ballAnim]);
+
+  useEffect(() => {
+    const lastRowIndex = WORDMARK_ROWS.length - 2;
+
     if (reduceMotion) {
       wordmarkAnimations.forEach((animation) => {
         animation.stopAnimation();
         animation.setValue(0);
       });
+      setEnterVisible(true);
       return undefined;
     }
 
+    const bottomAnim = wordmarkAnimations[lastRowIndex];
+    const spinTimer = setTimeout(() => {
+      bottomAnim.setValue(0);
+      Animated.timing(bottomAnim, {
+        toValue: 1,
+        duration: 1200,
+        easing: Easing.bezier(0.16, 1, 0.3, 1),
+        useNativeDriver: true
+      }).start();
+    }, 1500);
+    const enterTimer = setTimeout(() => setEnterVisible(true), 1600);
+
     const cycleRows = () => {
-      chooseCyclingRows(WORDMARK_ROWS.length).forEach((rowIndex, sequenceIndex) => {
+      // Exclude the ENTER row so it stays visible
+      chooseCyclingRows(WORDMARK_ROWS.length).filter(i => i !== lastRowIndex).forEach((rowIndex, sequenceIndex) => {
         const animation = wordmarkAnimations[rowIndex];
         animation.setValue(0);
         Animated.timing(animation, {
@@ -180,7 +215,7 @@ const LoginScreen = () => {
     };
 
     const interval = setInterval(cycleRows, WORDMARK_CYCLE_INTERVAL);
-    return () => clearInterval(interval);
+    return () => { clearTimeout(spinTimer); clearTimeout(enterTimer); clearInterval(interval); };
   }, [reduceMotion, wordmarkAnimations]);
 
   const resolveAuthAfterVerification = useCallback(async () => {
@@ -217,6 +252,11 @@ const LoginScreen = () => {
       setIsLoading(false);
     }
   }, [notify, phoneDigits, selectedCountry.code]);
+
+  useEffect(() => {
+    if (!hasEditedPhone.current || phoneDigits.length !== 10) return;
+    sendOtp();
+  }, [phoneDigits, sendOtp]);
 
   const verifyOtp = useCallback(async () => {
     const normalized = normalizePhoneNumber(selectedCountry.code, phoneDigits);
@@ -321,54 +361,60 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.screen}>
-      <View pointerEvents="none" style={styles.wordmark}>
-        {WORDMARK_ROWS.map((row, rowIndex) => (
-          <View
-            key={`${row.join('-')}-${rowIndex}`}
-            style={[styles.wordmarkRowViewport, { height: wordmarkSize * 0.9 }]}
-          >
-            <Animated.View
-              style={[
-                styles.wordmarkTrack,
-                {
-                  transform: [{
-                    translateX: wordmarkAnimations[rowIndex].interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-wordmarkWidths[rowIndex], 0]
-                    })
-                  }]
-                }
-              ]}
+      <View pointerEvents="none" style={[styles.wordmark, { bottom: insets.bottom }]}>
+        {WORDMARK_ROWS.map((row, rowIndex) => {
+          const isLastRow = rowIndex === WORDMARK_ROWS.length - 2;
+          return (
+            <View
+              key={`${row.join('-')}-${rowIndex}`}
+              style={[styles.wordmarkRowViewport, { height: wordmarkSize * 0.9 }]}
             >
-              {[0, 1].map((copyIndex) => (
-                <Text
-                  key={copyIndex}
-                  onLayout={copyIndex === 0 ? ({ nativeEvent }) => {
-                    const nextWidth = nativeEvent.layout.width;
-                    setWordmarkWidths((current) => {
-                      if (current[rowIndex] === nextWidth) {
-                        return current;
-                      }
-                      const next = [...current];
-                      next[rowIndex] = nextWidth;
-                      return next;
-                    });
-                  } : undefined}
-                  style={[
-                    styles.wordmarkRow,
-                    { fontSize: wordmarkSize, lineHeight: wordmarkSize * 0.9 }
-                  ]}
-                >
-                  {row.map((segment, segmentIndex) => (
-                    <Text key={`${segment}-${segmentIndex}`} style={segmentIndex === 1 ? styles.wordmarkAccent : null}>
-                      {segment}
-                    </Text>
-                  ))}
-                </Text>
-              ))}
-            </Animated.View>
-          </View>
-        ))}
+              <Animated.View
+                style={[
+                  styles.wordmarkTrack,
+                  {
+                    transform: [{
+                      translateX: wordmarkAnimations[rowIndex].interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-wordmarkWidths[rowIndex], 0]
+                      })
+                    }]
+                  }
+                ]}
+              >
+                {[0, 1].map((copyIndex) => (
+                  <Text
+                    key={copyIndex}
+                    onLayout={copyIndex === 0 ? ({ nativeEvent }) => {
+                      const nextWidth = nativeEvent.layout.width;
+                      setWordmarkWidths((current) => {
+                        if (current[rowIndex] === nextWidth) {
+                          return current;
+                        }
+                        const next = [...current];
+                        next[rowIndex] = nextWidth;
+                        return next;
+                      });
+                    } : undefined}
+                    style={[
+                      styles.wordmarkRow,
+                      { fontSize: wordmarkSize, lineHeight: wordmarkSize * 0.9 }
+                    ]}
+                  >
+                    {row.map((segment, segmentIndex) => {
+                      const accented = segmentIndex === 1 && (!isLastRow || enterVisible);
+                      return (
+                        <Text key={`${segment}-${segmentIndex}`} style={accented ? styles.wordmarkAccent : null}>
+                          {segment}
+                        </Text>
+                      );
+                    })}
+                  </Text>
+                ))}
+              </Animated.View>
+            </View>
+          );
+        })}
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.overlay}>
@@ -409,48 +455,61 @@ const LoginScreen = () => {
             </View>
           ) : step === 'phone' ? (
             <>
-              <View style={styles.phoneField}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Country code, ${selectedCountry.country} ${displayCode(selectedCountry)}`}
-                  onPress={() => setCountryPickerOpen(true)}
-                  style={({ pressed }) => [styles.countryButton, pressed && styles.pressed]}
-                >
-                  <Text style={styles.flag}>{selectedCountry.flag}</Text>
-                </Pressable>
-                <Text style={styles.prefix}>{displayCode(selectedCountry)}</Text>
-                <TextInput
-                  accessibilityLabel="Phone number"
-                  autoFocus
-                  autoComplete="tel"
-                  textContentType="telephoneNumber"
-                  keyboardType="phone-pad"
-                  value={formatPhoneNumber(phoneDigits)}
-                  onChangeText={(value) => {
-                    hasEditedPhone.current = true;
-                    setPhoneDigits(parsePhoneDigits(value));
-                    setError('');
-                  }}
-                  onSubmitEditing={sendOtp}
-                  placeholder="(___) ___-____"
-                  placeholderTextColor={colors.textSubtle}
-                  selectionColor={colors.accent}
-                  style={styles.phoneInput}
-                />
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Enter"
-                disabled={isLoading}
-                onPress={sendOtp}
-                style={({ pressed }) => [styles.pillButton, pressed && styles.pressed]}
+              <View
+                style={styles.phoneFieldWrap}
+                onLayout={({ nativeEvent }) => setFieldSize({ width: nativeEvent.layout.width, height: nativeEvent.layout.height })}
               >
-                <Text style={styles.pillButtonText}>Enter</Text>
-              </Pressable>
+                <View style={[styles.phoneField, isLoading && styles.phoneFieldActive]}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Country code, ${selectedCountry.country} ${displayCode(selectedCountry)}`}
+                    onPress={() => setCountryPickerOpen(true)}
+                    style={({ pressed }) => [styles.countryButton, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.flag}>{selectedCountry.flag}</Text>
+                  </Pressable>
+                  <Text style={styles.prefix}>{displayCode(selectedCountry)}</Text>
+                  <TextInput
+                    accessibilityLabel="Phone number"
+                    autoFocus
+                    autoComplete="tel"
+                    textContentType="telephoneNumber"
+                    keyboardType="phone-pad"
+                    value={formatPhoneNumber(phoneDigits)}
+                    onChangeText={(value) => {
+                      hasEditedPhone.current = true;
+                      setPhoneDigits(parsePhoneDigits(value));
+                      setError('');
+                    }}
+                    onSubmitEditing={sendOtp}
+                    placeholder="(___) ___-____"
+                    placeholderTextColor="#9ca3af"
+                    selectionColor={colors.accent}
+                    style={styles.phoneInput}
+                  />
+                </View>
+                {isLoading && fieldSize.width > 0 && (() => {
+                  const BALL = 9;
+                  const { width: fw, height: fh } = fieldSize;
+                  const P = 2 * (fw + fh);
+                  const bp = [0, fw / P, (fw + fh) / P, (2 * fw + fh) / P, 1];
+                  const ballLeft = ballAnim.interpolate({ inputRange: bp, outputRange: [-BALL / 2, fw - BALL / 2, fw - BALL / 2, -BALL / 2, -BALL / 2] });
+                  const ballTop = ballAnim.interpolate({ inputRange: bp, outputRange: [-BALL / 2, -BALL / 2, fh - BALL / 2, fh - BALL / 2, -BALL / 2] });
+                  return <Animated.View style={[styles.ball, { width: BALL, height: BALL, borderRadius: BALL / 2, left: ballLeft, top: ballTop }]} />;
+                })()}
+              </View>
             </>
           ) : (
             <>
               <View style={[styles.phoneField, styles.codeField]}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Change Phone Number"
+                  onPress={changePhone}
+                  style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+                >
+                  <Text style={styles.backArrow}>←</Text>
+                </Pressable>
                 <TextInput
                   accessibilityLabel="Verification code"
                   autoFocus
@@ -464,20 +523,12 @@ const LoginScreen = () => {
                   }}
                   onSubmitEditing={verifyOtp}
                   placeholder="123456"
-                  placeholderTextColor={colors.textSubtle}
+                  placeholderTextColor="#9ca3af"
                   selectionColor={colors.accent}
                   style={styles.codeInput}
                 />
                 <View style={styles.codeUnderline} />
               </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Change Phone Number"
-                onPress={changePhone}
-                style={({ pressed }) => [styles.pillButton, pressed && styles.pressed]}
-              >
-                <Text style={styles.pillButtonText}>Change Phone Number</Text>
-              </Pressable>
             </>
           )}
         </Animated.View>
@@ -499,7 +550,7 @@ const LoginScreen = () => {
               value={countrySearch}
               onChangeText={setCountrySearch}
               placeholder="Search for a country"
-              placeholderTextColor={colors.textSubtle}
+              placeholderTextColor="#9ca3af"
               selectionColor={colors.accent}
               style={styles.countrySearch}
             />
@@ -535,20 +586,20 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     overflow: 'hidden',
-    backgroundColor: '#060810'
+    backgroundColor: '#ffffff'
   },
   wordmark: {
     position: 'absolute',
     top: -8,
     right: -260,
-    bottom: -8,
     left: -8,
     justifyContent: 'space-between'
   },
   wordmarkRow: {
     flexShrink: 0,
-    color: colors.text,
-    fontWeight: '900',
+    color: '#111827',
+    fontFamily: 'Gelasio_400Regular',
+    fontWeight: '400',
     letterSpacing: -1.4
   },
   wordmarkRowViewport: {
@@ -581,16 +632,26 @@ const styles = StyleSheet.create({
       android: { elevation: 8 }
     })
   },
+  phoneFieldWrap: {
+    position: 'relative'
+  },
   phoneField: {
     minHeight: 54,
     paddingHorizontal: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.borderStrong,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
     borderRadius: 8,
-    backgroundColor: 'rgba(17, 24, 39, 0.96)'
+    backgroundColor: '#ffffff'
+  },
+  phoneFieldActive: {
+    borderColor: '#111827'
+  },
+  ball: {
+    position: 'absolute',
+    backgroundColor: '#111827'
   },
   countryButton: {
     width: 34,
@@ -603,7 +664,7 @@ const styles = StyleSheet.create({
     fontSize: 18
   },
   prefix: {
-    color: colors.text,
+    color: '#111827',
     fontSize: 16,
     fontWeight: '700'
   },
@@ -611,27 +672,26 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     paddingVertical: 0,
-    color: colors.text,
+    color: '#111827',
     fontSize: 16,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
     outlineStyle: 'none'
   },
-  pillButton: {
-    minHeight: 42,
-    marginTop: 5,
-    paddingHorizontal: 20,
+  backButton: {
+    position: 'absolute',
+    left: 10,
+    top: 0,
+    bottom: 0,
+    width: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.borderStrong,
-    borderRadius: 999,
-    backgroundColor: 'rgba(17, 24, 39, 0.96)'
+    zIndex: 1
   },
-  pillButtonText: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '700'
+  backArrow: {
+    color: '#111827',
+    fontSize: 20,
+    lineHeight: 24
   },
   pressed: {
     opacity: 0.75
@@ -643,7 +703,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     paddingVertical: 0,
-    color: colors.text,
+    color: '#111827',
     fontSize: 20,
     fontWeight: '700',
     letterSpacing: 5,
@@ -664,18 +724,18 @@ const styles = StyleSheet.create({
   accountPanel: {
     padding: 18,
     gap: spacing.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.borderStrong,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
     borderRadius: 8,
-    backgroundColor: 'rgba(17, 24, 39, 0.96)'
+    backgroundColor: '#ffffff'
   },
   fieldLabel: {
-    color: colors.text,
+    color: '#111827',
     fontSize: 14,
     fontWeight: '600'
   },
   fileName: {
-    color: colors.textMuted,
+    color: '#6b7280',
     fontSize: 13
   },
   preview: {
@@ -705,17 +765,17 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     maxHeight: '70%',
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.borderStrong,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
     borderRadius: 12,
-    backgroundColor: colors.surface
+    backgroundColor: '#ffffff'
   },
   countrySearch: {
     minHeight: 48,
     paddingHorizontal: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.borderStrong,
-    color: colors.text,
+    borderBottomWidth: 1,
+    borderBottomColor: '#d1d5db',
+    color: '#111827',
     outlineStyle: 'none'
   },
   countryList: {
@@ -737,12 +797,12 @@ const styles = StyleSheet.create({
   },
   optionName: {
     flex: 1,
-    color: colors.text,
+    color: '#111827',
     fontSize: 14,
     fontWeight: '700'
   },
   optionCode: {
-    color: colors.textMuted,
+    color: '#6b7280',
     fontSize: 13
   }
 });

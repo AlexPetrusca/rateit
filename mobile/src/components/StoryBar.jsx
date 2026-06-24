@@ -4,36 +4,35 @@ import { colors, spacing } from '../theme.js';
 
 const STORY_RING = 'linear-gradient(135deg, #ffb020 0%, #ff3b45 48%, #d72b91 100%)';
 
-const Story = ({ person, own = false, onPress, onAddStory }) => (
-  <Pressable
-    accessibilityRole="button"
-    accessibilityLabel={own ? 'Create prompt' : `Open ${person?.username || 'user'} prompts`}
-    onPress={onPress}
-    style={({ pressed }) => [styles.story, pressed && styles.storyPressed]}
-  >
-    <View style={[
-      styles.ring,
-      own ? styles.ownRing : styles.activeRing,
-      !own && (Platform.OS === 'web'
-        ? { backgroundImage: STORY_RING }
-        : { experimental_backgroundImage: STORY_RING })
-    ]}>
-      <UserAvatar username={person?.username} profilePicUrl={person?.profilePicUrl} size={60} />
-      {own ? (
-        <View
-          onTouchEnd={(event) => { event.stopPropagation(); onAddStory?.(); }}
-          onClick={(event) => { event.stopPropagation(); onAddStory?.(); }}
-          style={styles.plusBadge}
-        >
-          <Image source={require('../../assets/icons/create.png')} style={styles.plusIcon} />
-        </View>
-      ) : null}
-    </View>
-    <Text numberOfLines={1} style={styles.label}>{own ? 'Your story' : person?.username}</Text>
-  </Pressable>
-);
+const Story = ({ person, own = false, hasPrompt = false, onPress }) => {
+  const gradientRing = !own || hasPrompt;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={own ? (hasPrompt ? 'Open your prompt' : 'Create prompt') : `Open ${person?.username || 'user'} prompts`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.story, pressed && styles.storyPressed]}
+    >
+      <View style={[
+        styles.ring,
+        gradientRing ? styles.activeRing : styles.ownRing,
+        gradientRing && (Platform.OS === 'web'
+          ? { backgroundImage: STORY_RING }
+          : { experimental_backgroundImage: STORY_RING })
+      ]}>
+        <UserAvatar username={person?.username} profilePicUrl={person?.profilePicUrl} size={60} />
+        {own && !hasPrompt ? (
+          <View pointerEvents="none" style={styles.plusBadge}>
+            <Image source={require('../../assets/icons/create.png')} style={styles.plusIcon} />
+          </View>
+        ) : null}
+      </View>
+      <Text numberOfLines={1} style={styles.label}>{own ? 'Your story' : person?.username}</Text>
+    </Pressable>
+  );
+};
 
-const StoryBar = ({ user, people = [], onAddStory, onOpenStories, onOpenOwnStories }) => {
+const StoryBar = ({ user, people = [], ownHasPrompt = false, onAddStory, onOpenStories, onOpenOwnStories }) => {
   const currentUserId = user?.userId ?? user?.id;
   const seen = new Set([currentUserId]);
   const storyPeople = [];
@@ -56,8 +55,8 @@ const StoryBar = ({ user, people = [], onAddStory, onOpenStories, onOpenOwnStori
         <Story
           person={user}
           own
-          onAddStory={onAddStory}
-          onPress={onOpenOwnStories}
+          hasPrompt={ownHasPrompt}
+          onPress={ownHasPrompt ? onOpenOwnStories : onAddStory}
         />
         {storyPeople.map((person) => (
           <Story

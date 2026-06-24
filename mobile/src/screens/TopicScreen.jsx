@@ -40,6 +40,7 @@ const TopicScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [blurIntensity, setBlurIntensity] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
+  const [imagePortrait, setImagePortrait] = useState(false);
   const [composerScore, setComposerScore] = useState(4);
   const [composerText, setComposerText] = useState('');
   const [saving, setSaving] = useState(false);
@@ -87,6 +88,14 @@ const TopicScreen = ({ navigation, route }) => {
   const mediaObjectKey = topic?.mediaObjectKey || items[0]?.rateableItem?.mediaObjectKey;
   const mediaUrl = useResolvedImageUrl(mediaObjectKey);
   const hasTopicPhoto = Boolean(mediaUrl && !imageFailed);
+
+  useEffect(() => {
+    setImagePortrait(false);
+    if (!mediaUrl) return;
+    let active = true;
+    Image.getSize(mediaUrl, (w, h) => { if (active) setImagePortrait(h > w); }, () => {});
+    return () => { active = false; };
+  }, [mediaUrl]);
   const heroLayer = hasTopicPhoto ? PHOTO_HERO_LAYER : FALLBACK_HERO_LAYER;
   const heroLayerStyle = Platform.OS === 'web'
     ? { backgroundImage: heroLayer }
@@ -150,7 +159,7 @@ const TopicScreen = ({ navigation, route }) => {
         {hasTopicPhoto ? (
           <Image
             source={{ uri: mediaUrl }}
-            resizeMode="contain"
+            resizeMode={imagePortrait ? 'cover' : 'contain'}
             onError={() => setImageFailed(true)}
             style={styles.backgroundImage}
           />
