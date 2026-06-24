@@ -26,6 +26,9 @@ node_modules/
 # Local notes
 wiki/*
 !wiki/build-status.md
+# deploy.sh depends on this backup script, so it must be tracked
+!wiki/bin/
+!wiki/bin/critic-db-backup.sh
 
 # Legacy
 frontend-old/
@@ -38,3 +41,7 @@ frontend-old/
 # ignore downloaded charts in chart directory if using helm dependency update
 **/charts/*.tgz
 values.secret.yaml
+
+# Local DB dumps
+backups/
+backup-*.sql

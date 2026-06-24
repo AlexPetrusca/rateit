@@ -136,7 +136,10 @@ postgresql:
   primary:
     persistence:
       enabled: true
-      size: 8Gi
+      # Must match the live PVC (data-critic-postgresql-0 = 5Gi). StatefulSet
+      # volumeClaimTemplates are immutable; growing this needs a PVC expand +
+      # STS recreate, not a plain helm upgrade.
+      size: 5Gi
     service:
       ports:
         postgresql: 5432
@@ -156,7 +159,10 @@ redis:
       size: 1Gi
 
 kafka:
-  enabled: true
+  # ponytail: unused by the app (no backend/chart refs); disabled so it stops
+  # blocking helm upgrades with its password/clusterId guard. Re-enable when
+  # something actually consumes it.
+  enabled: false
   image:
     registry: docker.io
     repository: bitnamilegacy/kafka

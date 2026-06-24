@@ -50,6 +50,13 @@ if [ "$FORCE_BACKEND_PUSH" = true ]; then
   PULL_POLICY="Always"
 fi
 
+# The production DO cluster (REMOTE_KUBE_CONTEXT) is a single small node. The full
+# stack overcommits it and OOM-kills core services, so always apply the slim preset
+# on remote deploys. Use --local for the local cluster, which fits the full stack.
+if [ "$LOCAL_DEPLOY" = false ]; then
+  SINGLE_NODE_DEPLOY=true
+fi
+
 if [ "$SKIP_BACKEND_PUSH" = false ] && [ "$IMAGE_TAG_WAS_PROVIDED" = false ]; then
   IMAGE_TAG="dev-$(date +%Y%m%d%H%M%S)-$(git rev-parse --short HEAD)"
 fi
@@ -82,11 +89,11 @@ fi
 
 # Back up the current local Postgres data before making any cluster changes.
 # This is best-effort so fresh clusters and broken local setups can still deploy.
-echo "Backing up local Postgres data before deploy..."
+echo "Backing up Postgres data before deploy..."
 if bash ./wiki/bin/critic-db-backup.sh; then
-  echo "Local Postgres backup complete"
+  echo "Postgres backup complete"
 else
-  echo "Warning: local Postgres backup skipped or failed; continuing with deploy"
+  echo "Warning: Postgres backup skipped or failed; continuing with deploy"
 fi
 
 # Build Helm dependencies
@@ -144,7 +151,7 @@ kubectl rollout status deployment/critic-nginx -n "$NAMESPACE" --timeout=120s
 
 # Build and upload frontend to s3/minio
 echo "Building frontend..."
-(cd ./frontend/scripts && ./deploy.sh)
+(cd ./mobile/scripts && ./deploy.sh)
 
 echo "Deployment completed successfully!"
 echo "Namespace: $NAMESPACE"

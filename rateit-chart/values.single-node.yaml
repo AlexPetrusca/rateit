@@ -27,6 +27,12 @@ prometheus:
 grafana:
   enabled: false
 
+# metrics-server's 100m CPU request doesn't fit alongside the app + DOKS/Cilium
+# overhead (~622m) on a single 1-vCPU node. Drop it; kubectl top / HPA aren't
+# needed for prod to serve traffic.
+metrics-server:
+  enabled: false
+
 ingress:
   enabled: false
 
