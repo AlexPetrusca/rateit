@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import EmptyState from './EmptyState.jsx';
 import { colors, spacing, text } from '../theme.js';
@@ -23,13 +23,17 @@ const FeedList = ({
   const lastOffset = useRef(0);
   const refreshingRef = useRef(refreshing);
   refreshingRef.current = refreshing;
+  const detachRef = useRef(null);
 
-  // Web-only pull-to-refresh. Standalone PWAs have no browser pull-to-refresh and
-  // RN-web's RefreshControl ignores the gesture. Use a non-passive touchmove so we
-  // can preventDefault and stop the browser hijacking the drag as a scroll; a
-  // vertical drag down >60px while the feed is at the top triggers onRefresh.
-  useEffect(() => {
-    if (Platform.OS !== 'web' || !onRefresh || typeof document === 'undefined') return;
+  // Web-only pull-to-refresh, attached to THIS list's own scroll node (not
+  // document) so it can't block scrolling on other screens. A non-passive
+  // touchmove + preventDefault stops the browser hijacking the drag as a scroll;
+  // a vertical drag down >60px while the feed is at the top triggers onRefresh.
+  const listRef = useCallback((instance) => {
+    if (detachRef.current) { detachRef.current(); detachRef.current = null; }
+    if (Platform.OS !== 'web' || !onRefresh || !instance) return;
+    const node = instance.getScrollableNode?.();
+    if (!node) return;
     let startY = null;
     let startX = 0;
     const onStart = (e) => {
@@ -55,15 +59,15 @@ const FeedList = ({
       }
     };
     const end = () => { startY = null; };
-    document.addEventListener('touchstart', onStart, { passive: true });
-    document.addEventListener('touchmove', onMove, { passive: false });
-    document.addEventListener('touchend', end, { passive: true });
-    document.addEventListener('touchcancel', end, { passive: true });
-    return () => {
-      document.removeEventListener('touchstart', onStart);
-      document.removeEventListener('touchmove', onMove);
-      document.removeEventListener('touchend', end);
-      document.removeEventListener('touchcancel', end);
+    node.addEventListener('touchstart', onStart, { passive: true });
+    node.addEventListener('touchmove', onMove, { passive: false });
+    node.addEventListener('touchend', end, { passive: true });
+    node.addEventListener('touchcancel', end, { passive: true });
+    detachRef.current = () => {
+      node.removeEventListener('touchstart', onStart);
+      node.removeEventListener('touchmove', onMove);
+      node.removeEventListener('touchend', end);
+      node.removeEventListener('touchcancel', end);
     };
   }, [onRefresh]);
 
@@ -86,6 +90,7 @@ const FeedList = ({
       </View>
     ) : null}
     <FlatList
+      ref={listRef}
       data={items}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
