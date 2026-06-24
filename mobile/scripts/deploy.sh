@@ -104,5 +104,13 @@ if ! aws --endpoint-url "$ENDPOINT" s3api head-bucket --bucket "$BUCKET_NAME" 2>
 fi
 
 # Replace bucket contents so stale frontend files don't linger (--delete).
+# Assets are content-hashed, so the bulk sync can let them be cached.
 echo "Uploading files to bucket..."
 aws --endpoint-url "$ENDPOINT" s3 sync "$DIST_PATH" "s3://$BUCKET_NAME" --acl public-read --delete
+
+# index.html points at the hashed bundle, so it must never be cached, or devices
+# (especially iOS home-screen apps) keep serving a stale index referencing an old
+# bundle. Re-upload it with no-cache after the sync.
+echo "Setting no-cache on index.html..."
+aws --endpoint-url "$ENDPOINT" s3 cp "$DIST_PATH/index.html" "s3://$BUCKET_NAME/index.html" \
+  --acl public-read --content-type "text/html" --cache-control "no-cache, must-revalidate"
