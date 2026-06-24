@@ -11,9 +11,6 @@ cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.."
 # Configuration
 BUCKET_NAME="frontend"
 DIST_PATH="dist"
-# Prod web is served behind nginx at this origin, which proxies /api and /auth
-# to the backend. Baked into the build; override by exporting the var first.
-PROD_API_BASE_URL="${EXPO_PUBLIC_API_BASE_URL:-https://app.critic-app.com}"
 LOCAL_MINIO_PORT="${LOCAL_MINIO_PORT:-9100}"
 ENDPOINT="http://localhost:${LOCAL_MINIO_PORT}"
 NAMESPACE="critic"
@@ -40,9 +37,32 @@ if [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
 fi
 
 # 0. Package mobile web build (Expo export -> ./dist)
+# The web build resolves its API base to same-origin at runtime (see src/config.js),
+# so it needs no build-time API URL injection; it's served behind nginx which
+# proxies /api and /auth to the backend.
 npm install >/dev/null
 rm -rf "$DIST_PATH"
-EXPO_PUBLIC_API_BASE_URL="$PROD_API_BASE_URL" npx expo export --platform web --output-dir "$DIST_PATH"
+npx expo export --platform web --output-dir "$DIST_PATH"
+
+# Expo's generated index.html omits iOS home-screen (PWA) meta tags, so the
+# standalone status bar renders white. Inject them to match the dark app.
+python3 - "$DIST_PATH/index.html" <<'PY'
+import sys
+p = sys.argv[1]
+html = open(p).read()
+tags = (
+    '<meta name="apple-mobile-web-app-capable" content="yes" />'
+    '<meta name="mobile-web-app-capable" content="yes" />'
+    '<meta name="apple-mobile-web-app-status-bar-style" content="black" />'
+    '<meta name="theme-color" content="#000000" />'
+)
+if 'apple-mobile-web-app-status-bar-style' not in html:
+    html = html.replace('</title>', '</title>' + tags, 1)
+    open(p, 'w').write(html)
+    print('injected iOS PWA meta tags')
+else:
+    print('iOS PWA meta tags already present')
+PY
 
 if ! curl -fsS "$ENDPOINT/minio/health/live" >/dev/null 2>&1; then
   TEMP_TUNNEL=true
