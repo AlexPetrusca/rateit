@@ -50,11 +50,14 @@ python3 - "$DIST_PATH/index.html" <<'PY'
 import sys
 p = sys.argv[1]
 html = open(p).read()
+# black-translucent (not "black", which modern iOS renders white) + a dark page
+# background so the status-bar area shows dark instead of white.
 tags = (
     '<meta name="apple-mobile-web-app-capable" content="yes" />'
     '<meta name="mobile-web-app-capable" content="yes" />'
-    '<meta name="apple-mobile-web-app-status-bar-style" content="black" />'
-    '<meta name="theme-color" content="#000000" />'
+    '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />'
+    '<meta name="theme-color" content="#08080a" />'
+    '<style>html,body{background-color:#08080a;overscroll-behavior-y:contain;}</style>'
 )
 if 'apple-mobile-web-app-status-bar-style' not in html:
     html = html.replace('</title>', '</title>' + tags, 1)

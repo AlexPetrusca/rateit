@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import EmptyState from './EmptyState.jsx';
 import { colors, spacing, text } from '../theme.js';
@@ -23,33 +23,47 @@ const FeedList = ({
   const lastOffset = useRef(0);
   const refreshingRef = useRef(refreshing);
   refreshingRef.current = refreshing;
-  const detachRef = useRef(null);
 
   // Web-only pull-to-refresh. Standalone PWAs have no browser pull-to-refresh and
-  // RN-web's RefreshControl ignores the touch gesture, so wire it up by hand:
-  // a downward drag of >70px while scrolled at the top triggers onRefresh.
-  const pullToRefreshRef = useCallback((node) => {
-    if (detachRef.current) { detachRef.current(); detachRef.current = null; }
-    if (Platform.OS !== 'web' || !onRefresh || !node) return;
+  // RN-web's RefreshControl ignores the gesture. Use a non-passive touchmove so we
+  // can preventDefault and stop the browser hijacking the drag as a scroll; a
+  // vertical drag down >60px while the feed is at the top triggers onRefresh.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !onRefresh || typeof document === 'undefined') return;
     let startY = null;
-    const onStart = (e) => { startY = lastOffset.current <= 4 ? e.touches[0].clientY : null; };
-    const onMove = (e) => {
-      if (startY == null || refreshingRef.current) return;
-      if (lastOffset.current <= 4 && e.touches[0].clientY - startY > 70) {
+    let startX = 0;
+    const onStart = (e) => {
+      if (lastOffset.current <= 4) {
+        startY = e.touches[0].clientY;
+        startX = e.touches[0].clientX;
+      } else {
         startY = null;
-        onRefresh();
       }
     };
-    const clear = () => { startY = null; };
-    node.addEventListener('touchstart', onStart, { passive: true });
-    node.addEventListener('touchmove', onMove, { passive: true });
-    node.addEventListener('touchend', clear, { passive: true });
-    node.addEventListener('touchcancel', clear, { passive: true });
-    detachRef.current = () => {
-      node.removeEventListener('touchstart', onStart);
-      node.removeEventListener('touchmove', onMove);
-      node.removeEventListener('touchend', clear);
-      node.removeEventListener('touchcancel', clear);
+    const onMove = (e) => {
+      if (startY == null || refreshingRef.current) return;
+      const dy = e.touches[0].clientY - startY;
+      const dx = e.touches[0].clientX - startX;
+      // Only engage on a downward, vertically-dominant pull at the top (so it
+      // doesn't fight horizontal scrolls like the story bar).
+      if (lastOffset.current <= 4 && dy > 0 && dy > Math.abs(dx)) {
+        if (e.cancelable) e.preventDefault();
+        if (dy > 60) {
+          startY = null;
+          onRefresh();
+        }
+      }
+    };
+    const end = () => { startY = null; };
+    document.addEventListener('touchstart', onStart, { passive: true });
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', end, { passive: true });
+    document.addEventListener('touchcancel', end, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onStart);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', end);
+      document.removeEventListener('touchcancel', end);
     };
   }, [onRefresh]);
 
@@ -63,7 +77,14 @@ const FeedList = ({
   }
 
   return (
-    <View ref={pullToRefreshRef} style={styles.wrapper}>
+    <View style={styles.container}>
+    {Platform.OS === 'web' && refreshing ? (
+      <View style={styles.refreshSpinner} pointerEvents="none">
+        <View style={styles.refreshSpinnerBadge}>
+          <ActivityIndicator color={colors.accent} />
+        </View>
+      </View>
+    ) : null}
     <FlatList
       data={items}
       keyExtractor={keyExtractor}
@@ -112,8 +133,25 @@ const FeedList = ({
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
+  container: {
     flex: 1
+  },
+  refreshSpinner: {
+    position: 'absolute',
+    top: 8,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10
+  },
+  refreshSpinnerBadge: {
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: 18,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)'
   },
   flatList: {
     flex: 1
