@@ -160,11 +160,10 @@ public class FeedService {
     public List<PromptDto> getRecentPrompts(long userId, String currentUserPhoneNumber) {
         userService.findByPhoneNumber(currentUserPhoneNumber);
         return rateableItemRepository
-            .findByCreatedByUserIdAndItemTypeAndVisibilityAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+            .findByCreatedByUserIdAndItemTypeAndVisibilityOrderByCreatedAtDesc(
                 userId,
                 RateableItemType.PROMPT,
-                Visibility.PUBLIC,
-                java.time.Instant.now().minus(java.time.Duration.ofHours(24))
+                Visibility.PUBLIC
             )
             .stream()
             .map(PromptDto::from)
@@ -187,10 +186,9 @@ public class FeedService {
 
     private java.util.stream.Stream<PromptDto> recentPrompts() {
         return rateableItemRepository
-            .findByItemTypeAndVisibilityAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+            .findByItemTypeAndVisibilityOrderByCreatedAtDesc(
                 RateableItemType.PROMPT,
-                Visibility.PUBLIC,
-                java.time.Instant.now().minus(java.time.Duration.ofHours(24))
+                Visibility.PUBLIC
             )
             .stream()
             .map(PromptDto::from);

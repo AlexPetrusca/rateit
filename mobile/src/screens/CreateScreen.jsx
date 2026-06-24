@@ -20,16 +20,18 @@ const CreateScreen = ({ navigation, route }) => {
   const { notify } = useNotifications();
   const incomingDraft = route.params?.draft;
   const incomingMode = route.params?.mode;
+  const incomingEditPrompt = route.params?.editPrompt;
   const [draftId, setDraftId] = useState(incomingDraft?.id ?? null);
-  const [body, setBody] = useState(incomingDraft?.body ?? '');
+  const [editPromptId, setEditPromptId] = useState(incomingEditPrompt?.id ?? null);
+  const [body, setBody] = useState(incomingDraft?.body ?? incomingEditPrompt?.body ?? '');
   const [reviewText, setReviewText] = useState(incomingDraft?.reviewText ?? '');
   const [score, setScore] = useState(incomingDraft?.score ?? 4);
   const [previewScore, setPreviewScore] = useState(null);
-  const [postMode, setPostMode] = useState('rate');
+  const [postMode, setPostMode] = useState(incomingEditPrompt ? 'prompt' : 'rate');
   const [selectedFile, setSelectedFile] = useState(null);
   const [existingMedia, setExistingMedia] = useState({
-    mediaObjectKey: incomingDraft?.mediaObjectKey ?? null,
-    mediaContentType: incomingDraft?.mediaContentType ?? null
+    mediaObjectKey: incomingDraft?.mediaObjectKey ?? incomingEditPrompt?.mediaObjectKey ?? null,
+    mediaContentType: incomingDraft?.mediaContentType ?? incomingEditPrompt?.mediaContentType ?? null
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -59,8 +61,24 @@ const CreateScreen = ({ navigation, route }) => {
     }
   }, [incomingMode, navigation]);
 
+  useEffect(() => {
+    if (!incomingEditPrompt) {
+      return;
+    }
+    setEditPromptId(incomingEditPrompt.id);
+    setPostMode('prompt');
+    setBody(incomingEditPrompt.body ?? '');
+    setSelectedFile(null);
+    setExistingMedia({
+      mediaObjectKey: incomingEditPrompt.mediaObjectKey ?? null,
+      mediaContentType: incomingEditPrompt.mediaContentType ?? null
+    });
+    navigation.setParams({ editPrompt: undefined });
+  }, [incomingEditPrompt, navigation]);
+
   useFocusEffect(useCallback(() => () => {
     setDraftId(null);
+    setEditPromptId(null);
     setBody('');
     setReviewText('');
     setScore(4);
@@ -103,6 +121,14 @@ const CreateScreen = ({ navigation, route }) => {
     try {
       if (draftId) {
         await BackendApiService.publishDraft(draftId);
+      } else if (editPromptId) {
+        const hasMedia = selectedFile || existingMedia.mediaObjectKey;
+        if (!body.trim() && !hasMedia) {
+          setError('Add text or a photo to create a prompt.');
+          return;
+        }
+        const { mediaObjectKey, mediaContentType } = await uploadMedia();
+        await BackendApiService.updatePrompt(editPromptId, { body, mediaObjectKey, mediaContentType });
       } else {
         const hasMedia = selectedFile || existingMedia.mediaObjectKey;
         const validationError = postMode === 'prompt'
@@ -126,10 +152,30 @@ const CreateScreen = ({ navigation, route }) => {
           }));
         }
       }
-      notify({ message: postMode === 'prompt' ? 'Prompt posted.' : 'Rating posted.', type: 'info' });
+      notify({
+        message: editPromptId ? 'Prompt updated.' : postMode === 'prompt' ? 'Prompt posted.' : 'Rating posted.',
+        type: 'info'
+      });
       navigation.navigate('Home');
     } catch (err) {
       setError(err.message || 'Failed to post rating');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removePrompt = async () => {
+    if (!editPromptId) {
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      await BackendApiService.deletePrompt(editPromptId);
+      notify({ message: 'Prompt deleted.', type: 'info' });
+      navigation.navigate('Home');
+    } catch (err) {
+      setError(err.message || 'Failed to delete prompt');
     } finally {
       setSaving(false);
     }
@@ -163,25 +209,30 @@ const CreateScreen = ({ navigation, route }) => {
   };
 
   return (
-    <Screen title="Create" subtitle="Rate text or a photo.">
-      <View style={styles.modeToggle}>
-        {['rate', 'prompt'].map((mode) => {
-          const selected = postMode === mode;
-          return (
-            <Pressable
-              key={mode}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              onPress={() => setPostMode(mode)}
-              style={[styles.modeOption, selected && styles.modeOptionSelected]}
-            >
-              <Text style={[styles.modeText, selected && styles.modeTextSelected]}>
-                {mode === 'rate' ? 'Rate' : 'Prompt'}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+    <Screen
+      title={editPromptId ? 'Edit prompt' : 'Create'}
+      subtitle={editPromptId ? 'Edit your prompt or delete it.' : 'Rate text or a photo.'}
+    >
+      {editPromptId ? null : (
+        <View style={styles.modeToggle}>
+          {['rate', 'prompt'].map((mode) => {
+            const selected = postMode === mode;
+            return (
+              <Pressable
+                key={mode}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onPress={() => setPostMode(mode)}
+                style={[styles.modeOption, selected && styles.modeOptionSelected]}
+              >
+                <Text style={[styles.modeText, selected && styles.modeTextSelected]}>
+                  {mode === 'rate' ? 'Rate' : 'Prompt'}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
       <StatusMessage message={error} type="error" />
       <Card>
         <View style={styles.photoHeader}>
@@ -241,8 +292,12 @@ const CreateScreen = ({ navigation, route }) => {
         </View>
         <View style={styles.actionRow}>
           <AppButton variant="secondary" label="Back" icon={<HandDrawnIcon name="back" color={colors.text} />} onPress={() => navigation.goBack()} style={styles.composerButton} />
-          <AppButton variant="secondary" label="Save draft" icon={<HandDrawnIcon name="draft" color={colors.text} />} onPress={saveDraft} loading={saving} style={styles.composerButton} />
-          <AppButton label="Submit" icon={<HandDrawnIcon name="check" color="#ffffff" />} onPress={submit} loading={saving} style={styles.composerButton} />
+          {editPromptId ? (
+            <AppButton variant="danger" label="Delete" icon={<HandDrawnIcon name="x" color="#ffffff" />} onPress={removePrompt} loading={saving} style={styles.composerButton} />
+          ) : (
+            <AppButton variant="secondary" label="Save draft" icon={<HandDrawnIcon name="draft" color={colors.text} />} onPress={saveDraft} loading={saving} style={styles.composerButton} />
+          )}
+          <AppButton label={editPromptId ? 'Save' : 'Submit'} icon={<HandDrawnIcon name="check" color="#ffffff" />} onPress={submit} loading={saving} style={styles.composerButton} />
         </View>
       </Card>
     </Screen>

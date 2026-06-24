@@ -1,20 +1,33 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AppButton from '../components/AppButton.jsx';
 import RatingComposer from '../components/RatingComposer.jsx';
 import HandDrawnIcon from '../components/HandDrawnIcon.jsx';
 import RichText from '../components/RichText.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import { useResolvedImageUrl } from '../hooks/useResolvedImageUrl.js';
+import { usePeekHold } from '../hooks/usePeekHold.js';
+import { getSeenPromptIds, markPromptSeen } from '../storage/promptSeen.js';
 import BackendApiService from '../services/BackendApiService.js';
 import { colors, spacing, text } from '../theme.js';
 
 const PHOTO_LAYER = 'linear-gradient(180deg, rgba(9, 13, 22, 0.35) 0%, rgba(9, 13, 22, 0.08) 38%, rgba(9, 13, 22, 0.92) 100%)';
 const FALLBACK_LAYER = 'radial-gradient(circle at bottom right, rgba(255, 48, 58, 0.42), transparent 38%), linear-gradient(180deg, #171b24 0%, #090d16 72%)';
 
-const PromptSlide = ({ prompt, width, height }) => {
+const PromptSlide = ({ prompt, width, height, peeking }) => {
   const mediaUrl = useResolvedImageUrl(prompt.mediaObjectKey);
+  const [portrait, setPortrait] = useState(false);
   const layer = mediaUrl ? PHOTO_LAYER : FALLBACK_LAYER;
+
+  useEffect(() => {
+    setPortrait(false);
+    if (!mediaUrl) return;
+    let active = true;
+    Image.getSize(mediaUrl, (w, h) => { if (active) setPortrait(h > w); }, () => {});
+    return () => { active = false; };
+  }, [mediaUrl]);
   const layerStyle = Platform.OS === 'web'
     ? { backgroundImage: layer }
     : { experimental_backgroundImage: layer };
@@ -25,14 +38,15 @@ const PromptSlide = ({ prompt, width, height }) => {
   return (
     <View style={[styles.slide, { width, height }]}>
       <View style={[styles.layer, fallbackStyle]} />
-      {mediaUrl ? <Image source={{ uri: mediaUrl }} resizeMode="contain" style={styles.image} /> : null}
-      <View style={[styles.layer, layerStyle]} />
+      {mediaUrl ? <Image source={{ uri: mediaUrl }} resizeMode={peeking ? 'contain' : (portrait ? 'cover' : 'contain')} style={styles.image} /> : null}
+      <View style={[styles.layer, layerStyle, peeking && styles.hidden]} />
     </View>
   );
 };
 
 const PromptScreen = ({ navigation, route }) => {
   const { userId, username, own = false } = route.params || {};
+  const { user } = useAuth();
   const { notify } = useNotifications();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -43,7 +57,26 @@ const PromptScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
+  const currentUserId = user?.userId ?? user?.id;
   const activePrompt = prompts[activeIndex];
+
+  const goTo = (index) => {
+    if (index < 0 || index >= prompts.length) return;
+    setActiveIndex(index);
+    setReviewText('');
+  };
+
+  // Tap the left third to go back, the right third to advance — but only in the
+  // image area, so taps on the heading/close (top) or composer (bottom) are ignored.
+  const { peeking, handlers: peekHandlers } = usePeekHold({
+    onTap: (x, y) => {
+      // Ignore the top (heading/close) and bottom (composer / edit button).
+      if (y < height * 0.12 || y > height * 0.7) return;
+      if (x < width * 0.33) goTo(activeIndex - 1);
+      else if (x > width * 0.67) goTo(activeIndex + 1);
+    }
+  });
+
   const close = () => navigation.canGoBack()
     ? navigation.goBack()
     : navigation.navigate('MainTabs', { screen: 'Home' });
@@ -53,12 +86,18 @@ const PromptScreen = ({ navigation, route }) => {
     setLoading(true);
     setLoadError('');
     const request = own ? BackendApiService.getMyRecentPrompts() : BackendApiService.getRecentPrompts(userId);
-    request
-      .then((items) => {
-        if (active) {
-          setPrompts(items);
-          setActiveIndex(0);
-        }
+    Promise.all([request, getSeenPromptIds(currentUserId)])
+      .then(([items, seen]) => {
+        if (!active) return;
+        // Oldest first, so tapping right advances through time.
+        const ordered = [...items].sort(
+          (a, b) => (new Date(a.createdAt).getTime() || 0) - (new Date(b.createdAt).getTime() || 0)
+        );
+        // Start at the earliest unseen prompt, or the first if all are seen.
+        const firstUnseen = ordered.findIndex((p) => !seen.has(String(p.id)));
+        const startIndex = firstUnseen >= 0 ? firstUnseen : 0;
+        setPrompts(ordered);
+        setActiveIndex(startIndex);
       })
       .catch((error) => {
         const message = error.message || 'Failed to load prompts';
@@ -69,7 +108,13 @@ const PromptScreen = ({ navigation, route }) => {
       })
       .finally(() => active && setLoading(false));
     return () => { active = false; };
-  }, [notify, own, userId]);
+  }, [notify, own, userId, currentUserId]);
+
+  // Mark the visible prompt as seen on this device.
+  useEffect(() => {
+    const prompt = prompts[activeIndex];
+    if (prompt) markPromptSeen(currentUserId, prompt.id);
+  }, [activeIndex, prompts, currentUserId]);
 
   const submit = async () => {
     if (!activePrompt) {
@@ -97,7 +142,7 @@ const PromptScreen = ({ navigation, route }) => {
       <View style={[styles.center, { paddingTop: insets.top }]}>
         <Text style={styles.emptyTitle}>{loadError ? 'Could not load prompts' : 'No recent prompts'}</Text>
         <Text style={text.muted}>
-          {loadError || `${username || 'This user'} has not posted a prompt in the last 24 hours.`}
+          {loadError || `${username || 'This user'} has not posted a prompt yet.`}
         </Text>
         <Pressable onPress={close} style={styles.emptyBack}>
           <Text style={styles.backText}>Back</Text>
@@ -110,21 +155,13 @@ const PromptScreen = ({ navigation, route }) => {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.screen}
+      {...peekHandlers}
     >
-      <FlatList
-        horizontal
-        pagingEnabled
-        data={prompts}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => <PromptSlide prompt={item} width={width} height={height} />}
-        onMomentumScrollEnd={({ nativeEvent }) => {
-          setActiveIndex(Math.round(nativeEvent.contentOffset.x / width));
-          setReviewText('');
-        }}
-        showsHorizontalScrollIndicator={false}
-      />
+      {activePrompt ? (
+        <PromptSlide prompt={activePrompt} width={width} height={height} peeking={peeking} />
+      ) : null}
 
-      <View style={[styles.top, { paddingTop: insets.top + spacing.sm }]} pointerEvents="box-none">
+      <View style={[styles.top, { paddingTop: insets.top + spacing.sm }, peeking && styles.hidden]} pointerEvents={peeking ? 'none' : 'box-none'}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Close prompts"
@@ -139,29 +176,49 @@ const PromptScreen = ({ navigation, route }) => {
         </View>
       </View>
 
-      <View style={[styles.composer, { paddingBottom: insets.bottom + spacing.sm }]}>
-        <RatingComposer
-          title="Your rating"
-          score={score}
-          onScoreChange={setScore}
-          textValue={reviewText}
-          onTextChange={setReviewText}
-          placeholder="Add your take"
-          submitLabel="Rate prompt"
-          onSubmit={submit}
-          loading={saving}
-          richText
-          cardStyle={styles.composerCard}
-        />
-      </View>
+      {peeking ? null : own ? (
+        <View style={[styles.composer, { paddingBottom: insets.bottom + spacing.sm }]}>
+          <AppButton
+            label="Edit prompt"
+            icon={<HandDrawnIcon name="draft" color="#ffffff" />}
+            onPress={() => activePrompt && navigation.navigate('MainTabs', {
+              screen: 'Create',
+              params: {
+                editPrompt: {
+                  id: activePrompt.id,
+                  body: activePrompt.body,
+                  mediaObjectKey: activePrompt.mediaObjectKey
+                }
+              }
+            })}
+          />
+        </View>
+      ) : (
+        <View style={[styles.composer, { paddingBottom: insets.bottom + spacing.sm }]}>
+          <RatingComposer
+            title="Your rating"
+            score={score}
+            onScoreChange={setScore}
+            textValue={reviewText}
+            onTextChange={setReviewText}
+            placeholder="Add your take"
+            submitLabel="Rate prompt"
+            onSubmit={submit}
+            loading={saving}
+            richText
+            cardStyle={styles.composerCard}
+          />
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#090d16' },
+  hidden: { opacity: 0 },
   slide: { backgroundColor: '#090d16' },
-  image: { width: '100%', height: '100%' },
+  image: { width: '100%', height: '100%', userSelect: 'none', WebkitTouchCallout: 'none' },
   layer: { ...StyleSheet.absoluteFillObject },
   top: { position: 'absolute', top: 0, right: 0, left: 0, zIndex: 10, elevation: 10, paddingHorizontal: spacing.lg },
   heading: { paddingTop: spacing.lg, paddingRight: 42, gap: spacing.xs },

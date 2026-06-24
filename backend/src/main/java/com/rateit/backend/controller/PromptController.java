@@ -46,4 +46,19 @@ public class PromptController {
     public ResponseEntity<List<PromptDto>> getRecentPrompts(JwtAuthenticationToken token) {
         return ResponseEntity.ok(feedService.getRecentPrompts(token.getToken().getSubject()));
     }
+
+    @PutMapping("/{promptId}")
+    public ResponseEntity<PromptDto> updatePrompt(
+        @PathVariable Long promptId,
+        @RequestBody CreatePromptRequest request,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.ok(feedActionService.updatePrompt(promptId, request, token.getToken().getSubject()));
+    }
+
+    @DeleteMapping("/{promptId}")
+    public ResponseEntity<Void> deletePrompt(@PathVariable Long promptId, JwtAuthenticationToken token) {
+        feedActionService.deletePrompt(promptId, token.getToken().getSubject());
+        return ResponseEntity.noContent().build();
+    }
 }

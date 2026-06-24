@@ -28,6 +28,20 @@ public interface RateableItemRepository extends JpaRepository<RateableItem, Long
         Instant createdAfter
     );
 
+    // Prompts no longer expire after 24h; the client tracks which it has seen.
+    @EntityGraph(attributePaths = {"createdByUser", "mediaAsset"})
+    List<RateableItem> findByCreatedByUserIdAndItemTypeAndVisibilityOrderByCreatedAtDesc(
+        Long userId,
+        RateableItemType itemType,
+        Visibility visibility
+    );
+
+    @EntityGraph(attributePaths = {"createdByUser", "mediaAsset"})
+    List<RateableItem> findByItemTypeAndVisibilityOrderByCreatedAtDesc(
+        RateableItemType itemType,
+        Visibility visibility
+    );
+
     long countByCreatedByUser(User createdByUser);
     void deleteByCreatedByUser(User createdByUser);
 }

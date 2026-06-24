@@ -119,6 +119,15 @@ const BackendApiService = {
     body: jsonBody({ body, mediaObjectKey, mediaContentType })
   }, 'Failed to create prompt'),
 
+  updatePrompt: (promptId, { body, mediaObjectKey, mediaContentType }) => request(`/api/prompts/${encodeURIComponent(promptId)}`, {
+    method: 'PUT',
+    body: jsonBody({ body, mediaObjectKey, mediaContentType })
+  }, 'Failed to update prompt'),
+
+  deletePrompt: (promptId) => request(`/api/prompts/${encodeURIComponent(promptId)}`, {
+    method: 'DELETE'
+  }, 'Failed to delete prompt'),
+
   rateTopic: (rateableItemId, score, reviewText) => request(
     `/api/topics/${encodeURIComponent(rateableItemId)}/ratings`,
     {

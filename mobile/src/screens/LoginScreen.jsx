@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppButton from '../components/AppButton.jsx';
+import HandDrawnIcon from '../components/HandDrawnIcon.jsx';
 import AppTextInput from '../components/AppTextInput.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
@@ -303,8 +304,9 @@ const LoginScreen = () => {
     return () => clearTimeout(timer);
   }, [code, isLoading, needsAccountSetup, step, verifyOtp]);
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
+  const pickImage = async (camera = false) => {
+    const launcher = camera ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync;
+    const result = await launcher({
       mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
@@ -432,26 +434,44 @@ const LoginScreen = () => {
         >
           {needsAccountSetup ? (
             <View style={styles.accountPanel}>
+              <Text style={styles.fieldLabel}>Username</Text>
               <AppTextInput
-                label="Username"
                 value={username}
                 onChangeText={setUsername}
                 placeholder="Choose a username"
                 autoCapitalize="none"
+                inputStyle={styles.accountInput}
               />
               <Text style={styles.fieldLabel}>Profile picture</Text>
-              <AppButton
-                variant="secondary"
-                label={selectedImage ? 'Change photo' : 'Upload photo'}
-                onPress={pickImage}
-              />
+              <View style={styles.accountPhotoRow}>
+                <AppButton
+                  variant="secondary"
+                  label="Take photo"
+                  icon={<HandDrawnIcon name="camera" color="#111827" />}
+                  onPress={() => pickImage(true)}
+                  style={[styles.accountSecondaryButton, styles.accountPhotoButton]}
+                />
+                <AppButton
+                  variant="secondary"
+                  label="Upload photo"
+                  icon={<HandDrawnIcon name="upload" color="#111827" />}
+                  onPress={() => pickImage(false)}
+                  style={[styles.accountSecondaryButton, styles.accountPhotoButton]}
+                />
+              </View>
               {selectedImage ? (
                 <>
                   <Text style={styles.fileName}>{selectedImage.name}</Text>
                   <Image source={{ uri: selectedImage.uri }} style={styles.preview} />
                 </>
               ) : null}
-              <AppButton label="Continue" onPress={saveAccount} loading={isLoading} />
+              <AppButton
+                label="Continue"
+                onPress={saveAccount}
+                loading={isLoading}
+                style={styles.accountPrimaryButton}
+                textStyle={styles.accountLightText}
+              />
             </View>
           ) : step === 'phone' ? (
             <>
@@ -742,7 +762,36 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 140,
     borderRadius: 12,
-    backgroundColor: colors.surfaceSoft
+    backgroundColor: '#f3f4f6'
+  },
+  accountInput: {
+    backgroundColor: '#ffffff',
+    borderColor: '#d1d5db',
+    color: '#111827'
+  },
+  accountSecondaryButton: {
+    backgroundColor: '#ffffff',
+    borderColor: '#d1d5db'
+  },
+  accountPhotoRow: {
+    flexDirection: 'row',
+    gap: spacing.md
+  },
+  accountPhotoButton: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    paddingHorizontal: 0
+  },
+  accountDarkText: {
+    color: '#111827'
+  },
+  accountPrimaryButton: {
+    backgroundColor: '#111827',
+    borderColor: '#111827'
+  },
+  accountLightText: {
+    color: '#ffffff'
   },
   status: {
     position: 'absolute',

@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import { useRatingInteractions } from '../hooks/useRatingInteractions.js';
 import BackendApiService from '../services/BackendApiService.js';
+import { getSeenPromptIds } from '../storage/promptSeen.js';
 import { mergeUniqueBy } from '../utils/lists.js';
 
 const PAGE_SIZE = 5;
@@ -67,15 +68,29 @@ const HomeScreen = ({ navigation, route }) => {
   useFocusEffect(useCallback(() => {
     let active = true;
     const currentUserId = user?.userId ?? user?.id;
-    BackendApiService.getAllRecentPrompts()
-      .then((prompts) => {
+    Promise.all([BackendApiService.getAllRecentPrompts(), getSeenPromptIds(currentUserId)])
+      .then(([prompts, seen]) => {
         if (!active) return;
-        setHasOwnPrompt(prompts.some((prompt) => prompt.authorUserId === currentUserId));
-        setStoryPeople(prompts.map((prompt) => ({
-          userId: prompt.authorUserId,
-          username: prompt.authorUsername,
-          profilePicUrl: prompt.authorProfilePicUrl
-        })));
+        // Group prompts by author; an author's circle is "new" if any of their
+        // prompts haven't been seen on this device yet.
+        const byAuthor = new Map();
+        prompts.forEach((prompt) => {
+          const entry = byAuthor.get(prompt.authorUserId) || {
+            userId: prompt.authorUserId,
+            username: prompt.authorUsername,
+            profilePicUrl: prompt.authorProfilePicUrl,
+            hasUnseen: false,
+            latest: 0
+          };
+          if (!seen.has(String(prompt.id))) entry.hasUnseen = true;
+          entry.latest = Math.max(entry.latest, new Date(prompt.createdAt).getTime() || 0);
+          byAuthor.set(prompt.authorUserId, entry);
+        });
+        setHasOwnPrompt(byAuthor.has(currentUserId));
+        // Others only; surface unseen authors first, then most recent.
+        setStoryPeople([...byAuthor.values()]
+          .filter((person) => person.userId !== currentUserId)
+          .sort((a, b) => (b.hasUnseen - a.hasUnseen) || (b.latest - a.latest)));
       })
       .catch(() => { if (active) { setStoryPeople([]); setHasOwnPrompt(false); } });
     return () => { active = false; };

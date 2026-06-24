@@ -4,8 +4,10 @@ import { colors, spacing } from '../theme.js';
 
 const STORY_RING = 'linear-gradient(135deg, #ffb020 0%, #ff3b45 48%, #d72b91 100%)';
 
-const Story = ({ person, own = false, hasPrompt = false, onPress }) => {
-  const gradientRing = !own || hasPrompt;
+const Story = ({ person, own = false, hasPrompt = false, hasUnseen = false, onPress }) => {
+  // Own circle: gradient whenever you have a prompt to open. Others: gradient only
+  // when they have prompts this user hasn't seen yet (otherwise a muted grey ring).
+  const gradientRing = own ? hasPrompt : hasUnseen;
   return (
     <Pressable
       accessibilityRole="button"
@@ -27,7 +29,7 @@ const Story = ({ person, own = false, hasPrompt = false, onPress }) => {
           </View>
         ) : null}
       </View>
-      <Text numberOfLines={1} style={styles.label}>{own ? 'Your story' : person?.username}</Text>
+      <Text numberOfLines={1} style={styles.label}>{own ? 'Your prompts' : person?.username}</Text>
     </Pressable>
   );
 };
@@ -62,6 +64,7 @@ const StoryBar = ({ user, people = [], ownHasPrompt = false, onAddStory, onOpenS
           <Story
             key={person.userId ?? person.id}
             person={person}
+            hasUnseen={person.hasUnseen}
             onPress={() => onOpenStories?.(person)}
           />
         ))}

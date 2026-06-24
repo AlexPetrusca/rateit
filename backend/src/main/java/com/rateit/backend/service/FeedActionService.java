@@ -136,6 +136,53 @@ public class FeedActionService {
     }
 
     @Transactional
+    public PromptDto updatePrompt(Long promptId, CreatePromptRequest request, String currentUserPhoneNumber) {
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+        RateableItem item = findOwnedPrompt(promptId, currentUser);
+
+        String body = normalize(request.body());
+        String mediaObjectKey = normalize(request.mediaObjectKey());
+        if (body == null && mediaObjectKey == null) {
+            throw BadRequestException.invalidRequest("Prompts need text or an image");
+        }
+
+        item.setBody(body);
+        String currentKey = item.getMediaAsset() == null ? null : item.getMediaAsset().getObjectKey();
+        if (mediaObjectKey == null) {
+            item.setMediaAsset(null);
+        } else if (!mediaObjectKey.equals(currentKey)) {
+            item.setMediaAsset(mediaAssetRepository.save(MediaAsset.builder()
+                .ownerUser(currentUser)
+                .bucket("images")
+                .objectKey(mediaObjectKey)
+                .contentType(normalize(request.mediaContentType()))
+                .build()));
+        }
+
+        return PromptDto.from(rateableItemRepository.save(item));
+    }
+
+    @Transactional
+    public void deletePrompt(Long promptId, String currentUserPhoneNumber) {
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+        RateableItem item = findOwnedPrompt(promptId, currentUser);
+        // Soft-delete: hide from the public prompt queries. Ratings on it (if any)
+        // are left intact rather than cascading a hard delete.
+        item.setVisibility(Visibility.PRIVATE);
+        rateableItemRepository.save(item);
+    }
+
+    private RateableItem findOwnedPrompt(Long promptId, User currentUser) {
+        RateableItem item = rateableItemRepository.findById(promptId)
+            .filter(it -> it.getItemType() == RateableItemType.PROMPT)
+            .orElseThrow(() -> BadRequestException.invalidRequest("Prompt not found"));
+        if (!item.getCreatedByUser().getId().equals(currentUser.getId())) {
+            throw BadRequestException.invalidRequest("You can only edit your own prompts");
+        }
+        return item;
+    }
+
+    @Transactional
     public FeedItemDto updateRating(Long ratingId, UpdateRatingRequest request, String currentUserPhoneNumber) {
         User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
         Rating rating = findEditableRating(ratingId, currentUser);

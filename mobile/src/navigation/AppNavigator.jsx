@@ -180,7 +180,7 @@ const AppNavigator = () => {
     }
     setActiveTab(tab);
     const topRoute = state?.routes?.[state?.index ?? 0]?.name;
-    setShowNav(topRoute !== 'Topic' && topRoute !== 'PostEditor' && !(topRoute === 'MainTabs' && tab === 'Create'));
+    setShowNav(topRoute !== 'Topic' && topRoute !== 'PostEditor' && topRoute !== 'Prompts' && !(topRoute === 'MainTabs' && tab === 'Create'));
   }, []);
 
   const navigateToTab = useCallback((name) => {

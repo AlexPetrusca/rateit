@@ -20,7 +20,10 @@ export const AuthProvider = ({ children }) => {
       const userData = await BackendApiService.getCurrentUser();
       await storeAuthSession();
       setUser(userData || null);
-      setIsAuthenticated(true);
+      // A valid session with no user profile yet (new phone, mid-signup) must NOT
+      // count as authenticated, or the navigator swaps out LoginScreen before the
+      // account-setup form can show.
+      setIsAuthenticated(Boolean(userData));
       setIsLoading(false);
       return userData || null;
     } catch (error) {

@@ -12,6 +12,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import { useRatingInteractions } from '../hooks/useRatingInteractions.js';
 import { useResolvedImageUrl } from '../hooks/useResolvedImageUrl.js';
+import { usePeekHold } from '../hooks/usePeekHold.js';
 import BackendApiService from '../services/BackendApiService.js';
 import { colors, spacing, text } from '../theme.js';
 import { mergeUniqueBy } from '../utils/lists.js';
@@ -32,6 +33,7 @@ const formatAverageRating = (value) => {
 const TopicScreen = ({ navigation, route }) => {
   const { user } = useAuth();
   const { notify } = useNotifications();
+  const { peeking, handlers: peekHandlers } = usePeekHold();
   const insets = useSafeAreaInsets();
   const { height: viewportHeight, width: viewportWidth } = useWindowDimensions();
   const { rateableItemId } = route.params || {};
@@ -153,21 +155,21 @@ const TopicScreen = ({ navigation, route }) => {
   );
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} {...peekHandlers}>
       <View pointerEvents="none" style={styles.backgroundLayer}>
         <View style={[styles.backgroundFallback, fallbackLayerStyle]} />
         {hasTopicPhoto ? (
           <Image
             source={{ uri: mediaUrl }}
-            resizeMode={imagePortrait ? 'cover' : 'contain'}
+            resizeMode={peeking ? 'contain' : (imagePortrait ? 'cover' : 'contain')}
             onError={() => setImageFailed(true)}
             style={styles.backgroundImage}
           />
         ) : null}
-        <View style={[styles.heroLayer, heroLayerStyle]} />
+        <View style={[styles.heroLayer, heroLayerStyle, peeking && styles.hidden]} />
       </View>
 
-      <View pointerEvents="none" style={[styles.metadataLayer, { paddingBottom: REVIEW_PEEK + METADATA_GAP }]}>
+      <View pointerEvents="none" style={[styles.metadataLayer, { paddingBottom: REVIEW_PEEK + METADATA_GAP }, peeking && styles.hidden]}>
         <RichText style={[styles.title, { fontSize: titleSize, lineHeight: titleSize * 0.96 }]}>
           {topicTitle}
         </RichText>
@@ -184,14 +186,15 @@ const TopicScreen = ({ navigation, route }) => {
           style={[styles.blurLayer, {
             backdropFilter: `blur(${blurIntensity * 0.2}px)`,
             WebkitBackdropFilter: `blur(${blurIntensity * 0.2}px)`
-          }]}
+          }, peeking && styles.hidden]}
         />
       ) : (
-        <BlurView pointerEvents="none" intensity={blurIntensity} tint="dark" style={styles.blurLayer} />
+        <BlurView pointerEvents="none" intensity={blurIntensity} tint="dark" style={[styles.blurLayer, peeking && styles.hidden]} />
       )}
 
       <FlatList
-        style={styles.reviewsLayer}
+        pointerEvents={peeking ? 'none' : 'auto'}
+        style={[styles.reviewsLayer, peeking && styles.hidden]}
         data={displayedItems}
         keyExtractor={(item) => String(item.ratingId)}
         contentInsetAdjustmentBehavior="never"
@@ -247,10 +250,12 @@ const TopicScreen = ({ navigation, route }) => {
         accessibilityLabel="Close topic"
         hitSlop={8}
         onPress={closeTopic}
+        pointerEvents={peeking ? 'none' : 'auto'}
         style={({ pressed }) => [
           styles.closeTopic,
           { top: insets.top + spacing.sm },
-          pressed && styles.closeTopicPressed
+          pressed && styles.closeTopicPressed,
+          peeking && styles.hidden
         ]}
       >
         <HandDrawnIcon name="x" color="#ffffff" size={20} />
@@ -288,6 +293,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#090d16'
   },
+  hidden: {
+    opacity: 0
+  },
   backgroundLayer: {
     position: 'absolute',
     top: 0,
@@ -297,7 +305,9 @@ const styles = StyleSheet.create({
   },
   backgroundImage: {
     width: '100%',
-    height: '100%'
+    height: '100%',
+    userSelect: 'none',
+    WebkitTouchCallout: 'none'
   },
   backgroundFallback: {
     ...StyleSheet.absoluteFillObject,
