@@ -171,17 +171,21 @@ const AppNavigator = () => {
   const [activeTab, setActiveTab] = useState('Home');
   const [showNav, setShowNav] = useState(true);
 
-  const handleStateChange = useCallback((state) => {
-    const mainTabs = state?.routes?.find(r => r.name === 'MainTabs');
-    let tab = 'Home';
-    if (mainTabs?.state) {
-      const { routes, index } = mainTabs.state;
-      tab = routes[index ?? 0]?.name ?? 'Home';
+  const handleStateChange = useCallback(() => {
+    // getCurrentRoute() returns the deepest focused route, regardless of how the
+    // state tree is nested (client nav vs deep link) — more reliable than parsing
+    // state.routes[index] by hand.
+    const name = navigationRef.getCurrentRoute?.()?.name;
+    if (TAB_NAMES.includes(name)) {
+      setActiveTab(name);
     }
-    setActiveTab(tab);
-    const topRoute = state?.routes?.[state?.index ?? 0]?.name;
-    setShowNav(topRoute !== 'Topic' && topRoute !== 'PostEditor' && topRoute !== 'Prompts' && !(topRoute === 'MainTabs' && tab === 'Create'));
-  }, []);
+    setShowNav(
+      name !== 'Topic'
+      && name !== 'PostEditor'
+      && name !== 'Prompts'
+      && name !== 'Create'
+    );
+  }, [navigationRef]);
 
   const navigateToTab = useCallback((name) => {
     navigationRef.navigate('MainTabs', { screen: name });
