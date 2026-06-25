@@ -71,10 +71,12 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   ratingHeader: {
-    alignItems: 'flex-end'
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
   },
   ratingTitle: {
-    ...text.h3
+    ...text.h2
   },
   scoreNumber: {
     color: colors.text,
