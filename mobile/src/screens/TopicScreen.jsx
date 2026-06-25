@@ -150,6 +150,7 @@ const TopicScreen = ({ navigation, route }) => {
         onSubmit={submitTopicRating}
         loading={saving}
         richText
+        showStars
       />
     </View>
   );

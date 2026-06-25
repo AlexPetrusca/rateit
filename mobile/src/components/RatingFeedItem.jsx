@@ -154,6 +154,7 @@ const RatingFeedItem = ({
         [item.ratingId]: { ...current[item.ratingId], reviewText }
       }))}
       submitLabel="Re-rate"
+      showStars
       onSubmit={() => interactions.submitRerate(item.ratingId, refresh).catch((error) => {
         interactions.notify?.({ message: error.message, type: 'error' });
       })}

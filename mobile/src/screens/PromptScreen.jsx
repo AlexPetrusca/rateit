@@ -206,6 +206,7 @@ const PromptScreen = ({ navigation, route }) => {
             onSubmit={submit}
             loading={saving}
             richText
+            showStars
             cardStyle={styles.composerCard}
           />
         </View>
