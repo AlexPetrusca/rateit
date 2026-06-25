@@ -6,7 +6,7 @@ import Card from './Card.jsx';
 import RichTextInput from './RichTextInput.jsx';
 import StarRating from './StarRating.jsx';
 import { formatFiveStarScore } from '../utils/ratingDisplay.js';
-import { colors, spacing } from '../theme.js';
+import { colors, spacing, text } from '../theme.js';
 
 const RatingComposer = ({
   title = 'Your rating',
@@ -28,7 +28,10 @@ const RatingComposer = ({
     <Card style={[styles.card, cardStyle]}>
       {showStars ? (
         <View style={styles.ratingBlock}>
-          <Text style={styles.scoreNumber}>{formatFiveStarScore(Number(preview ?? score) || 0)}</Text>
+          <View style={styles.ratingHeader}>
+            <Text style={styles.ratingTitle}>{title}</Text>
+            <Text style={styles.scoreNumber}>{formatFiveStarScore(Number(preview ?? score) || 0)}</Text>
+          </View>
           <View style={styles.starRow}>
             <StarRating
               value={Number(score) || 0}
@@ -67,8 +70,13 @@ const styles = StyleSheet.create({
   ratingBlock: {
     gap: spacing.sm
   },
+  ratingHeader: {
+    alignItems: 'flex-end'
+  },
+  ratingTitle: {
+    ...text.h3
+  },
   scoreNumber: {
-    alignSelf: 'flex-end',
     color: colors.text,
     fontSize: 20,
     fontWeight: '700',
