@@ -1,0 +1,10 @@
+spring:
+  config:
+    activate:
+      on-profile: twilio
+
+security:
+  auth:
+    cookie:
+      secure: true
+      same-site: None

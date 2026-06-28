@@ -1,10 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 import PostActions from './PostActions.jsx';
 import RichText from './RichText.jsx';
-import StarRating from './StarRating.jsx';
 import UserAvatar from './UserAvatar.jsx';
 import { colors, spacing, text } from '../theme.js';
-import { formatScoreValue } from '../utils/ratingDisplay.js';
 
 const descendantCount = (comment) => {
   const replies = comment.replies || [];
@@ -62,23 +60,15 @@ const CommentThread = ({
             <UserAvatar username={comment.author?.username} profilePicUrl={comment.author?.profilePicUrl} size="sm" />
             <View style={styles.body}>
               <Text style={styles.author}>{comment.author?.username || 'Someone'}</Text>
-              {comment.score != null ? (
-                <View style={styles.score}>
-                  <StarRating value={comment.score} size="sm" label={formatScoreValue(comment.score)} />
-                  <Text style={styles.scoreLabel}>{formatScoreValue(comment.score)}</Text>
-                </View>
-              ) : null}
               <RichText style={styles.text}>{comment.text}</RichText>
               <PostActions
                 liked={Boolean(comment.likedByCurrentUser)}
                 likeCount={comment.likeCount || 0}
                 commentCount={replyCount}
                 onLike={onLikePress ? () => onLikePress(comment) : undefined}
-                onComment={replyCount > 0 ? () => onToggleReplies?.(comment, replyKey) : undefined}
-                onReply={onReplyPress ? () => onReplyPress(comment) : undefined}
+                onComment={onReplyPress ? () => onReplyPress(comment) : undefined}
                 onEdit={canEdit ? () => onEditPress(comment) : undefined}
-                commentLabel={repliesVisible ? 'Hide replies' : 'Replies'}
-                replyLabel="Reply"
+                commentLabel="Reply"
                 showCommentCount={replyCount > 0}
               />
             </View>
@@ -119,16 +109,6 @@ const styles = StyleSheet.create({
   author: {
     fontWeight: '800',
     color: colors.text
-  },
-  score: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm
-  },
-  scoreLabel: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '700'
   },
   text: text.body,
   replies: {

@@ -93,10 +93,14 @@ const ProfileScreen = ({ navigation, route }) => {
     setFollowLoading(true);
     try {
       const following = profile.followRelation === 'FOLLOWING';
-      const nextProfile = following
-        ? await BackendApiService.unfollowUser(profile.userId)
-        : await BackendApiService.followUser(profile.userId);
-      setProfile(nextProfile);
+      const result = following
+        ? await BackendApiService.unfollowUser(profileUserId)
+        : await BackendApiService.followUser(profileUserId);
+      setProfile((current) => ({
+        ...current,
+        followRelation: result.followRelation,
+        followerCount: (current.followerCount || 0) + (following ? -1 : 1)
+      }));
     } catch (error) {
       notify({ message: error.message || 'Failed to update follow', type: 'error' });
     } finally {
@@ -122,11 +126,11 @@ const ProfileScreen = ({ navigation, route }) => {
           <Text style={styles.name}>{profile.username}</Text>
           <Text style={styles.handle}>@{profile.username}</Text>
           <View style={styles.counts}>
-            <Pressable onPress={() => navigation.navigate('FollowList', { userId: profile.userId, type: 'following' })} style={styles.countButton}>
+            <Pressable onPress={() => navigation.navigate('FollowList', { userId: profileUserId, type: 'following' })} style={styles.countButton}>
               <Text style={styles.countStrong}>{profile.followingCount || 0}</Text>
               <Text style={styles.countLabel}>Following</Text>
             </Pressable>
-            <Pressable onPress={() => navigation.navigate('FollowList', { userId: profile.userId, type: 'followers' })} style={styles.countButton}>
+            <Pressable onPress={() => navigation.navigate('FollowList', { userId: profileUserId, type: 'followers' })} style={styles.countButton}>
               <Text style={styles.countStrong}>{profile.followerCount || 0}</Text>
               <Text style={styles.countLabel}>Followers</Text>
             </Pressable>
@@ -175,6 +179,7 @@ const ProfileScreen = ({ navigation, route }) => {
               openReviewId: post.ratingId
             })}
             onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
+            commentOpensRerate
           />
         )}
         ListHeaderComponent={header}

@@ -146,6 +146,7 @@ const HomeScreen = ({ navigation, route }) => {
             reviewNumberOfLines={6}
             openCardOnlyWhenTruncated
             showReply={false}
+            commentOpensRerate
             refresh={refresh}
             onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
             onTopicPress={(rateableItemId) => navigation.navigate('Topic', { rateableItemId })}

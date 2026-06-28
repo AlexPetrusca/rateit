@@ -57,7 +57,6 @@ const PostActions = ({
   return (
     <View style={styles.container}>
       <ActionButton icon={liked ? 'fullHeart' : 'emptyHeart'} label={liked ? 'Unlike' : 'Like'} count={likeCount} onPress={onLike} active={liked} />
-      <ActionButton icon="cycle" label="Re-rate" onPress={onRerate} showCount={false} />
       <ActionButton icon="chatBubble" label={commentLabel} count={commentCount} onPress={onComment} showCount={showCommentCount} />
       <ActionButton icon="reply" label={replyLabel} onPress={onReply} showCount={false} />
       <ActionButton icon="share" label="Share" onPress={shareUrl ? handleShare : undefined} showCount={false} />

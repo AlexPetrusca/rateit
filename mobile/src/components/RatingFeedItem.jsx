@@ -21,7 +21,8 @@ const RatingFeedItem = ({
   showTopicText = true,
   reviewNumberOfLines,
   openCardOnlyWhenTruncated = false,
-  showReply = true,
+  showReply = false,
+  commentOpensRerate = false,
   cardStyle
 }) => {
   const [activeEditKey, setActiveEditKey] = useState(null);
@@ -82,6 +83,7 @@ const RatingFeedItem = ({
         }))}
         submitLabel="Save"
         multilineLabel="Comment"
+        richText
         onSubmit={async () => {
           try {
             await BackendApiService.updateRatingComment(comment.id, draft.text, Number(draft.score));
@@ -117,6 +119,7 @@ const RatingFeedItem = ({
           onReplyPress={(comment) => {
             const replyKey = interactions.getReplyKey(item.ratingId, comment.id);
             interactions.setActiveComposer(interactions.activeComposer === replyKey ? rootComposerKey : replyKey);
+            setActiveEditKey(null);
           }}
           activeReplyKey={interactions.activeComposer}
           activeEditKey={activeEditKey}
@@ -131,6 +134,7 @@ const RatingFeedItem = ({
               [editKey]: current[editKey] || { text: comment.text || '', score: String(comment.score || 2.5) }
             }));
             setActiveEditKey((current) => (current === editKey ? null : editKey));
+            interactions.setActiveComposer(null);
           }}
           expandedReplyKeys={interactions.expandedReplyKeys}
           onToggleReplies={interactions.toggleReplies}
@@ -180,7 +184,7 @@ const RatingFeedItem = ({
             commentCount={item.commentCount}
             onLike={() => interactions.toggleLike(item)}
             onRerate={() => interactions.toggleRerateComposer(item)}
-            onComment={toggleComments}
+            onComment={commentOpensRerate ? () => interactions.toggleRerateComposer(item) : toggleComments}
             onReply={showReply ? () => interactions.openCommentComposer(item.ratingId) : undefined}
             onEdit={canEdit ? () => onEditPress?.(item.ratingId) : undefined}
             shareUrl={shareUrl}

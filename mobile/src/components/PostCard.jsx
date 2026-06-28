@@ -219,10 +219,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic'
   },
   expanded: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
     gap: spacing.md
   }
 });
