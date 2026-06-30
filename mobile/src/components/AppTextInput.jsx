@@ -64,7 +64,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     color: colors.text,
     fontSize: 16,
-    outlineStyle: 'none'
+    outlineStyle: 'none',
+    // Re-enable selection/typing in case an ancestor set user-select:none (e.g.
+    // the topic screen disables it for the hold-to-peek gesture). Without this,
+    // iOS Safari won't let you type in the field.
+    userSelect: 'text',
+    WebkitUserSelect: 'text'
   },
   focused: {
     borderColor: colors.text,
