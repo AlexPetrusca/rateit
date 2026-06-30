@@ -124,6 +124,9 @@ const FeedList = ({
         }
       }}
       scrollEventThrottle={200}
+      maxToRenderPerBatch={2}
+      initialNumToRender={3}
+      updateCellsBatchingPeriod={100}
       ListHeaderComponent={ListHeaderComponent}
       ListEmptyComponent={<EmptyState title={emptyTitle} message={emptyMessage} />}
       ListFooterComponent={(

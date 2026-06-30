@@ -15,6 +15,7 @@ import { useResolvedImageUrl } from '../hooks/useResolvedImageUrl.js';
 import BackendApiService from '../services/BackendApiService.js';
 import { colors, spacing, text } from '../theme.js';
 import { buildCreateRatingRequest, formatFiveStarScore, validateCreateRatingDraft } from '../utils/ratingDisplay.js';
+import { prepareImageForUpload } from '../utils/imageUpload.js';
 
 const CreateScreen = ({ navigation, route }) => {
   const { notify } = useNotifications();
@@ -98,11 +99,7 @@ const CreateScreen = ({ navigation, route }) => {
     });
     if (!result.canceled) {
       const asset = result.assets[0];
-      setSelectedFile({
-        uri: asset.uri,
-        name: asset.fileName || 'rating-photo.jpg',
-        type: asset.mimeType || 'image/jpeg'
-      });
+      setSelectedFile(await prepareImageForUpload(asset));
     }
   };
 

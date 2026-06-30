@@ -12,6 +12,7 @@ import { useNotifications } from '../contexts/NotificationContext.jsx';
 import { useResolvedImageUrl } from '../hooks/useResolvedImageUrl.js';
 import BackendApiService from '../services/BackendApiService.js';
 import { colors, spacing, text } from '../theme.js';
+import { prepareImageForUpload } from '../utils/imageUpload.js';
 
 const ProfileEditorScreen = ({ navigation }) => {
   const { user, updateUser } = useAuth();
@@ -31,11 +32,7 @@ const ProfileEditorScreen = ({ navigation }) => {
     });
     if (!result.canceled) {
       const asset = result.assets[0];
-      setSelectedImage({
-        uri: asset.uri,
-        name: asset.fileName || 'profile.jpg',
-        type: asset.mimeType || 'image/jpeg'
-      });
+      setSelectedImage(await prepareImageForUpload(asset));
     }
   };
 
