@@ -1,0 +1,75 @@
+name: Build backend image
+
+# Manual only — never runs on push. Trigger it from the GitHub "Actions" tab
+# (Run workflow) or with `gh workflow run backend-image.yml` when you've made a
+# rare backend change and want a fresh image built in the cloud (no local Docker).
+# This ONLY builds and pushes the image to Docker Hub; it does NOT deploy to the
+# cluster. After it finishes, run the printed deploy command locally when ready.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Image tag (leave blank to auto-generate dev-<date>-<sha>)'
+        required: false
+        default: ''
+
+concurrency:
+  group: backend-image
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute image tag
+        id: meta
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="dev-$(date +%Y%m%d%H%M%S)-$(git rev-parse --short HEAD)"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          # The DigitalOcean cluster nodes are amd64. (Add linux/arm64 here if you
+          # ever need to run the image on an arm machine; it builds slower via
+          # emulation and isn't needed for the cluster.)
+          platforms: linux/amd64
+          push: true
+          tags: |
+            alexpetrusca/rateit-backend:${{ steps.meta.outputs.tag }}
+            alexpetrusca/rateit-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Print deploy instructions
+        run: |
+          {
+            echo "### ✅ Backend image pushed"
+            echo ""
+            echo "Image: \`alexpetrusca/rateit-backend:${{ steps.meta.outputs.tag }}\` (also tagged \`latest\`)"
+            echo ""
+            echo "When you're ready to deploy it to the cluster, run locally (no Docker needed):"
+            echo ""
+            echo '```bash'
+            echo "IMAGE_TAG=${{ steps.meta.outputs.tag }} ./deploy.sh --skip-push --single-node"
+            echo '```'
+            echo ""
+            echo "Using the unique tag (not \`latest\`) ensures the node pulls the new image."
+          } >> "$GITHUB_STEP_SUMMARY"
