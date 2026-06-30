@@ -42,7 +42,8 @@ const TourneyCreateScreen = ({ navigation }) => {
   const [sport, setSport] = useState('spikeball');
   const [sportOpen, setSportOpen] = useState(false);
   const [tournamentDate, setTournamentDate] = useState(todayIsoDate());
-  const [isPartnerSwap, setIsPartnerSwap] = useState(true);
+  const [mode, setMode] = useState('LIVE');
+  const [courtCount, setCourtCount] = useState('1');
   const [pointsToWin, setPointsToWin] = useState('15');
   const [rawName, setRawName] = useState('');
   const [criticUsers, setCriticUsers] = useState([]);
@@ -133,10 +134,12 @@ const TourneyCreateScreen = ({ navigation }) => {
     setError('');
     try {
       const name = `${sportLabel} ${toNameDate(tournamentDate)}`;
+      const normalizedCourts = Math.max(1, Number.parseInt(courtCount, 10) || 1);
       const tournament = await BackendApiService.createTourneyTournament({
         name,
         tournamentDate,
-        format: isPartnerSwap ? 'PARTNER_SWAP' : 'FIXED_TEAMS',
+        mode,
+        courtCount: mode === 'LIVE' ? normalizedCourts : null,
         status: 'DRAFT',
         pointsToWin: normalizedPoints
       });
@@ -207,26 +210,41 @@ const TourneyCreateScreen = ({ navigation }) => {
         <AppTextInput label="Tournament date" value={tournamentDate} onChangeText={setTournamentDate} placeholder="YYYY-MM-DD" autoCapitalize="none" />
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Format</Text>
+          <Text style={styles.label}>Type</Text>
           <View style={styles.segmented}>
             <Pressable
               accessibilityRole="button"
-              accessibilityState={{ selected: isPartnerSwap }}
-              onPress={() => setIsPartnerSwap(true)}
-              style={[styles.segment, isPartnerSwap && styles.segmentActive]}
+              accessibilityState={{ selected: mode === 'LIVE' }}
+              onPress={() => setMode('LIVE')}
+              style={[styles.segment, mode === 'LIVE' && styles.segmentActive]}
             >
-              <Text style={[styles.segmentText, isPartnerSwap && styles.segmentTextActive]}>Partner swap</Text>
+              <Text style={[styles.segmentText, mode === 'LIVE' && styles.segmentTextActive]}>Live</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityState={{ selected: !isPartnerSwap }}
-              onPress={() => setIsPartnerSwap(false)}
-              style={[styles.segment, !isPartnerSwap && styles.segmentActive]}
+              accessibilityState={{ selected: mode === 'HISTORICAL' }}
+              onPress={() => setMode('HISTORICAL')}
+              style={[styles.segment, mode === 'HISTORICAL' && styles.segmentActive]}
             >
-              <Text style={[styles.segmentText, !isPartnerSwap && styles.segmentTextActive]}>Fixed teams</Text>
+              <Text style={[styles.segmentText, mode === 'HISTORICAL' && styles.segmentTextActive]}>Historical</Text>
             </Pressable>
           </View>
+          <Text style={styles.hint}>
+            {mode === 'LIVE'
+              ? 'Run round-by-round; pairings are auto-generated each round (drag to adjust).'
+              : 'Back-fill a finished event: enter all matchups and scores yourself.'}
+          </Text>
         </View>
+
+        {mode === 'LIVE' ? (
+          <AppTextInput
+            label="Nets (concurrent games)"
+            value={courtCount}
+            onChangeText={setCourtCount}
+            keyboardType="number-pad"
+            placeholder="1"
+          />
+        ) : null}
 
         <AppTextInput
           label="Points to win"
@@ -336,6 +354,11 @@ const styles = StyleSheet.create({
     ...text.muted,
     color: colors.text,
     fontWeight: '600'
+  },
+  hint: {
+    ...text.muted,
+    fontSize: 12,
+    lineHeight: 16
   },
   dropdown: {
     minHeight: 50,

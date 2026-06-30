@@ -21,6 +21,7 @@ import com.rateit.backend.entity.rest.SaveTourneyTournamentRequest;
 import com.rateit.backend.entity.rest.UpdateTourneyMatchScoreRequest;
 import com.rateit.backend.entity.types.Resource;
 import com.rateit.backend.entity.types.TourneyTournamentFormat;
+import com.rateit.backend.entity.types.TourneyTournamentMode;
 import com.rateit.backend.entity.types.TourneyTournamentStatus;
 import com.rateit.backend.exception.AuthorizationException;
 import com.rateit.backend.exception.ResourceNotFoundException;
@@ -120,6 +121,8 @@ public class TourneyService {
             .tournamentDate(request.tournamentDate())
             .status(request.status() == null ? TourneyTournamentStatus.DRAFT : request.status())
             .format(request.format() == null ? TourneyTournamentFormat.PARTNER_SWAP : request.format())
+            .mode(request.mode() == null ? TourneyTournamentMode.LIVE : request.mode())
+            .courtCount(request.courtCount() == null ? 1 : request.courtCount())
             .pointsToWin(request.pointsToWin() == null ? 21 : request.pointsToWin())
             .notes(trimToNull(request.notes()))
             .build();
@@ -135,6 +138,8 @@ public class TourneyService {
         tournament.setTournamentDate(request.tournamentDate());
         tournament.setStatus(request.status() == null ? tournament.getStatus() : request.status());
         tournament.setFormat(request.format() == null ? tournament.getFormat() : request.format());
+        tournament.setMode(request.mode() == null ? tournament.getMode() : request.mode());
+        tournament.setCourtCount(request.courtCount() == null ? tournament.getCourtCount() : request.courtCount());
         tournament.setPointsToWin(request.pointsToWin() == null ? tournament.getPointsToWin() : request.pointsToWin());
         tournament.setNotes(trimToNull(request.notes()));
         return buildDetail(tournament);

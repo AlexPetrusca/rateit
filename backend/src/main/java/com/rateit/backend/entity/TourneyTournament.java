@@ -1,6 +1,7 @@
 package com.rateit.backend.entity;
 
 import com.rateit.backend.entity.types.TourneyTournamentFormat;
+import com.rateit.backend.entity.types.TourneyTournamentMode;
 import com.rateit.backend.entity.types.TourneyTournamentStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -46,6 +47,18 @@ public class TourneyTournament extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "format", nullable = false)
     private TourneyTournamentFormat format;
+
+    // Nullable: existing rows predate this column. New tournaments always set it.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mode")
+    private TourneyTournamentMode mode;
+
+    // Number of nets / concurrent games per round (live tournaments).
+    @Column(name = "court_count")
+    private Integer courtCount;
+
+    @Column(name = "points_to_win")
+    private Integer pointsToWin;
 
     @Column(name = "notes", columnDefinition = "text")
     private String notes;

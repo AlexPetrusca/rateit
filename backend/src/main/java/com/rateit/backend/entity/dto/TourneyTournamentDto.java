@@ -2,6 +2,7 @@ package com.rateit.backend.entity.dto;
 
 import com.rateit.backend.entity.TourneyTournament;
 import com.rateit.backend.entity.types.TourneyTournamentFormat;
+import com.rateit.backend.entity.types.TourneyTournamentMode;
 import com.rateit.backend.entity.types.TourneyTournamentStatus;
 
 import java.time.Instant;
@@ -15,6 +16,9 @@ public record TourneyTournamentDto(
     LocalDate tournamentDate,
     TourneyTournamentStatus status,
     TourneyTournamentFormat format,
+    TourneyTournamentMode mode,
+    Integer courtCount,
+    Integer pointsToWin,
     String notes,
     Instant createdAt,
     Instant updatedAt,
@@ -49,6 +53,9 @@ public record TourneyTournamentDto(
             tournament.getTournamentDate(),
             tournament.getStatus(),
             tournament.getFormat(),
+            tournament.getMode(),
+            tournament.getCourtCount(),
+            tournament.getPointsToWin(),
             tournament.getNotes(),
             tournament.getCreatedAt(),
             tournament.getUpdatedAt(),
