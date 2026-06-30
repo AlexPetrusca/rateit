@@ -114,14 +114,18 @@ const FeedList = ({
         }
         lastOffset.current = offset;
       }}
-      scrollEventThrottle={200}
+      // Drive virtualization at ~60fps. On web the rendered window is recomputed
+      // from scroll events, so a coarse throttle (e.g. 200ms) lets fast scrolling
+      // outrun the renderer and reveal blank (black) cells before catching up in
+      // one heavy batch (the freeze).
+      scrollEventThrottle={16}
       // Prefetch the next page ~2 viewports before the end so a fast flick never
       // outruns pagination. Uses the virtualization layer (not throttled pixel
       // math), so it fires reliably even at high scroll speed.
       onEndReached={onEndReached}
       onEndReachedThreshold={2}
       // Render a generous buffer ahead/behind so fast scrolling doesn't outrun
-      // the renderer and reveal blank (black) cells.
+      // the renderer and reveal blank cells.
       windowSize={11}
       initialNumToRender={6}
       maxToRenderPerBatch={6}
