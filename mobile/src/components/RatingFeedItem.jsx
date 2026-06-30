@@ -204,10 +204,25 @@ const RatingFeedItem = ({
 // DOM subtree — the dominant cost when scrolling. Skip a card's re-render unless
 // its own data or the interaction state that actually affects it has changed.
 // Function props (navigation callbacks) are treated as stable and ignored.
+// Fingerprint of all comment/reply draft state belonging to this rating, so the
+// card re-renders as the user types in its comment composer (its draft lives in
+// shared interaction state, not local). Keys are `${ratingId}:comment[:commentId]`.
+const draftsForItem = (interactions, ratingId) => {
+  const drafts = interactions.commentDrafts;
+  if (!drafts) return '';
+  const prefix = `${ratingId}:`;
+  return Object.keys(drafts)
+    .filter((k) => k.startsWith(prefix))
+    .sort()
+    .map((k) => `${k}~${drafts[k].text}~${drafts[k].score}`)
+    .join('|');
+};
+
 const interactionRelevantToItem = (interactions, ratingId) => ({
   comments: interactions.commentsByRating[ratingId],
   expanded: interactions.expandedRatings.includes(ratingId),
   rerate: interactions.rerateDrafts[ratingId],
+  drafts: draftsForItem(interactions, ratingId),
   // activeComposer only affects this card when it targets this rating.
   composer: interactions.activeComposer && String(interactions.activeComposer).startsWith(`${ratingId}:`)
     ? interactions.activeComposer
@@ -233,6 +248,7 @@ const areEqual = (prev, next) => {
   return a.comments === b.comments
     && a.expanded === b.expanded
     && a.rerate === b.rerate
+    && a.drafts === b.drafts
     && a.composer === b.composer
     && a.replies === b.replies;
 };
