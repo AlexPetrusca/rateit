@@ -124,9 +124,12 @@ const FeedList = ({
       // math), so it fires reliably even at high scroll speed.
       onEndReached={onEndReached}
       onEndReachedThreshold={2}
-      // Render a generous buffer ahead/behind so fast scrolling doesn't outrun
-      // the renderer and reveal blank cells.
-      windowSize={11}
+      // Keep already-rendered cells mounted (large retention window) so flinging
+      // back up after loading many pages doesn't remount everything — that
+      // remount storm was the long black freeze. Images are small now, so the
+      // extra retained DOM is cheap. Cells still mount progressively on the way
+      // down (maxToRenderPerBatch), they just don't get unmounted behind you.
+      windowSize={50}
       initialNumToRender={6}
       maxToRenderPerBatch={6}
       ListHeaderComponent={ListHeaderComponent}
