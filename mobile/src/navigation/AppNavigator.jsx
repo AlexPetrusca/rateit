@@ -25,6 +25,8 @@ import PromptScreen from '../screens/PromptScreen.jsx';
 import SearchUsersScreen from '../screens/SearchUsersScreen.jsx';
 import SuggestionSubmitScreen from '../screens/SuggestionSubmitScreen.jsx';
 import TopicScreen from '../screens/TopicScreen.jsx';
+import TourneyCreateScreen from '../screens/TourneyCreateScreen.jsx';
+import TourneyScreen from '../screens/TourneyScreen.jsx';
 import { APP_PUBLIC_URL } from '../config.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { colors } from '../theme.js';
@@ -56,6 +58,8 @@ const linking = {
       Menu: 'menu',
       Backlog: 'backlog',
       SuggestionSubmit: 'suggestions/new',
+      Tourney: 'tourney',
+      TourneyCreate: 'tourney/new',
       InstallInfo: 'install'
     }
   }
@@ -195,6 +199,9 @@ const AppNavigator = () => {
       && name !== 'PostEditor'
       && name !== 'Prompts'
       && name !== 'Create'
+      // Everything tourney-related (selector, creator, future screens) is its own
+      // full-screen flow — hide the main nav bar.
+      && !String(name || '').startsWith('Tourney')
     );
   }, [navigationRef]);
 
@@ -224,7 +231,7 @@ const AppNavigator = () => {
   };
 
   return (
-    <NavigationContainer ref={navigationRef} linking={linking} theme={theme} onStateChange={handleStateChange}>
+    <NavigationContainer ref={navigationRef} linking={linking} theme={theme} onReady={handleStateChange} onStateChange={handleStateChange}>
       <Stack.Navigator screenOptions={stackOptions}>
         {!isAuthenticated ? (
           <>
@@ -246,6 +253,8 @@ const AppNavigator = () => {
             <Stack.Screen name="Menu" component={MenuScreen} />
             <Stack.Screen name="Backlog" component={BacklogScreen} />
             <Stack.Screen name="SuggestionSubmit" component={SuggestionSubmitScreen} options={{ title: 'Suggestion' }} />
+            <Stack.Screen name="Tourney" component={TourneyScreen} />
+            <Stack.Screen name="TourneyCreate" component={TourneyCreateScreen} />
             <Stack.Screen name="InstallInfo" component={InstallInfoScreen} options={{ title: 'Install' }} />
             {isAdmin ? (
               <>
