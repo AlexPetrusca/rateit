@@ -137,7 +137,9 @@ const TopicScreen = ({ navigation, route }) => {
     ? navigation.goBack()
     : navigation.navigate('MainTabs', { screen: 'Home' });
 
-  const footer = (
+  // Hide the topic-level "Add your rating" composer while a per-rating comment
+  // composer is open, so only one composer shows at a time.
+  const footer = interactions.activeComposer ? null : (
     <View style={[styles.footer, { width: feedWidth }]}>
       <RatingComposer
         title="Add your rating"
