@@ -12,11 +12,11 @@ const FeedList = ({
   refreshing = false,
   onRefresh,
   onEndReached,
+  hasMore = false,
   emptyTitle = 'No items yet.',
   emptyMessage,
   endMessage,
   ListHeaderComponent,
-  ListFooterExtra,
   contentContainerStyle
 }) => {
   const lastOffset = useRef(0);
@@ -123,21 +123,27 @@ const FeedList = ({
       // outruns pagination. Uses the virtualization layer (not throttled pixel
       // math), so it fires reliably even at high scroll speed.
       onEndReached={onEndReached}
-      onEndReachedThreshold={2}
+      onEndReachedThreshold={3}
       // Keep already-rendered cells mounted (large retention window) so flinging
       // back up after loading many pages doesn't remount everything — that
       // remount storm was the long black freeze. Images are small now, so the
       // extra retained DOM is cheap. Cells still mount progressively on the way
       // down (maxToRenderPerBatch), they just don't get unmounted behind you.
       windowSize={50}
-      initialNumToRender={6}
-      maxToRenderPerBatch={6}
+      initialNumToRender={8}
+      maxToRenderPerBatch={8}
       ListHeaderComponent={ListHeaderComponent}
       ListEmptyComponent={<EmptyState title={emptyTitle} message={emptyMessage} />}
+      // Whenever more content is coming (fetching or more pages available), show a
+      // spinner at the end instead of bare dark space, so reaching the bottom
+      // before the next cards render reads as "loading", never as a black screen.
       ListFooterComponent={(
         <View style={styles.footer}>
-          {ListFooterExtra}
-          {!loadingMore && endMessage ? <Text style={styles.message}>{endMessage}</Text> : null}
+          {(loadingMore || hasMore) ? (
+            <ActivityIndicator color={colors.accent} />
+          ) : endMessage ? (
+            <Text style={styles.message}>{endMessage}</Text>
+          ) : null}
         </View>
       )}
     />
@@ -183,7 +189,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   footer: {
-    minHeight: 64,
+    minHeight: 160,
     alignItems: 'stretch',
     justifyContent: 'center'
   },

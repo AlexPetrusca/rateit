@@ -162,7 +162,7 @@ const ProfileScreen = ({ navigation, route }) => {
         loading={loading}
         loadingMore={loadingMore}
         onEndReached={loadMore}
-        ListFooterExtra={hasMore ? <AppButton variant="ghost" label="Load more" onPress={loadMore} loading={loadingMore} /> : null}
+        hasMore={hasMore}
         onRefresh={loadProfile}
         endMessage={hasMore ? '' : 'No more posts to show.'}
         emptyTitle="No posts to show."

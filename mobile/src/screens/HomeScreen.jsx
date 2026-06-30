@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import AppButton from '../components/AppButton.jsx';
 import FeedList from '../components/FeedList.jsx';
 import RatingFeedItem from '../components/RatingFeedItem.jsx';
 import Screen from '../components/Screen.jsx';
@@ -122,6 +121,7 @@ const HomeScreen = ({ navigation, route }) => {
         refreshing={refreshing}
         onRefresh={refresh}
         onEndReached={loadMore}
+        hasMore={hasMore}
         ListHeaderComponent={(
           <StoryBar
             user={user}
@@ -135,7 +135,6 @@ const HomeScreen = ({ navigation, route }) => {
             })}
           />
         )}
-        ListFooterExtra={hasMore ? <AppButton variant="ghost" label="Load more" onPress={loadMore} loading={loadingMore} /> : null}
         endMessage={hasMore ? '' : 'You reached the end of the feed.'}
         emptyTitle="No ratings yet."
         renderItem={({ item }) => (
