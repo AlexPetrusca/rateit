@@ -24,4 +24,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
         order by u.username asc
         """)
     List<User> searchVisibleUsersByUsername(@Param("query") String query, Pageable pageable);
+
+    @Query("""
+        select u from User u
+        where u.deletedAt is null
+          and u.username is not null
+        order by u.username asc
+        """)
+    List<User> findVisibleUsers(Pageable pageable);
 }

@@ -6,6 +6,7 @@ import com.rateit.backend.entity.TourneyTeam;
 import com.rateit.backend.entity.TourneyTournament;
 import com.rateit.backend.entity.TourneyTournamentPlayer;
 import com.rateit.backend.entity.User;
+import com.rateit.backend.entity.dto.TourneyCriticUserDto;
 import com.rateit.backend.entity.dto.TourneyMatchDto;
 import com.rateit.backend.entity.dto.TourneyPlayerDto;
 import com.rateit.backend.entity.dto.TourneyPlayerStandingDto;
@@ -28,15 +29,19 @@ import com.rateit.backend.repository.TourneyPlayerRepository;
 import com.rateit.backend.repository.TourneyTeamRepository;
 import com.rateit.backend.repository.TourneyTournamentPlayerRepository;
 import com.rateit.backend.repository.TourneyTournamentRepository;
+import com.rateit.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +53,7 @@ public class TourneyService {
     private final TourneyTeamRepository teamRepository;
     private final TourneyMatchRepository matchRepository;
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public List<TourneyPlayerDto> listPlayers(String phoneNumber) {
@@ -55,6 +61,25 @@ public class TourneyService {
         return playerRepository.findByOwnerUserOrderByDisplayNameAsc(owner)
             .stream()
             .map(TourneyPlayerDto::fromPlayer)
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TourneyCriticUserDto> listCriticUsers(String phoneNumber) {
+        userService.findByPhoneNumber(phoneNumber); // auth check
+        Set<Long> playedBefore = new HashSet<>(playerRepository.findCriticUserIdsWithTournamentHistory());
+        return userRepository.findVisibleUsers(PageRequest.of(0, 500))
+            .stream()
+            .map(user -> new TourneyCriticUserDto(
+                user.getId(),
+                user.getUsername(),
+                user.getProfilePicUrl(),
+                playedBefore.contains(user.getId())
+            ))
+            // Players who have been in tournaments before float to the top, then
+            // alphabetical by username.
+            .sorted(Comparator.comparing(TourneyCriticUserDto::playedBefore).reversed()
+                .thenComparing(dto -> dto.username() == null ? "" : dto.username().toLowerCase()))
             .toList();
     }
 
@@ -95,6 +120,7 @@ public class TourneyService {
             .tournamentDate(request.tournamentDate())
             .status(request.status() == null ? TourneyTournamentStatus.DRAFT : request.status())
             .format(request.format() == null ? TourneyTournamentFormat.PARTNER_SWAP : request.format())
+            .pointsToWin(request.pointsToWin() == null ? 21 : request.pointsToWin())
             .notes(trimToNull(request.notes()))
             .build();
 
@@ -109,6 +135,7 @@ public class TourneyService {
         tournament.setTournamentDate(request.tournamentDate());
         tournament.setStatus(request.status() == null ? tournament.getStatus() : request.status());
         tournament.setFormat(request.format() == null ? tournament.getFormat() : request.format());
+        tournament.setPointsToWin(request.pointsToWin() == null ? tournament.getPointsToWin() : request.pointsToWin());
         tournament.setNotes(trimToNull(request.notes()));
         return buildDetail(tournament);
     }

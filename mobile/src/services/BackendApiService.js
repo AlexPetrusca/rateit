@@ -96,6 +96,27 @@ const BackendApiService = {
     'Failed to fetch following feed'
   ),
 
+  getTourneyTournaments: () => request('/api/tourney/tournaments', {}, 'Failed to fetch tournaments'),
+
+  createTourneyTournament: (tournamentData) => request('/api/tourney/tournaments', {
+    method: 'POST',
+    body: jsonBody(tournamentData)
+  }, 'Failed to create tournament'),
+
+  getTourneyPlayers: () => request('/api/tourney/players', {}, 'Failed to fetch players'),
+
+  getTourneyCriticUsers: () => request('/api/tourney/critic-users', {}, 'Failed to fetch critic users'),
+
+  createTourneyPlayer: (playerData) => request('/api/tourney/players', {
+    method: 'POST',
+    body: jsonBody(playerData)
+  }, 'Failed to create player'),
+
+  addTourneyTournamentPlayer: (tournamentId, playerData) => request(`/api/tourney/tournaments/${encodeURIComponent(tournamentId)}/players`, {
+    method: 'POST',
+    body: jsonBody(playerData)
+  }, 'Failed to add player to tournament'),
+
   getTopicRatings: ({ rateableItemId, page = 0, size = 20 } = {}) => request(
     `/api/feed/topics/${encodeURIComponent(rateableItemId)}?page=${encodeURIComponent(page)}&limit=${encodeURIComponent(size)}`,
     {},

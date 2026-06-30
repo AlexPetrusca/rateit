@@ -1,0 +1,517 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import AppButton from '../components/AppButton.jsx';
+import AppTextInput from '../components/AppTextInput.jsx';
+import Card from '../components/Card.jsx';
+import Screen from '../components/Screen.jsx';
+import StatusMessage from '../components/StatusMessage.jsx';
+import UserAvatar from '../components/UserAvatar.jsx';
+import { useNotifications } from '../contexts/NotificationContext.jsx';
+import BackendApiService from '../services/BackendApiService.js';
+import { colors, radius, spacing, text } from '../theme.js';
+
+const SPORTS = [
+  { value: 'spikeball', label: 'Spikeball' },
+  { value: 'basketball', label: 'Basketball' }
+];
+
+const todayIsoDate = () => new Date().toISOString().slice(0, 10);
+
+// "YYYY-MM-DD" -> "MM-DD-YYYY" for the generated tournament name.
+const toNameDate = (iso) => {
+  const [y, m, d] = (iso || todayIsoDate()).split('-');
+  return `${m}-${d}-${y}`;
+};
+
+const normalizeName = (value) => value.trim().replace(/\s+/g, ' ');
+const playerKey = (player) => (
+  player.playerId ? `player:${player.playerId}` : player.criticUserId ? `critic:${player.criticUserId}` : `raw:${player.displayName.toLowerCase()}`
+);
+const samePlayer = (left, right) => {
+  if (left.playerId && right.playerId) {
+    return left.playerId === right.playerId;
+  }
+  if (left.criticUserId && right.criticUserId) {
+    return left.criticUserId === right.criticUserId;
+  }
+  return left.displayName.toLowerCase() === right.displayName.toLowerCase();
+};
+
+const TourneyCreateScreen = ({ navigation }) => {
+  const { notify } = useNotifications();
+  const [sport, setSport] = useState('spikeball');
+  const [sportOpen, setSportOpen] = useState(false);
+  const [tournamentDate, setTournamentDate] = useState(todayIsoDate());
+  const [isPartnerSwap, setIsPartnerSwap] = useState(true);
+  const [pointsToWin, setPointsToWin] = useState('15');
+  const [rawName, setRawName] = useState('');
+  const [criticUsers, setCriticUsers] = useState([]);
+  const [existingPlayers, setExistingPlayers] = useState([]);
+  const [selectedPlayers, setSelectedPlayers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const sportLabel = useMemo(() => SPORTS.find((s) => s.value === sport)?.label || 'Spikeball', [sport]);
+
+  const isSelected = useCallback((candidate) => (
+    selectedPlayers.some((selected) => samePlayer(selected, candidate))
+  ), [selectedPlayers]);
+
+  const addSelectedPlayer = useCallback((player) => {
+    setSelectedPlayers((current) => (
+      current.some((selected) => samePlayer(selected, player)) ? current : [...current, player]
+    ));
+  }, []);
+
+  const removeSelectedPlayer = (player) => {
+    setSelectedPlayers((current) => current.filter((selected) => !samePlayer(selected, player)));
+  };
+
+  const loadData = useCallback(async () => {
+    setLoadingUsers(true);
+    try {
+      const [users, players] = await Promise.all([
+        BackendApiService.getTourneyCriticUsers(),
+        BackendApiService.getTourneyPlayers()
+      ]);
+      setCriticUsers(users);
+      setExistingPlayers(players);
+    } catch (err) {
+      notify({ message: err.message || 'Failed to load players', type: 'error' });
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [notify]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const addRawName = () => {
+    const displayName = normalizeName(rawName);
+    if (!displayName) {
+      return;
+    }
+    addSelectedPlayer({ displayName });
+    setRawName('');
+  };
+
+  // The selected non-critic (raw) players, shown as removable chips above the input.
+  const rawSelected = useMemo(
+    () => selectedPlayers.filter((player) => !player.criticUserId && !player.playerId),
+    [selectedPlayers]
+  );
+
+  const ensureTourneyPlayer = async (player) => {
+    if (player.playerId) {
+      return player.playerId;
+    }
+    const existing = existingPlayers.find((candidate) => (
+      player.criticUserId
+        ? candidate.criticUserId === player.criticUserId
+        : candidate.displayName.toLowerCase() === player.displayName.toLowerCase()
+    ));
+    if (existing) {
+      return existing.id;
+    }
+    const created = await BackendApiService.createTourneyPlayer({
+      displayName: player.displayName,
+      criticUserId: player.criticUserId || null
+    });
+    return created.id;
+  };
+
+  const createTournament = async () => {
+    const normalizedPoints = Number.parseInt(pointsToWin, 10);
+    if (!Number.isFinite(normalizedPoints) || normalizedPoints < 1) {
+      setError('Points to win must be at least 1.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    try {
+      const name = `${sportLabel} ${toNameDate(tournamentDate)}`;
+      const tournament = await BackendApiService.createTourneyTournament({
+        name,
+        tournamentDate,
+        format: isPartnerSwap ? 'PARTNER_SWAP' : 'FIXED_TEAMS',
+        status: 'DRAFT',
+        pointsToWin: normalizedPoints
+      });
+
+      for (const [index, player] of selectedPlayers.entries()) {
+        const playerId = await ensureTourneyPlayer(player);
+        await BackendApiService.addTourneyTournamentPlayer(tournament.id, {
+          playerId,
+          seedNumber: index + 1,
+          checkedIn: true
+        });
+      }
+
+      notify({ message: 'Tournament created.', type: 'info' });
+      navigation.navigate('Tourney');
+    } catch (err) {
+      const message = err.message || 'Failed to create tournament';
+      setError(message);
+      notify({ message, type: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Screen>
+      <View style={styles.header}>
+        <Text style={styles.eyebrow}>Tourney</Text>
+        <Text style={styles.title}>Create tournament</Text>
+      </View>
+      <StatusMessage message={error} type="error" />
+
+      <Card style={styles.section}>
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Sport</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: sportOpen }}
+            onPress={() => setSportOpen((open) => !open)}
+            style={styles.dropdown}
+          >
+            <Text style={styles.dropdownText}>{sportLabel}</Text>
+            <Text style={styles.dropdownCaret}>{sportOpen ? '▲' : '▼'}</Text>
+          </Pressable>
+          {sportOpen ? (
+            <View style={styles.dropdownMenu}>
+              {SPORTS.map((option) => (
+                <Pressable
+                  key={option.value}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: option.value === sport }}
+                  onPress={() => { setSport(option.value); setSportOpen(false); }}
+                  style={({ pressed }) => [
+                    styles.dropdownOption,
+                    option.value === sport && styles.dropdownOptionActive,
+                    pressed && styles.dropdownOptionPressed
+                  ]}
+                >
+                  <Text style={[styles.dropdownOptionText, option.value === sport && styles.dropdownOptionTextActive]}>
+                    {option.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+        </View>
+
+        <AppTextInput label="Tournament date" value={tournamentDate} onChangeText={setTournamentDate} placeholder="YYYY-MM-DD" autoCapitalize="none" />
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Format</Text>
+          <View style={styles.segmented}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: isPartnerSwap }}
+              onPress={() => setIsPartnerSwap(true)}
+              style={[styles.segment, isPartnerSwap && styles.segmentActive]}
+            >
+              <Text style={[styles.segmentText, isPartnerSwap && styles.segmentTextActive]}>Partner swap</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: !isPartnerSwap }}
+              onPress={() => setIsPartnerSwap(false)}
+              style={[styles.segment, !isPartnerSwap && styles.segmentActive]}
+            >
+              <Text style={[styles.segmentText, !isPartnerSwap && styles.segmentTextActive]}>Fixed teams</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <AppTextInput
+          label="Points to win"
+          value={pointsToWin}
+          onChangeText={setPointsToWin}
+          keyboardType="number-pad"
+          placeholder="15"
+        />
+      </Card>
+
+      <Card style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Players</Text>
+          <Text style={styles.count}>
+            {selectedPlayers.length} selected{loadingUsers ? ' · loading' : ''}
+          </Text>
+        </View>
+
+        <ScrollView
+          style={styles.playerList}
+          contentContainerStyle={styles.playerListContent}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator
+        >
+          {criticUsers.length === 0 ? (
+            <Text style={styles.muted}>{loadingUsers ? 'Loading players…' : 'No critic users found.'}</Text>
+          ) : criticUsers.map((user) => {
+            const candidate = { displayName: user.username, criticUserId: user.userId, criticUsername: user.username };
+            const selected = isSelected(candidate);
+            return (
+              <Pressable
+                key={`critic:${user.userId}`}
+                onPress={() => (selected ? removeSelectedPlayer(candidate) : addSelectedPlayer(candidate))}
+                style={({ pressed }) => [styles.playerRow, pressed && styles.playerRowPressed]}
+              >
+                <UserAvatar username={user.username} profilePicUrl={user.profilePicUrl} size="sm" />
+                <View style={styles.playerCopy}>
+                  <Text style={styles.playerName} numberOfLines={1}>{user.username}</Text>
+                  {user.playedBefore ? <Text style={styles.playerBadge}>Played before</Text> : null}
+                </View>
+                <View style={[styles.checkbox, selected && styles.checkboxOn]}>
+                  {selected ? <Text style={styles.checkmark}>✓</Text> : null}
+                </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.rawBlock}>
+          <Text style={styles.label}>Add someone not on Critic</Text>
+          {rawSelected.length > 0 ? (
+            <View style={styles.chips}>
+              {rawSelected.map((player) => (
+                <Pressable key={playerKey(player)} onPress={() => removeSelectedPlayer(player)} style={styles.chip}>
+                  <Text style={styles.chipText}>{player.displayName}</Text>
+                  <Text style={styles.chipRemove}>×</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+          <View style={styles.addRow}>
+            <AppTextInput
+              value={rawName}
+              onChangeText={setRawName}
+              placeholder="Player name"
+              style={styles.addInput}
+              onSubmitEditing={addRawName}
+            />
+            <AppButton label="Add" onPress={addRawName} variant="secondary" style={styles.addButton} />
+          </View>
+        </View>
+      </Card>
+
+      <AppButton label="Create tournament" onPress={createTournament} loading={saving} />
+    </Screen>
+  );
+};
+
+const styles = StyleSheet.create({
+  header: {
+    gap: spacing.xs
+  },
+  eyebrow: {
+    ...text.muted,
+    color: colors.textSubtle,
+    textTransform: 'uppercase',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800'
+  },
+  title: text.h1,
+  section: {
+    gap: spacing.md
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: spacing.md
+  },
+  sectionTitle: text.h3,
+  count: text.muted,
+  fieldGroup: {
+    gap: spacing.xs
+  },
+  label: {
+    ...text.muted,
+    color: colors.text,
+    fontWeight: '600'
+  },
+  dropdown: {
+    minHeight: 50,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  dropdownText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '600'
+  },
+  dropdownCaret: {
+    color: colors.textMuted,
+    fontSize: 12
+  },
+  dropdownMenu: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    overflow: 'hidden'
+  },
+  dropdownOption: {
+    minHeight: 44,
+    paddingHorizontal: spacing.lg,
+    justifyContent: 'center'
+  },
+  dropdownOptionActive: {
+    backgroundColor: colors.surfacePressed
+  },
+  dropdownOptionPressed: {
+    backgroundColor: colors.surfaceMuted
+  },
+  dropdownOptionText: {
+    color: colors.textMuted,
+    fontSize: 16,
+    fontWeight: '600'
+  },
+  dropdownOptionTextActive: {
+    color: colors.text
+  },
+  segmented: {
+    flexDirection: 'row',
+    padding: 3,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceSoft
+  },
+  segment: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm
+  },
+  segmentActive: {
+    backgroundColor: colors.surfacePressed
+  },
+  segmentText: {
+    color: colors.textMuted,
+    fontWeight: '700',
+    fontSize: 14
+  },
+  segmentTextActive: {
+    color: colors.text
+  },
+  playerList: {
+    maxHeight: 320,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceSoft
+  },
+  playerListContent: {
+    padding: spacing.xs
+  },
+  playerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm
+  },
+  playerRowPressed: {
+    backgroundColor: colors.surfacePressed
+  },
+  playerCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2
+  },
+  playerName: {
+    color: colors.text,
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: '700'
+  },
+  playerBadge: {
+    ...text.muted,
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: '700'
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.borderStrong,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  checkboxOn: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent
+  },
+  checkmark: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 18
+  },
+  rawBlock: {
+    gap: spacing.sm
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    minHeight: 36,
+    paddingHorizontal: spacing.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceMuted
+  },
+  chipText: {
+    color: colors.text,
+    fontWeight: '700'
+  },
+  chipRemove: {
+    color: colors.textMuted,
+    fontWeight: '900'
+  },
+  addRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    alignItems: 'flex-end'
+  },
+  addInput: {
+    flex: 1,
+    minWidth: 190
+  },
+  addButton: {
+    minWidth: 82
+  },
+  muted: {
+    ...text.muted,
+    padding: spacing.sm
+  }
+});
+
+export default TourneyCreateScreen;
