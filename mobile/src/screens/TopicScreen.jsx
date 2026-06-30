@@ -292,7 +292,12 @@ const TopicScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#090d16'
+    backgroundColor: '#090d16',
+    // Press-and-hold to peek must not trigger iOS text selection / the callout
+    // menu on the title and review text underneath.
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none'
   },
   hidden: {
     opacity: 0
