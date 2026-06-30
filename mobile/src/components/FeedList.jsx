@@ -2,7 +2,6 @@ import { useCallback, useRef } from 'react';
 import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import EmptyState from './EmptyState.jsx';
 import { colors, spacing, text } from '../theme.js';
-import { isNearListEnd } from '../utils/lists.js';
 
 const FeedList = ({
   items,
@@ -114,19 +113,18 @@ const FeedList = ({
           }));
         }
         lastOffset.current = offset;
-
-        if (onEndReached && isNearListEnd({
-          visibleLength: nativeEvent.layoutMeasurement.height,
-          offset: nativeEvent.contentOffset.y,
-          contentLength: nativeEvent.contentSize.height
-        })) {
-          onEndReached();
-        }
       }}
       scrollEventThrottle={200}
-      maxToRenderPerBatch={2}
-      initialNumToRender={3}
-      updateCellsBatchingPeriod={100}
+      // Prefetch the next page ~2 viewports before the end so a fast flick never
+      // outruns pagination. Uses the virtualization layer (not throttled pixel
+      // math), so it fires reliably even at high scroll speed.
+      onEndReached={onEndReached}
+      onEndReachedThreshold={2}
+      // Render a generous buffer ahead/behind so fast scrolling doesn't outrun
+      // the renderer and reveal blank (black) cells.
+      windowSize={11}
+      initialNumToRender={6}
+      maxToRenderPerBatch={6}
       ListHeaderComponent={ListHeaderComponent}
       ListEmptyComponent={<EmptyState title={emptyTitle} message={emptyMessage} />}
       ListFooterComponent={(
