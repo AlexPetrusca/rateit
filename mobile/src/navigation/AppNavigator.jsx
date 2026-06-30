@@ -26,6 +26,7 @@ import SearchUsersScreen from '../screens/SearchUsersScreen.jsx';
 import SuggestionSubmitScreen from '../screens/SuggestionSubmitScreen.jsx';
 import TopicScreen from '../screens/TopicScreen.jsx';
 import TourneyCreateScreen from '../screens/TourneyCreateScreen.jsx';
+import TourneyDetailScreen from '../screens/TourneyDetailScreen.jsx';
 import TourneyScreen from '../screens/TourneyScreen.jsx';
 import { APP_PUBLIC_URL } from '../config.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -60,6 +61,7 @@ const linking = {
       SuggestionSubmit: 'suggestions/new',
       Tourney: 'tourney',
       TourneyCreate: 'tourney/new',
+      TourneyDetail: 'tournaments/:tournamentId',
       InstallInfo: 'install'
     }
   }
@@ -255,6 +257,7 @@ const AppNavigator = () => {
             <Stack.Screen name="SuggestionSubmit" component={SuggestionSubmitScreen} options={{ title: 'Suggestion' }} />
             <Stack.Screen name="Tourney" component={TourneyScreen} />
             <Stack.Screen name="TourneyCreate" component={TourneyCreateScreen} />
+            <Stack.Screen name="TourneyDetail" component={TourneyDetailScreen} />
             <Stack.Screen name="InstallInfo" component={InstallInfoScreen} options={{ title: 'Install' }} />
             {isAdmin ? (
               <>

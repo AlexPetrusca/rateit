@@ -15,6 +15,7 @@ import com.rateit.backend.entity.dto.TourneyTeamDto;
 import com.rateit.backend.entity.dto.TourneyTournamentDto;
 import com.rateit.backend.entity.dto.TourneyTournamentPlayerDto;
 import com.rateit.backend.entity.rest.AddTourneyTournamentPlayerRequest;
+import com.rateit.backend.entity.rest.CommitTourneyRoundRequest;
 import com.rateit.backend.entity.rest.SaveTourneyPlayerRequest;
 import com.rateit.backend.entity.rest.SaveTourneyTeamRequest;
 import com.rateit.backend.entity.rest.SaveTourneyTournamentRequest;
@@ -292,6 +293,62 @@ public class TourneyService {
         match.setTeamBScore(request.teamBScore());
         match.setCourt(trimToNull(request.court()));
         return buildDetail(tournament);
+    }
+
+    @Transactional
+    public TourneyTournamentDto commitRound(Long tournamentId, CommitTourneyRoundRequest request, String phoneNumber) {
+        TourneyTournament tournament = findOwnedTournament(tournamentId, phoneNumber);
+        Map<Long, TourneyPlayer> byId = new LinkedHashMap<>();
+        for (TourneyTournamentPlayer tp : tournamentPlayerRepository.findByTournamentOrderBySeedNumberAscCreatedAtAsc(tournament)) {
+            byId.put(tp.getPlayer().getId(), tp.getPlayer());
+        }
+
+        int roundNumber = request.roundNumber();
+        List<TourneyMatch> toSave = new ArrayList<>();
+        int net = 1;
+        for (CommitTourneyRoundRequest.RoundGame game : request.games()) {
+            TourneyTeam teamA = getOrCreateTeam(tournament,
+                requirePlayer(byId, game.teamAPlayerIds().get(0)),
+                requirePlayer(byId, game.teamAPlayerIds().get(1)));
+            TourneyTeam teamB = getOrCreateTeam(tournament,
+                requirePlayer(byId, game.teamBPlayerIds().get(0)),
+                requirePlayer(byId, game.teamBPlayerIds().get(1)));
+            toSave.add(TourneyMatch.builder()
+                .tournament(tournament)
+                .teamA(teamA)
+                .teamB(teamB)
+                .roundNumber(roundNumber)
+                .roundName("Round " + roundNumber)
+                .court("Net " + net)
+                .build());
+            net++;
+        }
+        matchRepository.saveAll(toSave);
+
+        if (tournament.getStatus() == TourneyTournamentStatus.DRAFT && !toSave.isEmpty()) {
+            tournament.setStatus(TourneyTournamentStatus.ACTIVE);
+        }
+        return buildDetail(tournament);
+    }
+
+    @Transactional
+    public TourneyTournamentDto deleteMatch(Long tournamentId, Long matchId, String phoneNumber) {
+        TourneyTournament tournament = findOwnedTournament(tournamentId, phoneNumber);
+        TourneyMatch match = matchRepository.findById(matchId)
+            .orElseThrow(() -> ResourceNotFoundException.resource(Resource.TOURNEY_MATCH, matchId));
+        if (!match.getTournament().getId().equals(tournament.getId())) {
+            throw ResourceNotFoundException.resource(Resource.TOURNEY_MATCH, matchId);
+        }
+        matchRepository.delete(match);
+        return buildDetail(tournament);
+    }
+
+    private TourneyPlayer requirePlayer(Map<Long, TourneyPlayer> byId, Long playerId) {
+        TourneyPlayer player = byId.get(playerId);
+        if (player == null) {
+            throw ResourceNotFoundException.resource(Resource.TOURNEY_PLAYER, playerId);
+        }
+        return player;
     }
 
     private TourneyTournament findOwnedTournament(Long tournamentId, String phoneNumber) {

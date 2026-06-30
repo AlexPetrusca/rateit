@@ -4,6 +4,7 @@ import com.rateit.backend.entity.dto.TourneyCriticUserDto;
 import com.rateit.backend.entity.dto.TourneyPlayerDto;
 import com.rateit.backend.entity.dto.TourneyTournamentDto;
 import com.rateit.backend.entity.rest.AddTourneyTournamentPlayerRequest;
+import com.rateit.backend.entity.rest.CommitTourneyRoundRequest;
 import com.rateit.backend.entity.rest.SaveTourneyPlayerRequest;
 import com.rateit.backend.entity.rest.SaveTourneyTeamRequest;
 import com.rateit.backend.entity.rest.SaveTourneyTournamentRequest;
@@ -99,6 +100,25 @@ public class TourneyController {
         JwtAuthenticationToken token
     ) {
         return ResponseEntity.ok(tourneyService.deleteTournamentPlayer(tournamentId, playerId, token.getToken().getSubject()));
+    }
+
+    @PostMapping("/tournaments/{tournamentId}/rounds")
+    public ResponseEntity<TourneyTournamentDto> commitRound(
+        @PathVariable Long tournamentId,
+        @RequestBody @Valid CommitTourneyRoundRequest request,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(tourneyService.commitRound(tournamentId, request, token.getToken().getSubject()));
+    }
+
+    @DeleteMapping("/tournaments/{tournamentId}/matches/{matchId}")
+    public ResponseEntity<TourneyTournamentDto> deleteMatch(
+        @PathVariable Long tournamentId,
+        @PathVariable Long matchId,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.ok(tourneyService.deleteMatch(tournamentId, matchId, token.getToken().getSubject()));
     }
 
     @PostMapping("/tournaments/{tournamentId}/teams")

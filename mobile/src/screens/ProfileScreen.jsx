@@ -112,14 +112,24 @@ const ProfileScreen = ({ navigation, route }) => {
     <View style={styles.profileHeader}>
       <Card style={styles.profileCard}>
         {isOwnProfile ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Open settings"
-            onPress={() => (navigation.getParent() || navigation).navigate('ProfileEditor')}
-            style={({ pressed }) => [styles.settingsButton, pressed && styles.settingsButtonPressed]}
-          >
-            <HandDrawnIcon name="gear" color={colors.textMuted} />
-          </Pressable>
+          <>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open tourney"
+              onPress={() => navigation.navigate('Tourney')}
+              style={({ pressed }) => [styles.tourneyButton, pressed && styles.profileIconButtonPressed]}
+            >
+              <Text style={styles.tourneyIcon}>🏆</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open settings"
+              onPress={() => (navigation.getParent() || navigation).navigate('ProfileEditor')}
+              style={({ pressed }) => [styles.settingsButton, pressed && styles.profileIconButtonPressed]}
+            >
+              <HandDrawnIcon name="gear" color={colors.textMuted} />
+            </Pressable>
+          </>
         ) : null}
         <UserAvatar username={profile.username} profilePicUrl={profile.profilePicUrl} size={width < 375 ? 'lg' : 'xl'} />
         <View style={[styles.profileCopy, isOwnProfile && styles.profileCopyOwn]}>
@@ -210,7 +220,7 @@ const styles = StyleSheet.create({
     paddingTop: 2
   },
   profileCopyOwn: {
-    paddingRight: 34
+    paddingRight: 82
   },
   name: {
     ...text.h2
@@ -245,8 +255,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 22
   },
-  settingsButtonPressed: {
+  tourneyButton: {
+    position: 'absolute',
+    zIndex: 1,
+    elevation: 1,
+    top: spacing.sm,
+    right: spacing.sm + 48,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22
+  },
+  profileIconButtonPressed: {
     backgroundColor: colors.surfacePressed
+  },
+  tourneyIcon: {
+    fontSize: 23,
+    lineHeight: 28
   },
   profileAction: {
     alignSelf: 'flex-start',

@@ -98,10 +98,26 @@ const BackendApiService = {
 
   getTourneyTournaments: () => request('/api/tourney/tournaments', {}, 'Failed to fetch tournaments'),
 
+  getTourneyTournament: (tournamentId) => request(`/api/tourney/tournaments/${encodeURIComponent(tournamentId)}`, {}, 'Failed to fetch tournament'),
+
   createTourneyTournament: (tournamentData) => request('/api/tourney/tournaments', {
     method: 'POST',
     body: jsonBody(tournamentData)
   }, 'Failed to create tournament'),
+
+  commitTourneyRound: (tournamentId, payload) => request(`/api/tourney/tournaments/${encodeURIComponent(tournamentId)}/rounds`, {
+    method: 'POST',
+    body: jsonBody(payload)
+  }, 'Failed to commit round'),
+
+  updateTourneyMatchScore: (tournamentId, matchId, payload) => request(`/api/tourney/tournaments/${encodeURIComponent(tournamentId)}/matches/${encodeURIComponent(matchId)}/score`, {
+    method: 'PUT',
+    body: jsonBody(payload)
+  }, 'Failed to update score'),
+
+  deleteTourneyMatch: (tournamentId, matchId) => request(`/api/tourney/tournaments/${encodeURIComponent(tournamentId)}/matches/${encodeURIComponent(matchId)}`, {
+    method: 'DELETE'
+  }, 'Failed to delete game'),
 
   getTourneyPlayers: () => request('/api/tourney/players', {}, 'Failed to fetch players'),
 
