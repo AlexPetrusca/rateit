@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import RichText from './RichText.jsx';
 import StarRating from './StarRating.jsx';
@@ -27,18 +27,27 @@ const PostCard = ({
   const isDeleted = Boolean(post?.deleted || post?.deletedAt);
   const mediaUrl = useResolvedImageUrl(!isDeleted ? post?.rateableItem?.mediaObjectKey : null);
   const [isReviewTruncated, setIsReviewTruncated] = useState(false);
-  const [reviewHeights, setReviewHeights] = useState({ visible: 0, full: 0 });
+  const reviewRef = useRef(null);
 
+  // Detect truncation on web with a single, one-shot DOM measurement instead of
+  // rendering the text twice and watching both with ResizeObservers (onLayout) —
+  // that observer churn across many cards froze the feed during scroll.
   useEffect(() => {
-    setIsReviewTruncated(false);
-    setReviewHeights({ visible: 0, full: 0 });
-  }, [post?.ratingId, post?.reviewText, reviewNumberOfLines]);
-
-  useEffect(() => {
-    if (Platform.OS === 'web' && reviewHeights.visible && reviewHeights.full) {
-      setIsReviewTruncated(reviewHeights.full > reviewHeights.visible + 1);
+    if (Platform.OS !== 'web' || !reviewNumberOfLines) {
+      setIsReviewTruncated(false);
+      return undefined;
     }
-  }, [reviewHeights]);
+    const measure = () => {
+      const node = reviewRef.current;
+      if (node) {
+        setIsReviewTruncated(node.scrollHeight > node.clientHeight + 1);
+      }
+    };
+    measure();
+    // Re-check once after fonts/layout settle.
+    const raf = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(raf);
+  }, [post?.ratingId, post?.reviewText, reviewNumberOfLines]);
 
   if (!post) {
     return null;
@@ -96,40 +105,36 @@ const PostCard = ({
               </View>
 
               {post.reviewText ? (
-                <View>
+                Platform.OS === 'web' ? (
+                  // Single clamped element; truncation is measured once via ref.
                   <RichText
+                    ref={reviewRef}
                     numberOfLines={reviewNumberOfLines}
                     ellipsizeMode="tail"
-                    onLayout={Platform.OS === 'web' ? ({ nativeEvent }) => {
-                      setReviewHeights((current) => ({
-                        ...current,
-                        visible: nativeEvent.layout.height
-                      }));
-                    } : undefined}
                     style={styles.review}
                   >
                     {post.reviewText}
                   </RichText>
-                  {reviewNumberOfLines ? (
-                    <RichText
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
-                      onLayout={Platform.OS === 'web' ? ({ nativeEvent }) => {
-                        setReviewHeights((current) => ({
-                          ...current,
-                          full: nativeEvent.layout.height
-                        }));
-                      } : undefined}
-                      onTextLayout={Platform.OS !== 'web' ? ({ nativeEvent }) => {
-                        setIsReviewTruncated(nativeEvent.lines.length > reviewNumberOfLines);
-                      } : undefined}
-                      pointerEvents="none"
-                      style={[styles.review, styles.reviewMeasure]}
-                    >
+                ) : (
+                  <View>
+                    <RichText numberOfLines={reviewNumberOfLines} ellipsizeMode="tail" style={styles.review}>
                       {post.reviewText}
                     </RichText>
-                  ) : null}
-                </View>
+                    {reviewNumberOfLines ? (
+                      <RichText
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                        onTextLayout={({ nativeEvent }) => {
+                          setIsReviewTruncated(nativeEvent.lines.length > reviewNumberOfLines);
+                        }}
+                        pointerEvents="none"
+                        style={[styles.review, styles.reviewMeasure]}
+                      >
+                        {post.reviewText}
+                      </RichText>
+                    ) : null}
+                  </View>
+                )
               ) : null}
             </>
           )}

@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { Linking, Text } from 'react-native';
 import { colors } from '../theme.js';
 
@@ -64,9 +65,9 @@ export const parseRichText = (value) => {
   return segments.length > 0 ? segments : value;
 };
 
-const RichText = ({ children, style, ...props }) => (
-  <Text style={style} {...props}>{parseRichText(children)}</Text>
-);
+const RichText = forwardRef(({ children, style, ...props }, ref) => (
+  <Text ref={ref} style={style} {...props}>{parseRichText(children)}</Text>
+));
 
 const styles = {
   link: {
