@@ -69,6 +69,17 @@ const tabIcons = {
   Me: require('../../assets/tab-icons/profile.png')
 };
 
+// On web the density-suffixed (@2x/@3x) variants aren't selected for the tinted
+// nav icons, so the 24px @1x got upscaled and looked pixelated on retina. Use a
+// single high-res (72px) source for the web nav bar so it stays crisp.
+const webTabIcons = {
+  Home: require('../../assets/tab-icons/home_hd.png'),
+  Following: require('../../assets/tab-icons/following_hd.png'),
+  Create: require('../../assets/tab-icons/create_hd.png'),
+  Search: require('../../assets/tab-icons/search_hd.png'),
+  Me: require('../../assets/tab-icons/profile_hd.png')
+};
+
 const tabOptions = ({ route }) => {
   const common = {
     headerShown: false,
@@ -130,7 +141,7 @@ const WebNavBar = ({ activeTab, onNavigate }) => {
           onPress={() => { setHidden(false); setActiveIndex(i); onNavigate(name); }}
         >
           <View style={styles.webTabIconWrap}>
-            <Image source={tabIcons[name]} style={styles.webTabIcon} />
+            <Image source={webTabIcons[name]} style={styles.webTabIcon} />
           </View>
         </Pressable>
       ))}
