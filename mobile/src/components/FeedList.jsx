@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import EmptyState from './EmptyState.jsx';
 import { colors, spacing, text } from '../theme.js';
 
@@ -23,6 +23,7 @@ const FeedList = ({
   const refreshingRef = useRef(refreshing);
   refreshingRef.current = refreshing;
   const detachRef = useRef(null);
+  const lastEndReached = useRef(0);
 
   // Web-only pull-to-refresh, attached to THIS list's own scroll node (not
   // document) so it can't block scrolling on other screens. A non-passive
@@ -79,15 +80,80 @@ const FeedList = ({
     );
   }
 
+  const footer = (
+    <View style={styles.footer}>
+      {(loadingMore || hasMore) ? (
+        <ActivityIndicator color={colors.accent} />
+      ) : endMessage ? (
+        <Text style={styles.message}>{endMessage}</Text>
+      ) : null}
+    </View>
+  );
+
+  // WEB: render a plain, non-virtualized native-scrolling list. The browser
+  // scrolls over real DOM with zero per-frame JS, so a fast flick can never
+  // outrun a windowed renderer and reveal blank (black) cells, and scrolling
+  // back up never remounts. Cards are memoized, so appending a page only mounts
+  // the new cards; images are small, so the growing DOM stays affordable.
+  if (Platform.OS === 'web') {
+    const onScroll = ({ nativeEvent }) => {
+      const offset = nativeEvent.contentOffset.y;
+      if (offset <= 8 || Math.abs(offset - lastOffset.current) > 6) {
+        window.dispatchEvent(new CustomEvent('rateit-scroll-direction', {
+          detail: offset <= 8 || offset < lastOffset.current ? 'up' : 'down'
+        }));
+      }
+      lastOffset.current = offset;
+
+      // Eager pagination: whenever we're within ~2 viewports of the end, ask for
+      // the next page. The owning screen dedupes in-flight loads (loadingMoreRef)
+      // and stops at the end (hasMore), so firing on each near-end scroll event
+      // simply loads pages back-to-back until there are none left.
+      const { layoutMeasurement, contentSize } = nativeEvent;
+      const distanceToEnd = (contentSize?.height || 0) - (offset + layoutMeasurement.height);
+      // Throttle so a fast flick past the bottom loads one page at a time (each
+      // mounting only ~5 cards) instead of burst-loading several pages into one
+      // big render. If the user outruns it they reach the footer spinner, never
+      // blank space.
+      const now = Date.now();
+      if (distanceToEnd < layoutMeasurement.height * 2 && now - lastEndReached.current > 500) {
+        lastEndReached.current = now;
+        onEndReached?.();
+      }
+    };
+
+    return (
+      <View style={styles.container}>
+        {refreshing ? (
+          <View style={styles.refreshSpinner} pointerEvents="none">
+            <View style={styles.refreshSpinnerBadge}>
+              <ActivityIndicator color={colors.accent} />
+            </View>
+          </View>
+        ) : null}
+        <ScrollView
+          ref={listRef}
+          style={styles.flatList}
+          contentContainerStyle={[styles.list, contentContainerStyle]}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+        >
+          {ListHeaderComponent}
+          {items?.length ? items.map((item, index) => (
+            <View key={keyExtractor(item)}>
+              {index > 0 ? <View style={styles.separator} /> : null}
+              {renderItem({ item, index })}
+            </View>
+          )) : <EmptyState title={emptyTitle} message={emptyMessage} />}
+          {footer}
+        </ScrollView>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-    {Platform.OS === 'web' && refreshing ? (
-      <View style={styles.refreshSpinner} pointerEvents="none">
-        <View style={styles.refreshSpinnerBadge}>
-          <ActivityIndicator color={colors.accent} />
-        </View>
-      </View>
-    ) : null}
     <FlatList
       ref={listRef}
       data={items}
@@ -105,45 +171,11 @@ const FeedList = ({
           progressBackgroundColor={colors.surfaceElevated}
         />
       ) : undefined}
-      onScroll={({ nativeEvent }) => {
-        const offset = nativeEvent.contentOffset.y;
-        if (Platform.OS === 'web' && (offset <= 8 || Math.abs(offset - lastOffset.current) > 6)) {
-          window.dispatchEvent(new CustomEvent('rateit-scroll-direction', {
-            detail: offset <= 8 || offset < lastOffset.current ? 'up' : 'down'
-          }));
-        }
-        lastOffset.current = offset;
-      }}
-      // Drive virtualization at ~60fps. On web the rendered window is recomputed
-      // from scroll events, so a coarse throttle (e.g. 200ms) lets fast scrolling
-      // outrun the renderer and reveal blank (black) cells before catching up in
-      // one heavy batch (the freeze).
-      scrollEventThrottle={16}
-      // Prefetch the next page ~2 viewports before the end so a fast flick never
-      // outruns pagination. Uses the virtualization layer (not throttled pixel
-      // math), so it fires reliably even at high scroll speed.
       onEndReached={onEndReached}
       onEndReachedThreshold={2}
-      // Large retention window so flinging back up after loading many pages doesn't
-      // remount everything (that remount storm was the long black freeze). Images
-      // are small now, so the extra retained DOM is cheap.
-      windowSize={50}
-      initialNumToRender={6}
-      maxToRenderPerBatch={6}
       ListHeaderComponent={ListHeaderComponent}
       ListEmptyComponent={<EmptyState title={emptyTitle} message={emptyMessage} />}
-      // Whenever more content is coming (fetching or more pages available), show a
-      // spinner at the end instead of bare dark space, so reaching the bottom
-      // before the next cards render reads as "loading", never as a black screen.
-      ListFooterComponent={(
-        <View style={styles.footer}>
-          {(loadingMore || hasMore) ? (
-            <ActivityIndicator color={colors.accent} />
-          ) : endMessage ? (
-            <Text style={styles.message}>{endMessage}</Text>
-          ) : null}
-        </View>
-      )}
+      ListFooterComponent={footer}
     />
     </View>
   );
