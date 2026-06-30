@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Tourney",
+    "slug": "critic-tourney-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.alexpetrusca.critic-tourney"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#f7f8f2"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    }
+  }
+}

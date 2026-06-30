@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import BackendApiService from '../services/BackendApiService.js';
 import { DEFAULT_COMMENT_SCORE, isFiveStarScoreInRange } from '../utils/ratingDisplay.js';
 
@@ -14,6 +14,11 @@ export const useRatingInteractions = ({ notify, updateItem }) => {
   const [activeComposer, setActiveComposer] = useState(null);
   const [expandedReplyKeys, setExpandedReplyKeys] = useState([]);
   const [rerateDrafts, setRerateDrafts] = useState({});
+  // Ratings with a like/unlike request in flight. A second tap (or a mobile-web
+  // touch+click double event) would otherwise fire a concurrent like that races
+  // the first past the backend's not-yet-committed dedupe check, hit the unique
+  // constraint, 500, and revert the heart to grey. Ignore toggles while pending.
+  const likeInFlight = useRef(new Set());
 
   const loadComments = useCallback(async (ratingId, force = false) => {
     if (!force && commentsByRating[ratingId]) {
@@ -87,8 +92,16 @@ export const useRatingInteractions = ({ notify, updateItem }) => {
   }, [getDraft, loadComments, notify, updateItem]);
 
   const toggleLike = useCallback(async (item) => {
+    const ratingId = item.ratingId;
+    // Ignore a tap while this rating's like request is still in flight, so we
+    // never fire two racing like/unlike requests for the same rating.
+    if (likeInFlight.current.has(ratingId)) {
+      return;
+    }
+    likeInFlight.current.add(ratingId);
+
     const wasLiked = Boolean(item.likedByCurrentUser);
-    updateItem?.(item.ratingId, (current) => ({
+    updateItem?.(ratingId, (current) => ({
       ...current,
       likedByCurrentUser: !wasLiked,
       likeCount: Math.max(0, (current.likeCount || 0) + (wasLiked ? -1 : 1))
@@ -96,18 +109,20 @@ export const useRatingInteractions = ({ notify, updateItem }) => {
 
     try {
       const updated = wasLiked
-        ? await BackendApiService.unlikeRating(item.ratingId)
-        : await BackendApiService.likeRating(item.ratingId);
+        ? await BackendApiService.unlikeRating(ratingId)
+        : await BackendApiService.likeRating(ratingId);
       if (updated) {
-        updateItem?.(item.ratingId, (current) => ({ ...current, ...updated }));
+        updateItem?.(ratingId, (current) => ({ ...current, ...updated }));
       }
     } catch (error) {
-      updateItem?.(item.ratingId, (current) => ({
+      updateItem?.(ratingId, (current) => ({
         ...current,
         likedByCurrentUser: wasLiked,
         likeCount: Math.max(0, (current.likeCount || 0) + (wasLiked ? 1 : -1))
       }));
       notify?.({ message: error.message || 'Failed to like post', type: 'error' });
+    } finally {
+      likeInFlight.current.delete(ratingId);
     }
   }, [notify, updateItem]);
 

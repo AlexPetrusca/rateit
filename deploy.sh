@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Top-level script to deploy all application components to Kubernetes
-# Usage: IMAGE_TAG=<tag> ./deploy.sh [--local] [--single-node] [--push] [--skip-push] [--force]
+# Usage: IMAGE_TAG=<tag> ./deploy.sh [--local] [--single-node] [--push] [--skip-push] [--with-frontend] [--restart-nginx] [--force]
 # If IMAGE_TAG is not provided, defaults to "latest"
 
 set -e  # Exit immediately if a command exits with a non-zero status
@@ -25,6 +25,31 @@ SINGLE_NODE_DEPLOY=false
 SKIP_BACKEND_PUSH=false
 FORCE_BACKEND_PUSH=false
 PULL_POLICY="Always"
+DEPLOY_FRONTEND=false
+RESTART_NGINX=false
+TEMP_VALUES_FILES=()
+
+cleanup_temp_values() {
+  if [ "${#TEMP_VALUES_FILES[@]}" -gt 0 ]; then
+    rm -f "${TEMP_VALUES_FILES[@]}"
+  fi
+}
+trap cleanup_temp_values EXIT
+
+append_secret_value() {
+  local values_file="$1"
+  local values_key="$2"
+  local secret_name="$3"
+  local secret_key="$4"
+  local secret_value
+
+  secret_value="$(kubectl get secret "$secret_name" -n "$NAMESPACE" -o "jsonpath={.data.$secret_key}" | base64 --decode)"
+  {
+    printf "  %s: |-\n" "$values_key"
+    printf "%s" "$secret_value" | sed 's/^/    /'
+    printf "\n"
+  } >> "$values_file"
+}
 
 # Parse flags
 while [[ "$#" -gt 0 ]]; do
@@ -34,6 +59,9 @@ while [[ "$#" -gt 0 ]]; do
         --single-node) SINGLE_NODE_DEPLOY=true ;;
         --push) FORCE_BACKEND_PUSH=true ;;
         --skip-push) SKIP_BACKEND_PUSH=true; PULL_POLICY="IfNotPresent" ;;
+        --with-frontend) DEPLOY_FRONTEND=true ;;
+        --skip-frontend) DEPLOY_FRONTEND=false ;;
+        --restart-nginx) RESTART_NGINX=true ;;
         --twilio) BACKEND_SPRING_PROFILES="twilio" ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
@@ -74,6 +102,16 @@ if [ "$LOCAL_DEPLOY" = true ]; then
 fi
 if [ "$SINGLE_NODE_DEPLOY" = true ]; then
   echo "Single-node deploy: local-only, ingress-controller, metrics, and observability workloads will be disabled"
+fi
+if [ "$DEPLOY_FRONTEND" = true ]; then
+  echo "Frontend deploy: enabled"
+else
+  echo "Frontend deploy: skipped (use --with-frontend to upload the mobile web bundle)"
+fi
+if [ "$RESTART_NGINX" = true ]; then
+  echo "Nginx restart: enabled"
+else
+  echo "Nginx restart: skipped (use --restart-nginx when nginx config changed)"
 fi
 
 # Check prerequisites
@@ -118,8 +156,26 @@ fi
 echo "Deploying to Kubernetes namespace: $NAMESPACE"
 VALUES_ARGS=(
   --values ./rateit-chart/values.yaml
-  --values ./rateit-chart/values.secret.yaml
 )
+if [ -f ./rateit-chart/values.secret.yaml ]; then
+  VALUES_ARGS+=(--values ./rateit-chart/values.secret.yaml)
+else
+  GENERATED_SECRET_VALUES="$(mktemp /tmp/critic-values.secret.XXXXXX.yaml)"
+  TEMP_VALUES_FILES+=("$GENERATED_SECRET_VALUES")
+  echo "Secret values overlay not found; generating a temporary overlay from existing Kubernetes secrets"
+  printf "secrets:\n" > "$GENERATED_SECRET_VALUES"
+  append_secret_value "$GENERATED_SECRET_VALUES" twilioAccountSid critic-backend-secret TWILIO_ACCOUNT_SID
+  append_secret_value "$GENERATED_SECRET_VALUES" twilioAuthToken critic-backend-secret TWILIO_AUTH_TOKEN
+  append_secret_value "$GENERATED_SECRET_VALUES" twilioServiceSid critic-backend-secret TWILIO_SERVICE_SID
+  append_secret_value "$GENERATED_SECRET_VALUES" rsaPublicKey critic-backend-secret RSA_PUBLIC_KEY
+  append_secret_value "$GENERATED_SECRET_VALUES" rsaPrivateKey critic-backend-secret RSA_PRIVATE_KEY
+  append_secret_value "$GENERATED_SECRET_VALUES" minioAdminUser critic-minio-secret rootUser
+  append_secret_value "$GENERATED_SECRET_VALUES" minioAdminPassword critic-minio-secret rootPassword
+  append_secret_value "$GENERATED_SECRET_VALUES" postgresAdminPassword critic-postgres-secret POSTGRES_ADMIN_PASSWORD
+  append_secret_value "$GENERATED_SECRET_VALUES" postgresUserPassword critic-postgres-secret POSTGRES_USER_PASSWORD
+  append_secret_value "$GENERATED_SECRET_VALUES" redisAdminPassword critic-redis-secret REDIS_ADMIN_PASSWORD
+  VALUES_ARGS+=(--values "$GENERATED_SECRET_VALUES")
+fi
 if [ "$LOCAL_DEPLOY" = true ]; then
   VALUES_ARGS+=(--values ./rateit-chart/values.local.yaml)
 fi
@@ -146,12 +202,17 @@ else
   kubectl rollout restart deployment/critic-backend -n "$NAMESPACE" 2>/dev/null || true
   kubectl rollout status deployment/critic-backend -n "$NAMESPACE" --timeout=300s
 fi
-kubectl rollout restart deployment/critic-nginx -n "$NAMESPACE" 2>/dev/null || true
-kubectl rollout status deployment/critic-nginx -n "$NAMESPACE" --timeout=120s
 
-# Build and upload frontend to s3/minio
-echo "Building frontend..."
-(cd ./mobile/scripts && ./deploy.sh)
+if [ "$RESTART_NGINX" = true ]; then
+  echo "Restarting nginx..."
+  kubectl rollout restart deployment/critic-nginx -n "$NAMESPACE" 2>/dev/null || true
+  kubectl rollout status deployment/critic-nginx -n "$NAMESPACE" --timeout=120s
+fi
+
+if [ "$DEPLOY_FRONTEND" = true ]; then
+  echo "Building frontend..."
+  (cd ./mobile/scripts && ./deploy.sh)
+fi
 
 echo "Deployment completed successfully!"
 echo "Namespace: $NAMESPACE"

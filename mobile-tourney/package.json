@@ -1,0 +1,27 @@
+{
+  "name": "critic-tourney-mobile",
+  "private": true,
+  "version": "0.1.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start --port 3004",
+    "android": "expo start --android --port 3004",
+    "ios": "expo start --ios --port 3004",
+    "web": "expo start --web --port 3004"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~56.0.15",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "^56.0.12",
+    "expo-status-bar": "~56.0.4",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "babel-preset-expo": "~56.0.0"
+  }
+}
