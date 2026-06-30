@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import { SvgXml } from 'react-native-svg';
+import { SvgAst, parse } from 'react-native-svg';
 import { colors } from '../theme.js';
 import { MAX_RATING_SCORE, MIN_RATING_SCORE, RATING_SCORE_STEP, ratingForPosition } from '../utils/ratingDisplay.js';
 
@@ -19,23 +19,29 @@ const STAR_FILL_XML = `<svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/sv
   <path fill="currentColor" stroke="none" d="M 36,6 L 43.05,26.29 L 64.53,26.73 L 47.41,39.71 L 53.63,60.27 L 36,48 L 18.37,60.27 L 24.59,39.71 L 7.47,26.73 L 28.95,26.29 Z"/>
 </svg>`;
 
+// Parse the (large, hand-drawn) star SVGs ONCE at module load. SvgXml re-parses
+// the multi-kilobyte XML on every instance/remount; with 5 stars per feed card
+// that parsing dominated scroll cost. SvgAst renders a shared, pre-parsed AST.
+const STAR_OUTLINE_AST = parse(STAR_XML);
+const STAR_FILL_AST = parse(STAR_FILL_XML);
+
 const fillFor = (value, index) => {
   const fill = value - (index - 1);
   return Math.max(0, Math.min(1, fill));
 };
 
-const DisplayStar = ({ fill, size, fillColor }) => (
+const DisplayStar = memo(({ fill, size, fillColor }) => (
   <View style={[styles.starSlot, { width: size, height: size }]}>
     {fill > 0 ? (
       <View style={[styles.filledStarClip, { width: size * fill }]}>
-        <SvgXml xml={STAR_FILL_XML} width={size} height={size} color={fillColor} />
+        <SvgAst ast={STAR_FILL_AST} override={{ width: size, height: size, color: fillColor }} />
       </View>
     ) : null}
     <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-      <SvgXml xml={STAR_XML} width={size} height={size} color={colors.text} />
+      <SvgAst ast={STAR_OUTLINE_AST} override={{ width: size, height: size, color: colors.text }} />
     </View>
   </View>
-);
+));
 
 const StarRating = ({
   value = 0,

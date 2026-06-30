@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { View } from 'react-native';
 import CommentComposer from './CommentComposer.jsx';
 import CommentThread from './CommentThread.jsx';
@@ -199,4 +199,42 @@ const RatingFeedItem = ({
   );
 };
 
-export default RatingFeedItem;
+// The feed re-renders its parent on every pagination tick (and on any shared
+// interaction-state change), which would otherwise rebuild every visible card's
+// DOM subtree — the dominant cost when scrolling. Skip a card's re-render unless
+// its own data or the interaction state that actually affects it has changed.
+// Function props (navigation callbacks) are treated as stable and ignored.
+const interactionRelevantToItem = (interactions, ratingId) => ({
+  comments: interactions.commentsByRating[ratingId],
+  expanded: interactions.expandedRatings.includes(ratingId),
+  rerate: interactions.rerateDrafts[ratingId],
+  // activeComposer only affects this card when it targets this rating.
+  composer: interactions.activeComposer && String(interactions.activeComposer).startsWith(`${ratingId}:`)
+    ? interactions.activeComposer
+    : null,
+  // expandedReplyKeys only matters while this card's comments are open.
+  replies: interactions.expandedRatings.includes(ratingId) ? interactions.expandedReplyKeys : null
+});
+
+const areEqual = (prev, next) => {
+  if (
+    prev.item !== next.item
+    || prev.currentUserId !== next.currentUserId
+    || prev.commentOpensRerate !== next.commentOpensRerate
+    || prev.showReply !== next.showReply
+    || prev.reviewNumberOfLines !== next.reviewNumberOfLines
+    || prev.shareUrl !== next.shareUrl
+  ) {
+    return false;
+  }
+  const id = prev.item.ratingId;
+  const a = interactionRelevantToItem(prev.interactions, id);
+  const b = interactionRelevantToItem(next.interactions, id);
+  return a.comments === b.comments
+    && a.expanded === b.expanded
+    && a.rerate === b.rerate
+    && a.composer === b.composer
+    && a.replies === b.replies;
+};
+
+export default memo(RatingFeedItem, areEqual);
