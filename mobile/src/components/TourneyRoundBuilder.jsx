@@ -1,17 +1,30 @@
 import { memo, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import AppButton from './AppButton.jsx';
+import UserAvatar from './UserAvatar.jsx';
 import { colors, radius, spacing, text } from '../theme.js';
 
 // Draggable player chip. Uses DOM Pointer Events (supported by iOS Safari) rather
 // than PanResponder, which didn't reliably deliver continuous moves on web.
 // touchAction:'none' stops the browser from hijacking the touch as a scroll.
-const DraggableChip = memo(({ player, zone, onPickup }) => (
+// Players with a Critic account show a profile-pic circle; chips already placed
+// in a net show an "x" to send them back to the buys pool without dragging.
+const DraggableChip = memo(({ player, zone, onPickup, onRemove }) => (
   <View
     style={styles.chip}
     onPointerDown={(e) => onPickup(player, zone, e)}
   >
-    <Text style={styles.chipText} numberOfLines={1}>{player.name}</Text>
+    {player.hasAccount ? <UserAvatar username={player.name} profilePicUrl={player.profilePicUrl} size={24} /> : null}
+    <Text style={[styles.chipText, styles.chipTextFlex]} numberOfLines={1}>{player.name}</Text>
+    {onRemove ? (
+      <Pressable
+        onPointerDown={(e) => { e.stopPropagation?.(); onRemove(player, zone); }}
+        hitSlop={8}
+        style={styles.chipX}
+      >
+        <Text style={styles.chipXText}>×</Text>
+      </Pressable>
+    ) : null}
   </View>
 ));
 
@@ -101,6 +114,18 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
     document.addEventListener('pointercancel', onUp);
   }).current;
 
+  // Tap the "x" on a placed chip to send it back to the buys pool. Stable so
+  // memoized chips don't re-render.
+  const removeChip = useRef((player, fromZone) => {
+    const sel = selectedRef.current;
+    setNets((cur) => {
+      const copy = cur.map((n) => ({ teamA: [...n.teamA], teamB: [...n.teamB] }));
+      if (fromZone === 'teamA') copy[sel].teamA = copy[sel].teamA.filter((p) => p.id !== player.id);
+      if (fromZone === 'teamB') copy[sel].teamB = copy[sel].teamB.filter((p) => p.id !== player.id);
+      return copy;
+    });
+  }).current;
+
   const addNet = () => { setNets((n) => [...n, emptyNet()]); setSelected(nets.length); };
   const removeNet = () => {
     if (nets.length <= 1) { setNets([emptyNet()]); setSelected(0); return; }
@@ -126,7 +151,7 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
       <Text style={styles.zoneLabel}>{label}</Text>
       <View style={styles.zoneList}>
         {list.length === 0 ? <Text style={styles.zoneEmpty}>Drag here</Text> : list.map((p) => (
-          <DraggableChip key={p.id} player={p} zone={key} onPickup={onPickup} />
+          <DraggableChip key={p.id} player={p} zone={key} onPickup={onPickup} onRemove={removeChip} />
         ))}
       </View>
     </View>
@@ -150,7 +175,7 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
       </View>
 
       <View nativeID="tzone-pool" style={styles.pool}>
-        <Text style={styles.zoneLabel}>Players</Text>
+        <Text style={styles.zoneLabel}>Buys</Text>
         <View style={styles.zoneList}>
           {pool.length === 0 ? <Text style={styles.zoneEmpty}>Everyone is placed.</Text> : pool.map((p) => (
             <DraggableChip key={p.id} player={p} zone="pool" onPickup={onPickup} />
@@ -189,8 +214,11 @@ const styles = StyleSheet.create({
   zoneList: { gap: spacing.xs, minHeight: 44 },
   zoneEmpty: { ...text.muted, fontSize: 12, fontStyle: 'italic' },
   pool: { padding: spacing.sm, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderStrong, borderStyle: 'dashed', gap: spacing.xs },
-  chip: { minHeight: 40, paddingHorizontal: spacing.md, justifyContent: 'center', borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderStrong, backgroundColor: colors.surface, touchAction: 'none', userSelect: 'none' },
+  chip: { minHeight: 40, paddingHorizontal: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderStrong, backgroundColor: colors.surface, touchAction: 'none', userSelect: 'none' },
   chipText: { color: colors.text, fontWeight: '700' },
+  chipTextFlex: { flex: 1, minWidth: 0 },
+  chipX: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center', borderRadius: 12, touchAction: 'none' },
+  chipXText: { color: colors.textMuted, fontSize: 18, fontWeight: '800', lineHeight: 20 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
   smallBtn: { minHeight: 40, paddingVertical: 9, paddingHorizontal: spacing.lg },
   smallBtnText: { fontSize: 14, lineHeight: 17 },

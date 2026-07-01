@@ -8,6 +8,7 @@ public record TourneyPlayerDto(
     String displayName,
     Long criticUserId,
     String criticUsername,
+    String profilePicUrl,
     String notes
 ) {
     public static TourneyPlayerDto fromPlayer(TourneyPlayer player) {
@@ -17,6 +18,7 @@ public record TourneyPlayerDto(
             player.getDisplayName(),
             criticUser == null ? null : criticUser.getId(),
             criticUser == null ? null : criticUser.getUsername(),
+            criticUser == null ? null : criticUser.getProfilePicUrl(),
             player.getNotes()
         );
     }

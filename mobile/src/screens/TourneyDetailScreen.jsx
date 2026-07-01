@@ -190,7 +190,12 @@ const LiveRunner = ({ detail, onChange }) => {
 
 const HistoricalEditor = ({ detail, onChange }) => {
   const { notify } = useNotifications();
-  const participants = (detail.players || []).map((tp) => ({ id: tp.player.id, name: tp.player.displayName }));
+  const participants = (detail.players || []).map((tp) => ({
+    id: tp.player.id,
+    name: tp.player.displayName,
+    profilePicUrl: tp.player.profilePicUrl,
+    hasAccount: !!tp.player.criticUsername
+  }));
   const matches = detail.matches || [];
   const [busy, setBusy] = useState(false);
   const [scores, setScores] = useState({});
