@@ -5,6 +5,7 @@ import AppButton from '../components/AppButton.jsx';
 import AppTextInput from '../components/AppTextInput.jsx';
 import Card from '../components/Card.jsx';
 import Screen from '../components/Screen.jsx';
+import TourneyRoundBuilder from '../components/TourneyRoundBuilder.jsx';
 import TourneyScoreboard from '../components/TourneyScoreboard.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import BackendApiService from '../services/BackendApiService.js';
@@ -191,35 +192,19 @@ const HistoricalEditor = ({ detail, onChange }) => {
   const { notify } = useNotifications();
   const participants = (detail.players || []).map((tp) => ({ id: tp.player.id, name: tp.player.displayName }));
   const matches = detail.matches || [];
-  const [slots, setSlots] = useState([null, null, null, null]); // A1, A2, B1, B2
   const [busy, setBusy] = useState(false);
   const [scores, setScores] = useState({});
 
-  const usedSlotIds = new Set(slots.filter(Boolean).map((p) => p.id));
+  const nextRound = (matches.length ? Math.max(...matches.map((m) => m.roundNumber)) : 0) + 1;
 
-  const assign = (player) => {
-    if (usedSlotIds.has(player.id)) { // remove if already placed
-      setSlots((s) => s.map((x) => (x && x.id === player.id ? null : x)));
-      return;
-    }
-    const idx = slots.findIndex((x) => x == null);
-    if (idx < 0) return;
-    setSlots((s) => s.map((x, i) => (i === idx ? player : x)));
-  };
-
-  const addGame = async () => {
-    if (slots.some((x) => x == null)) { notify({ message: 'Pick 4 players (2 per team).', type: 'warning' }); return; }
+  const commitRound = async (games) => {
+    if (!games.length) { notify({ message: 'Fill at least one net (2 players per team).', type: 'warning' }); return; }
     setBusy(true);
     try {
-      const nextRound = (matches.length ? Math.max(...matches.map((m) => m.roundNumber)) : 0) + 1;
-      await BackendApiService.commitTourneyRound(detail.id, {
-        roundNumber: nextRound,
-        games: [{ teamAPlayerIds: [slots[0].id, slots[1].id], teamBPlayerIds: [slots[2].id, slots[3].id] }]
-      });
-      setSlots([null, null, null, null]);
+      await BackendApiService.commitTourneyRound(detail.id, { roundNumber: nextRound, games });
       await onChange();
     } catch (err) {
-      notify({ message: err.message || 'Failed to add game', type: 'error' });
+      notify({ message: err.message || 'Failed to save round', type: 'error' });
     } finally {
       setBusy(false);
     }
@@ -241,26 +226,12 @@ const HistoricalEditor = ({ detail, onChange }) => {
     catch (err) { notify({ message: err.message || 'Failed to delete game', type: 'error' }); }
   };
 
-  const slotLabel = ['Team A', 'Team A', 'Team B', 'Team B'];
-
   return (
     <>
       <Card style={styles.section}>
-        <Text style={styles.sectionTitle}>Add a game</Text>
-        <View style={styles.slotRow}>
-          {slots.map((p, i) => (
-            <View key={i} style={styles.slot}>
-              <Text style={styles.slotLabel}>{slotLabel[i]}</Text>
-              <Text style={[styles.slotName, !p && styles.slotEmpty]} numberOfLines={1}>{p ? p.name : '—'}</Text>
-            </View>
-          ))}
-        </View>
-        <View style={styles.chips}>
-          {participants.map((p) => (
-            <PlayerChip key={p.id} player={p} lifted={usedSlotIds.has(p.id)} onPress={() => assign(p)} />
-          ))}
-        </View>
-        <AppButton label="Add game" onPress={addGame} loading={busy} variant="secondary" />
+        <Text style={styles.sectionTitle}>Build round {nextRound}</Text>
+        <Text style={styles.hint}>Pick a net, then drag players into Team A and Team B.</Text>
+        <TourneyRoundBuilder participants={participants} roundNumber={nextRound} saving={busy} onCommit={commitRound} />
       </Card>
 
       <Card style={styles.section}>
