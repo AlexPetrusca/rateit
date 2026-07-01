@@ -321,13 +321,18 @@ const TourneyResults = ({ detail }) => {
           <Text style={styles.netLabel}>Round {r}</Text>
           {matches.filter((m) => m.roundNumber === r).map((m) => {
             const done = m.teamAScore != null && m.teamBScore != null;
-            const aWon = done && m.teamAScore > m.teamBScore;
-            const bWon = done && m.teamBScore > m.teamAScore;
+            const hasWinner = done && m.teamAScore !== m.teamBScore;
+            // The winner always displays on the left.
+            const bWon = hasWinner && m.teamBScore > m.teamAScore;
+            const leftName = bWon ? m.teamBName : m.teamAName;
+            const rightName = bWon ? m.teamAName : m.teamBName;
+            const leftScore = bWon ? m.teamBScore : m.teamAScore;
+            const rightScore = bWon ? m.teamAScore : m.teamBScore;
             return (
               <View key={m.id} style={styles.scoreRow}>
-                <Text style={[styles.scoreTeam, styles.scoreTeamLeft, aWon && styles.scoreTeamTextWin]} numberOfLines={2}>{m.teamAName}</Text>
-                <Text style={styles.resultScore}>{m.teamAScore ?? '–'} : {m.teamBScore ?? '–'}</Text>
-                <Text style={[styles.scoreTeam, styles.scoreTeamRight, bWon && styles.scoreTeamTextWin]} numberOfLines={2}>{m.teamBName}</Text>
+                <Text style={[styles.scoreTeam, styles.scoreTeamLeft, hasWinner && styles.scoreTeamTextWin]} numberOfLines={2}>{leftName}</Text>
+                <Text style={styles.resultScore}>{leftScore ?? '–'} : {rightScore ?? '–'}</Text>
+                <Text style={[styles.scoreTeam, styles.scoreTeamRight]} numberOfLines={2}>{rightName}</Text>
               </View>
             );
           })}
