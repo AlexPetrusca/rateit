@@ -1,30 +1,17 @@
-// Mexicano-style auto-pairing for a live tournament round, computed from the
-// tournament detail (standings give wins; teams give past partnerships; matches
-// give bye history). Returns a proposed next round the user can hand-adjust.
+// Auto-pairing for a live tournament round, computed from the tournament detail
+// (standings give wins; teams give past partnerships; matches give bye history).
+// Returns a proposed next round the user can hand-adjust.
 //
 // Rules:
 //  - Rank players by wins (tiebreak point differential, then name).
 //  - Byes (when players don't fill nets x4) go to whoever has sat out the least.
-//  - Fill nets from the top of the ranking (top 4 -> net 1, next 4 -> net 2 ...).
-//  - Within a net of 4 ranked a>b>c>d, partner lowest+highest: (a+d) vs (b+c).
-//  - Rule 1: avoid repeating a past partnership; try the other splits if needed.
+//  - Partner the highest-win players with the lowest-win players ACROSS the whole
+//    field (not just within a net): rank the playing players, then pair the top
+//    with the bottom, next-top with next-bottom, etc.
+//  - Rule 1: avoid repeating a past partnership (pick the next-lowest available
+//    partner instead), then distribute the balanced teams across the nets.
 
 const pairKey = (a, b) => (a < b ? `${a}-${b}` : `${b}-${a}`);
-
-// Pick the split of 4 ranked players into two pairs, preferring (a+d)/(b+c) and
-// avoiding partnerships that already happened.
-const chooseTeams = (group, partnered) => {
-  const [a, b, c, d] = group;
-  const splits = [
-    [[a, d], [b, c]],
-    [[a, c], [b, d]],
-    [[a, b], [c, d]]
-  ];
-  const fresh = splits.find(([t1, t2]) => (
-    !partnered.has(pairKey(t1[0].id, t1[1].id)) && !partnered.has(pairKey(t2[0].id, t2[1].id))
-  ));
-  return fresh || splits[0];
-};
 
 export const proposeNextRound = (detail) => {
   const players = (detail?.players || []).map((tp) => ({ id: tp.player.id, name: tp.player.displayName }));
@@ -65,16 +52,29 @@ export const proposeNextRound = (detail) => {
     ? [...ranked].sort((p, q) => byeCount(p.id) - byeCount(q.id) || p.name.localeCompare(q.name)).slice(0, byesCount)
     : [];
   const byeIds = new Set(byes.map((p) => p.id));
-  const playing = ranked.filter((p) => !byeIds.has(p.id)); // still rank-ordered
+  const playing = ranked.filter((p) => !byeIds.has(p.id)); // still rank-ordered, wins desc
 
+  // Form balanced teams across the WHOLE field: take the highest-ranked player and
+  // partner them with the lowest-ranked player they haven't partnered before, then
+  // repeat. This pairs winners with losers globally (not just inside one net).
+  const remaining = [...playing];
+  const teams = [];
+  while (remaining.length >= 2) {
+    const high = remaining.shift();
+    let partnerIdx = -1;
+    for (let i = remaining.length - 1; i >= 0; i--) {
+      if (!partnered.has(pairKey(high.id, remaining[i].id))) { partnerIdx = i; break; }
+    }
+    if (partnerIdx === -1) partnerIdx = remaining.length - 1; // all repeats -> take lowest
+    const partner = remaining.splice(partnerIdx, 1)[0];
+    teams.push([high, partner]);
+  }
+
+  // Distribute the balanced teams into nets. Consecutive teams have similar total
+  // strength (each is a high+low pair), so pairing them makes competitive games.
   const games = [];
-  for (let i = 0; i + 4 <= playing.length; i += 4) {
-    const group = playing.slice(i, i + 4);
-    const [teamA, teamB] = chooseTeams(group, partnered);
-    // Reserve these partnerships so two nets in the same round don't collide.
-    partnered.add(pairKey(teamA[0].id, teamA[1].id));
-    partnered.add(pairKey(teamB[0].id, teamB[1].id));
-    games.push({ net: games.length + 1, teamA, teamB });
+  for (let i = 0; i + 1 < teams.length; i += 2) {
+    games.push({ net: games.length + 1, teamA: teams[i], teamB: teams[i + 1] });
   }
 
   return { roundNumber: nextRoundNumber, games, byes };
