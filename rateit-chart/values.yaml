@@ -110,7 +110,7 @@ minio:
     port: 9001
   buckets:
     - name: images
-      policy: none
+      policy: download
       purge: false
   policies:
     - name: user-policy

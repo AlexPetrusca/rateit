@@ -14,6 +14,7 @@ The tourney backend is intentionally separate from Critic social data. It shares
 - One tournament event.
 - Has `format`, currently `PARTNER_SWAP` or `FIXED_TEAMS`.
 - Partner swap is the main format: every participant can be paired with every other participant.
+- Stores `points_to_win` so match/result logic can know what score qualifies as a win.
 
 `tourney_tournament_players`
 - Join table for tournament participants.
