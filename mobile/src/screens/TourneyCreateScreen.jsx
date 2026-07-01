@@ -55,6 +55,35 @@ const TourneyCreateScreen = ({ navigation }) => {
 
   const sportLabel = useMemo(() => SPORTS.find((s) => s.value === sport)?.label || 'Spikeball', [sport]);
 
+  // One selectable list of everyone: Critic users + saved non-Critic ("guest")
+  // players created on the fly in past tournaments, so they can be reused.
+  // Tournament veterans (played before, incl. saved guests) sort to the top.
+  const people = useMemo(() => {
+    const criticPeople = criticUsers.map((u) => ({
+      key: `critic:${u.userId}`,
+      displayName: u.username,
+      profilePicUrl: u.profilePicUrl,
+      guest: false,
+      playedBefore: u.playedBefore,
+      candidate: { displayName: u.username, criticUserId: u.userId, criticUsername: u.username }
+    }));
+    const criticNames = new Set(criticUsers.map((u) => u.username.toLowerCase()));
+    const guestPeople = existingPlayers
+      .filter((p) => p.criticUserId == null && !criticNames.has(p.displayName.toLowerCase()))
+      .map((p) => ({
+        key: `player:${p.id}`,
+        displayName: p.displayName,
+        profilePicUrl: null,
+        guest: true,
+        playedBefore: true,
+        candidate: { playerId: p.id, displayName: p.displayName }
+      }));
+    return [...criticPeople, ...guestPeople].sort((a, b) => (
+      (b.playedBefore === a.playedBefore ? 0 : b.playedBefore ? 1 : -1)
+      || a.displayName.toLowerCase().localeCompare(b.displayName.toLowerCase())
+    ));
+  }, [criticUsers, existingPlayers]);
+
   const isSelected = useCallback((candidate) => (
     selectedPlayers.some((selected) => samePlayer(selected, candidate))
   ), [selectedPlayers]);
@@ -269,21 +298,24 @@ const TourneyCreateScreen = ({ navigation }) => {
           nestedScrollEnabled
           showsVerticalScrollIndicator
         >
-          {criticUsers.length === 0 ? (
-            <Text style={styles.muted}>{loadingUsers ? 'Loading players…' : 'No critic users found.'}</Text>
-          ) : criticUsers.map((user) => {
-            const candidate = { displayName: user.username, criticUserId: user.userId, criticUsername: user.username };
-            const selected = isSelected(candidate);
+          {people.length === 0 ? (
+            <Text style={styles.muted}>{loadingUsers ? 'Loading players…' : 'No players found.'}</Text>
+          ) : people.map((person) => {
+            const selected = isSelected(person.candidate);
             return (
               <Pressable
-                key={`critic:${user.userId}`}
-                onPress={() => (selected ? removeSelectedPlayer(candidate) : addSelectedPlayer(candidate))}
+                key={person.key}
+                onPress={() => (selected ? removeSelectedPlayer(person.candidate) : addSelectedPlayer(person.candidate))}
                 style={({ pressed }) => [styles.playerRow, pressed && styles.playerRowPressed]}
               >
-                <UserAvatar username={user.username} profilePicUrl={user.profilePicUrl} size="sm" />
+                <UserAvatar username={person.displayName} profilePicUrl={person.profilePicUrl} size="sm" />
                 <View style={styles.playerCopy}>
-                  <Text style={styles.playerName} numberOfLines={1}>{user.username}</Text>
-                  {user.playedBefore ? <Text style={styles.playerBadge}>Played before</Text> : null}
+                  <Text style={styles.playerName} numberOfLines={1}>{person.displayName}</Text>
+                  {person.guest ? (
+                    <Text style={styles.playerBadgeGuest}>Guest</Text>
+                  ) : person.playedBefore ? (
+                    <Text style={styles.playerBadge}>Played before</Text>
+                  ) : null}
                 </View>
                 <View style={[styles.checkbox, selected && styles.checkboxOn]}>
                   {selected ? <Text style={styles.checkmark}>✓</Text> : null}
@@ -469,6 +501,12 @@ const styles = StyleSheet.create({
   playerBadge: {
     ...text.muted,
     color: colors.accent,
+    fontSize: 12,
+    fontWeight: '700'
+  },
+  playerBadgeGuest: {
+    ...text.muted,
+    color: colors.textSubtle,
     fontSize: 12,
     fontWeight: '700'
   },
