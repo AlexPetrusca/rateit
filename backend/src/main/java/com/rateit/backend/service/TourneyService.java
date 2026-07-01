@@ -114,6 +114,19 @@ public class TourneyService {
         return TourneyPlayerDto.fromPlayer(playerRepository.save(player));
     }
 
+    // Link (or unlink) a guest player to a Critic account after the fact, e.g. once
+    // you learn who a placeholder name actually is.
+    @Transactional
+    public TourneyPlayerDto updatePlayer(Long playerId, SaveTourneyPlayerRequest request, String phoneNumber) {
+        requireAdmin(phoneNumber);
+        TourneyPlayer player = findOwnedPlayer(playerId, phoneNumber);
+        User criticUser = request.criticUserId() == null ? null : userService.findById(request.criticUserId());
+        player.setDisplayName(request.displayName().trim());
+        player.setCriticUser(criticUser);
+        player.setNotes(trimToNull(request.notes()));
+        return TourneyPlayerDto.fromPlayer(player);
+    }
+
     @Transactional(readOnly = true)
     public List<TourneyTournamentDto> listTournaments(String phoneNumber) {
         userService.findByPhoneNumber(phoneNumber); // auth check; tournaments are viewable by everyone

@@ -65,6 +65,15 @@ public class TourneyController {
             .body(tourneyService.createPlayer(request, token.getToken().getSubject()));
     }
 
+    @PutMapping("/players/{playerId}")
+    public ResponseEntity<TourneyPlayerDto> updatePlayer(
+        @PathVariable Long playerId,
+        @RequestBody @Valid SaveTourneyPlayerRequest request,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.ok(tourneyService.updatePlayer(playerId, request, token.getToken().getSubject()));
+    }
+
     @GetMapping("/tournaments")
     public ResponseEntity<List<TourneyTournamentDto>> listTournaments(JwtAuthenticationToken token) {
         return ResponseEntity.ok(tourneyService.listTournaments(token.getToken().getSubject()));
