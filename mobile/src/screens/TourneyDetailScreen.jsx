@@ -73,6 +73,19 @@ const LiveRunner = ({ detail, onChange }) => {
     setScores((cur) => ({ ...cur, [matchId]: { ...(cur[matchId] || { a: '', b: '' }), [side]: digits } }));
   };
 
+  // On blur: a finished losing score (below the winning score) means the other
+  // team must have won, so fill their score to the winning score. Waiting for
+  // blur (rather than every keystroke) avoids jumping the gun while someone is
+  // still typing e.g. "1" then "5" for 15.
+  const settleScore = (matchId, side) => setScores((cur) => {
+    const s = cur[matchId] || { a: '', b: '' };
+    const val = s[side];
+    if (val === '' || val == null || Number(val) >= pointsToWin) return cur;
+    const other = side === 'a' ? 'b' : 'a';
+    if (s[other] !== '' && s[other] != null) return cur;
+    return { ...cur, [matchId]: { ...s, [other]: String(pointsToWin) } };
+  });
+
   const [round, setRound] = useState(null); // editable proposed groupings
   const [lifted, setLifted] = useState(null);
   const [scores, setScores] = useState({});
@@ -244,6 +257,7 @@ const LiveRunner = ({ detail, onChange }) => {
       <AppTextInput
         value={(scores[g.uid] || {})[side] ?? ''}
         onChangeText={(v) => changeScore(g.uid, side, v)}
+        onBlur={() => settleScore(g.uid, side)}
         keyboardType="number-pad"
         placeholder="score"
         style={styles.scoreInputWide}
