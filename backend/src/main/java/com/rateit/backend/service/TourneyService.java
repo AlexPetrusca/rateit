@@ -344,6 +344,9 @@ public class TourneyService {
         if (request.tournamentDate() != null) {
             tournament.setTournamentDate(request.tournamentDate());
         }
+        if (request.status() != null) {
+            tournament.setStatus(request.status());
+        }
 
         // Clear the existing schedule first so roster changes don't collide with it.
         matchRepository.deleteByTournament(tournament);

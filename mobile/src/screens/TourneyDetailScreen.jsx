@@ -5,7 +5,6 @@ import AppButton from '../components/AppButton.jsx';
 import AppTextInput from '../components/AppTextInput.jsx';
 import Card from '../components/Card.jsx';
 import Screen from '../components/Screen.jsx';
-import TourneyRoundBuilder from '../components/TourneyRoundBuilder.jsx';
 import TourneyScoreboard from '../components/TourneyScoreboard.jsx';
 import UserAvatar from '../components/UserAvatar.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
@@ -293,87 +292,6 @@ const LiveRunner = ({ detail, onChange }) => {
   );
 };
 
-const HistoricalEditor = ({ detail, onChange }) => {
-  const { notify } = useNotifications();
-  const participants = (detail.players || []).map((tp) => ({
-    id: tp.player.id,
-    name: tp.player.displayName,
-    profilePicUrl: tp.player.profilePicUrl,
-    hasAccount: !!tp.player.criticUsername
-  }));
-  const matches = detail.matches || [];
-  const [busy, setBusy] = useState(false);
-  const [scores, setScores] = useState({});
-
-  const nextRound = (matches.length ? Math.max(...matches.map((m) => m.roundNumber)) : 0) + 1;
-
-  const commitRound = async (games) => {
-    if (!games.length) { notify({ message: 'Fill at least one net (2 players per team).', type: 'warning' }); return; }
-    setBusy(true);
-    try {
-      await BackendApiService.commitTourneyRound(detail.id, { roundNumber: nextRound, games });
-      await onChange();
-    } catch (err) {
-      notify({ message: err.message || 'Failed to save round', type: 'error' });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const saveScore = async (m) => {
-    const s = scores[m.id] || {};
-    if (s.a === '' || s.b === '' || s.a == null || s.b == null) { notify({ message: 'Enter both scores.', type: 'warning' }); return; }
-    try {
-      await BackendApiService.updateTourneyMatchScore(detail.id, m.id, { teamAScore: Number.parseInt(s.a, 10), teamBScore: Number.parseInt(s.b, 10) });
-      await onChange();
-    } catch (err) {
-      notify({ message: err.message || 'Failed to save score', type: 'error' });
-    }
-  };
-
-  const removeGame = async (m) => {
-    try { await BackendApiService.deleteTourneyMatch(detail.id, m.id); await onChange(); }
-    catch (err) { notify({ message: err.message || 'Failed to delete game', type: 'error' }); }
-  };
-
-  return (
-    <>
-      <Card style={styles.section}>
-        <Text style={styles.sectionTitle}>Build round {nextRound}</Text>
-        <Text style={styles.hint}>Pick a net, then drag players into Team A and Team B.</Text>
-        <TourneyRoundBuilder participants={participants} roundNumber={nextRound} saving={busy} onCommit={commitRound} />
-      </Card>
-
-      <Card style={styles.section}>
-        <Text style={styles.sectionTitle}>Games ({matches.length})</Text>
-        {matches.length === 0 ? <Text style={styles.hint}>No games yet.</Text> : matches.map((m) => (
-          <View key={m.id} style={styles.histGame}>
-            <View style={styles.scoreRow}>
-              <Text style={styles.scoreTeam} numberOfLines={2}>{m.teamAName}</Text>
-              <AppTextInput
-                value={(scores[m.id]?.a) ?? (m.teamAScore != null ? String(m.teamAScore) : '')}
-                onChangeText={(v) => setScores((cur) => ({ ...cur, [m.id]: { ...cur[m.id], a: v.replace(/[^0-9]/g, ''), b: cur[m.id]?.b ?? (m.teamBScore != null ? String(m.teamBScore) : '') } }))}
-                keyboardType="number-pad" style={styles.scoreInput} inputStyle={styles.scoreInputBox}
-              />
-              <Text style={styles.scoreDash}>–</Text>
-              <AppTextInput
-                value={(scores[m.id]?.b) ?? (m.teamBScore != null ? String(m.teamBScore) : '')}
-                onChangeText={(v) => setScores((cur) => ({ ...cur, [m.id]: { ...cur[m.id], b: v.replace(/[^0-9]/g, ''), a: cur[m.id]?.a ?? (m.teamAScore != null ? String(m.teamAScore) : '') } }))}
-                keyboardType="number-pad" style={styles.scoreInput} inputStyle={styles.scoreInputBox}
-              />
-              <Text style={styles.scoreTeam} numberOfLines={2}>{m.teamBName}</Text>
-            </View>
-            <View style={styles.histActions}>
-              <AppButton label="Save" onPress={() => saveScore(m)} variant="secondary" style={styles.histBtn} textStyle={styles.histBtnText} />
-              <AppButton label="Delete" onPress={() => removeGame(m)} variant="ghost" style={styles.histBtn} textStyle={styles.histBtnText} />
-            </View>
-          </View>
-        ))}
-      </Card>
-    </>
-  );
-};
-
 // Read-only games summary shown once a tournament has ended.
 const TourneyResults = ({ detail }) => {
   const matches = detail.matches || [];
@@ -451,7 +369,7 @@ const todayIsoDate = () => new Date().toISOString().slice(0, 10);
 // Full edit interface for a finished tournament: rename, re-date, adjust the
 // roster, and per-round cards (identical to the live combined cards) to fix
 // scores and move players around. Submits the whole thing in one call.
-const TourneyEditor = ({ detail, onDone, onCancel }) => {
+const TourneyEditor = ({ detail, onDone, onCancel, showMeta = true, markComplete = false }) => {
   const { notify } = useNotifications();
 
   const [name, setName] = useState(detail.name || '');
@@ -527,7 +445,7 @@ const TourneyEditor = ({ detail, onDone, onCancel }) => {
       setLoadingPeople(false);
     }
   }, [notify]);
-  useEffect(() => { loadPeople(); }, [loadPeople]);
+  useEffect(() => { if (showMeta) loadPeople(); }, [loadPeople, showMeta]);
 
   const criticNames = useMemo(() => new Set(criticUsers.map((u) => u.username.toLowerCase())), [criticUsers]);
   const people = useMemo(() => {
@@ -636,6 +554,8 @@ const TourneyEditor = ({ detail, onDone, onCancel }) => {
 
   const submit = async () => {
     if (!name.trim()) { notify({ message: 'Give the tournament a name.', type: 'warning' }); return; }
+    const totalGames = rounds.reduce((n, r) => n + r.games.length, 0);
+    if (totalGames === 0) { notify({ message: 'Add at least one round with a net.', type: 'warning' }); return; }
     for (const r of rounds) {
       for (const g of r.games) {
         const ids = [...g.teamA, ...g.teamB].map((p) => p.id);
@@ -654,6 +574,7 @@ const TourneyEditor = ({ detail, onDone, onCancel }) => {
       const payload = {
         name: name.trim(),
         tournamentDate: date || null,
+        status: markComplete ? 'COMPLETE' : null,
         playerIds: roster.map((r) => r.id),
         rounds: rounds.filter((r) => r.games.length > 0).map((r) => ({
           roundNumber: r.roundNumber,
@@ -713,48 +634,54 @@ const TourneyEditor = ({ detail, onDone, onCancel }) => {
 
   return (
     <>
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>Tourney · Edit</Text>
-      </View>
+      {showMeta ? (
+        <>
+          <View style={styles.header}>
+            <Text style={styles.eyebrow}>Tourney · Edit</Text>
+          </View>
 
-      <Card style={styles.section}>
-        <AppTextInput label="Name" value={name} onChangeText={setName} />
-        <AppTextInput label="Tournament date" value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" autoCapitalize="none" />
-      </Card>
+          <Card style={styles.section}>
+            <AppTextInput label="Name" value={name} onChangeText={setName} />
+            <AppTextInput label="Tournament date" value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" autoCapitalize="none" />
+          </Card>
 
-      <Card style={styles.section}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.sectionTitle}>Players</Text>
-          <Text style={styles.count}>{roster.length} selected{loadingPeople ? ' · loading' : ''}</Text>
-        </View>
-        <ScrollView style={styles.playerList} contentContainerStyle={styles.playerListContent} nestedScrollEnabled showsVerticalScrollIndicator>
-          {people.length === 0 ? (
-            <Text style={styles.mutedPad}>{loadingPeople ? 'Loading players…' : 'No players found.'}</Text>
-          ) : people.map((person) => {
-            const selected = inRoster(person.candidate);
-            return (
-              <Pressable
-                key={person.key}
-                onPress={() => (selected ? removePlayer(person.candidate) : addPlayer(person.candidate, person.profilePicUrl))}
-                style={({ pressed }) => [styles.playerRow, pressed && styles.playerRowPressed]}
-              >
-                <UserAvatar username={person.displayName} profilePicUrl={person.profilePicUrl} size="sm" />
-                <View style={styles.playerCopy}>
-                  <Text style={styles.playerName} numberOfLines={1}>{person.displayName}</Text>
-                  {person.guest ? <Text style={styles.playerBadgeGuest}>Guest</Text> : person.playedBefore ? <Text style={styles.playerBadge}>Played before</Text> : null}
-                </View>
-                <View style={[styles.checkbox, selected && styles.checkboxOn]}>
-                  {selected ? <Text style={styles.checkmark}>✓</Text> : null}
-                </View>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-        <View style={styles.addRow}>
-          <AppTextInput value={rawName} onChangeText={setRawName} placeholder="Add someone not on Critic" style={styles.addInput} onSubmitEditing={addRaw} />
-          <AppButton label="Add" onPress={addRaw} variant="secondary" style={styles.addButton} />
-        </View>
-      </Card>
+          <Card style={styles.section}>
+            <View style={styles.rowBetween}>
+              <Text style={styles.sectionTitle}>Players</Text>
+              <Text style={styles.count}>{roster.length} selected{loadingPeople ? ' · loading' : ''}</Text>
+            </View>
+            <ScrollView style={styles.playerList} contentContainerStyle={styles.playerListContent} nestedScrollEnabled showsVerticalScrollIndicator>
+              {people.length === 0 ? (
+                <Text style={styles.mutedPad}>{loadingPeople ? 'Loading players…' : 'No players found.'}</Text>
+              ) : people.map((person) => {
+                const selected = inRoster(person.candidate);
+                return (
+                  <Pressable
+                    key={person.key}
+                    onPress={() => (selected ? removePlayer(person.candidate) : addPlayer(person.candidate, person.profilePicUrl))}
+                    style={({ pressed }) => [styles.playerRow, pressed && styles.playerRowPressed]}
+                  >
+                    <UserAvatar username={person.displayName} profilePicUrl={person.profilePicUrl} size="sm" />
+                    <View style={styles.playerCopy}>
+                      <Text style={styles.playerName} numberOfLines={1}>{person.displayName}</Text>
+                      {person.guest ? <Text style={styles.playerBadgeGuest}>Guest</Text> : person.playedBefore ? <Text style={styles.playerBadge}>Played before</Text> : null}
+                    </View>
+                    <View style={[styles.checkbox, selected && styles.checkboxOn]}>
+                      {selected ? <Text style={styles.checkmark}>✓</Text> : null}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            <View style={styles.addRow}>
+              <AppTextInput value={rawName} onChangeText={setRawName} placeholder="Add someone not on Critic" style={styles.addInput} onSubmitEditing={addRaw} />
+              <AppButton label="Add" onPress={addRaw} variant="secondary" style={styles.addButton} />
+            </View>
+          </Card>
+        </>
+      ) : (
+        <Text style={styles.hint}>Add a round, then a net, and tap two players to swap them into teams. Enter each game&apos;s score.</Text>
+      )}
 
       {rounds.map((r, ri) => (
         <Card key={ri} style={styles.section}>
@@ -785,10 +712,14 @@ const TourneyEditor = ({ detail, onDone, onCancel }) => {
         <Text style={styles.addNetText}>+ Add round</Text>
       </Pressable>
 
-      <View style={styles.endConfirmRow}>
-        <AppButton label="Cancel" variant="ghost" onPress={onCancel} style={styles.endHalf} />
-        <AppButton label="Submit" onPress={submit} loading={busy} style={styles.endHalf} />
-      </View>
+      {showMeta ? (
+        <View style={styles.endConfirmRow}>
+          <AppButton label="Cancel" variant="ghost" onPress={onCancel} style={styles.endHalf} />
+          <AppButton label="Submit" onPress={submit} loading={busy} style={styles.endHalf} />
+        </View>
+      ) : (
+        <AppButton label="Submit" onPress={submit} loading={busy} />
+      )}
     </>
   );
 };
@@ -885,12 +816,16 @@ const TourneyDetailScreen = ({ route, navigation }) => {
         ) : null}
       </View>
       <TourneyScoreboard standings={detail.playerStandings} />
-      {detail.status === 'COMPLETE'
-        ? <TourneyResults detail={detail} />
-        : detail.mode === 'HISTORICAL'
-          ? <HistoricalEditor detail={detail} onChange={load} />
-          : <LiveRunner detail={detail} onChange={load} />}
-      <EndTournament detail={detail} onChange={load} />
+      {detail.status === 'COMPLETE' ? (
+        <TourneyResults detail={detail} />
+      ) : detail.mode === 'HISTORICAL' ? (
+        <TourneyEditor detail={detail} showMeta={false} markComplete onDone={load} />
+      ) : (
+        <>
+          <LiveRunner detail={detail} onChange={load} />
+          <EndTournament detail={detail} onChange={load} />
+        </>
+      )}
     </Screen>
   );
 };
