@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import AppButton from '../components/AppButton.jsx';
 import AppTextInput from '../components/AppTextInput.jsx';
 import Card from '../components/Card.jsx';
 import Screen from '../components/Screen.jsx';
 import TourneyRoundBuilder from '../components/TourneyRoundBuilder.jsx';
 import TourneyScoreboard from '../components/TourneyScoreboard.jsx';
+import UserAvatar from '../components/UserAvatar.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import BackendApiService from '../services/BackendApiService.js';
 import { proposeNextRound } from '../utils/tourneyPairing.js';
@@ -68,7 +69,6 @@ const LiveRunner = ({ detail, onChange }) => {
 
   const changeScore = (matchId, side, value) => {
     const digits = value.replace(/[^0-9]/g, '');
-    if (digits !== '' && Number(digits) >= pointsToWin) { setWinner(matchId, side); return; }
     setScores((cur) => ({ ...cur, [matchId]: { ...(cur[matchId] || { a: '', b: '' }), [side]: digits } }));
   };
 
@@ -152,8 +152,8 @@ const LiveRunner = ({ detail, onChange }) => {
           return {
             teamAPlayerIds: g.teamA.map((p) => p.id),
             teamBPlayerIds: g.teamB.map((p) => p.id),
-            teamAScore: w === 'a' ? pointsToWin : Number.parseInt(s.a, 10),
-            teamBScore: w === 'b' ? pointsToWin : Number.parseInt(s.b, 10)
+            teamAScore: Number.parseInt(s.a, 10),
+            teamBScore: Number.parseInt(s.b, 10)
           };
         })
       };
@@ -241,8 +241,7 @@ const LiveRunner = ({ detail, onChange }) => {
         ))}
       </View>
       <AppTextInput
-        value={isWin ? String(pointsToWin) : ((scores[g.uid] || {})[side] ?? '')}
-        editable={!isWin}
+        value={(scores[g.uid] || {})[side] ?? ''}
         onChangeText={(v) => changeScore(g.uid, side, v)}
         keyboardType="number-pad"
         placeholder="score"
@@ -447,11 +446,396 @@ const EndTournament = ({ detail, onChange }) => {
   );
 };
 
-const TourneyDetailScreen = ({ route }) => {
+const todayIsoDate = () => new Date().toISOString().slice(0, 10);
+
+// Full edit interface for a finished tournament: rename, re-date, adjust the
+// roster, and per-round cards (identical to the live combined cards) to fix
+// scores and move players around. Submits the whole thing in one call.
+const TourneyEditor = ({ detail, onDone, onCancel }) => {
+  const { notify } = useNotifications();
+
+  const [name, setName] = useState(detail.name || '');
+  const [date, setDate] = useState(detail.tournamentDate || todayIsoDate());
+  const [criticUsers, setCriticUsers] = useState([]);
+  const [existingPlayers, setExistingPlayers] = useState([]);
+  const [roster, setRoster] = useState([]); // [{ id, name, profilePicUrl, criticUserId }]
+  const [rounds, setRounds] = useState([]); // [{ roundNumber, games:[{ uid, teamA, teamB }], byes:[] }]
+  const [scores, setScores] = useState({});
+  const [lifted, setLifted] = useState(null); // { roundIdx, id }
+  const [rawName, setRawName] = useState('');
+  const [loadingPeople, setLoadingPeople] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  // The higher score wins (historical scores may not follow first-to-N exactly).
+  const winnerByScore = (s) => {
+    const a = s?.a === '' || s?.a == null ? null : Number(s.a);
+    const b = s?.b === '' || s?.b == null ? null : Number(s.b);
+    if (a == null || b == null || a === b) return null;
+    return a > b ? 'a' : 'b';
+  };
+
+  // Seed roster, rounds, and scores from the tournament detail.
+  useEffect(() => {
+    const teamById = new Map((detail.teams || []).map((t) => [t.id, t]));
+    const playerOf = (p) => ({ id: p.id, name: p.displayName, profilePicUrl: p.profilePicUrl });
+    const roster0 = (detail.players || []).map((tp) => ({
+      id: tp.player.id,
+      name: tp.player.displayName,
+      profilePicUrl: tp.player.profilePicUrl,
+      criticUserId: tp.player.criticUserId
+    }));
+    setRoster(roster0);
+
+    const roundNums = [...new Set((detail.matches || []).map((m) => m.roundNumber))].sort((a, b) => a - b);
+    const seededScores = {};
+    const seededRounds = roundNums.map((rn) => {
+      const games = (detail.matches || []).filter((m) => m.roundNumber === rn).map((m) => {
+        const uid = `m${m.id}`;
+        const ta = teamById.get(m.teamAId);
+        const tb = teamById.get(m.teamBId);
+        seededScores[uid] = {
+          a: m.teamAScore != null ? String(m.teamAScore) : '',
+          b: m.teamBScore != null ? String(m.teamBScore) : ''
+        };
+        return {
+          uid,
+          teamA: ta ? [playerOf(ta.playerOne), playerOf(ta.playerTwo)] : [],
+          teamB: tb ? [playerOf(tb.playerOne), playerOf(tb.playerTwo)] : []
+        };
+      });
+      const inGame = new Set();
+      games.forEach((g) => [...g.teamA, ...g.teamB].forEach((p) => inGame.add(p.id)));
+      const byes = roster0.filter((p) => !inGame.has(p.id));
+      return { roundNumber: rn, games, byes };
+    });
+    setRounds(seededRounds);
+    setScores(seededScores);
+  }, [detail]);
+
+  const loadPeople = useCallback(async () => {
+    setLoadingPeople(true);
+    try {
+      const [users, players] = await Promise.all([
+        BackendApiService.getTourneyCriticUsers(),
+        BackendApiService.getTourneyPlayers()
+      ]);
+      setCriticUsers(users);
+      setExistingPlayers(players);
+    } catch (err) {
+      notify({ message: err.message || 'Failed to load players', type: 'error' });
+    } finally {
+      setLoadingPeople(false);
+    }
+  }, [notify]);
+  useEffect(() => { loadPeople(); }, [loadPeople]);
+
+  const criticNames = useMemo(() => new Set(criticUsers.map((u) => u.username.toLowerCase())), [criticUsers]);
+  const people = useMemo(() => {
+    const criticPeople = criticUsers.map((u) => ({
+      key: `critic:${u.userId}`, displayName: u.username, profilePicUrl: u.profilePicUrl,
+      guest: false, playedBefore: u.playedBefore, candidate: { criticUserId: u.userId, displayName: u.username }
+    }));
+    const guestPeople = existingPlayers
+      .filter((p) => p.criticUserId == null && !criticNames.has(p.displayName.toLowerCase()))
+      .map((p) => ({
+        key: `player:${p.id}`, displayName: p.displayName, profilePicUrl: p.profilePicUrl || null,
+        guest: true, playedBefore: true, candidate: { playerId: p.id, displayName: p.displayName }
+      }));
+    return [...criticPeople, ...guestPeople].sort((a, b) => (
+      (b.playedBefore === a.playedBefore ? 0 : b.playedBefore ? 1 : -1)
+      || a.displayName.toLowerCase().localeCompare(b.displayName.toLowerCase())
+    ));
+  }, [criticUsers, existingPlayers, criticNames]);
+
+  const inRoster = useCallback((cand) => roster.some((r) => (
+    (cand.playerId && r.id === cand.playerId)
+    || (cand.criticUserId && r.criticUserId === cand.criticUserId)
+    || (r.name.toLowerCase() === cand.displayName.toLowerCase())
+  )), [roster]);
+
+  // Resolve a candidate to a persisted tourney player (create a guest/critic
+  // player if one doesn't exist yet) so it has a stable id to place in games.
+  const ensurePlayer = async (cand, profilePicUrl) => {
+    if (cand.playerId) {
+      return { id: cand.playerId, name: cand.displayName, profilePicUrl: profilePicUrl || null, criticUserId: null };
+    }
+    const existing = existingPlayers.find((p) => (cand.criticUserId
+      ? p.criticUserId === cand.criticUserId
+      : p.displayName.toLowerCase() === cand.displayName.toLowerCase()));
+    if (existing) {
+      return { id: existing.id, name: existing.displayName, profilePicUrl: existing.profilePicUrl || profilePicUrl || null, criticUserId: existing.criticUserId };
+    }
+    const created = await BackendApiService.createTourneyPlayer({ displayName: cand.displayName, criticUserId: cand.criticUserId || null });
+    setExistingPlayers((cur) => [...cur, created]);
+    return { id: created.id, name: created.displayName, profilePicUrl: created.profilePicUrl || profilePicUrl || null, criticUserId: created.criticUserId };
+  };
+
+  const addPlayer = async (cand, profilePicUrl) => {
+    try {
+      const p = await ensurePlayer(cand, profilePicUrl);
+      setRoster((cur) => (cur.some((r) => r.id === p.id) ? cur : [...cur, p]));
+      setRounds((cur) => cur.map((r) => (r.byes.some((b) => b.id === p.id) || r.games.some((g) => [...g.teamA, ...g.teamB].some((x) => x.id === p.id))
+        ? r : { ...r, byes: [...r.byes, p] })));
+    } catch (err) {
+      notify({ message: err.message || 'Failed to add player', type: 'error' });
+    }
+  };
+
+  const removePlayer = (cand) => {
+    const entry = roster.find((r) => (
+      (cand.playerId && r.id === cand.playerId)
+      || (cand.criticUserId && r.criticUserId === cand.criticUserId)
+      || (r.name.toLowerCase() === cand.displayName.toLowerCase())
+    ));
+    if (!entry) return;
+    const usedInGame = rounds.some((r) => r.games.some((g) => [...g.teamA, ...g.teamB].some((p) => p.id === entry.id)));
+    if (usedInGame) { notify({ message: `${entry.name} is still in a game — remove them from every net first.`, type: 'warning' }); return; }
+    setRoster((cur) => cur.filter((r) => r.id !== entry.id));
+    setRounds((cur) => cur.map((r) => ({ ...r, byes: r.byes.filter((p) => p.id !== entry.id) })));
+  };
+
+  const addRaw = async () => {
+    const dn = rawName.trim().replace(/\s+/g, ' ');
+    if (!dn) return;
+    setRawName('');
+    if (inRoster({ displayName: dn })) return;
+    await addPlayer({ displayName: dn }, null);
+  };
+
+  const tapPlayer = (roundIdx, id) => {
+    if (!lifted || lifted.roundIdx !== roundIdx) { setLifted({ roundIdx, id }); return; }
+    if (lifted.id === id) { setLifted(null); return; }
+    setRounds((rs) => rs.map((r, i) => (i === roundIdx ? swapPlayers(r, lifted.id, id) : r)));
+    setLifted(null);
+  };
+
+  const changeScore = (uid, side, v) => {
+    const d = v.replace(/[^0-9]/g, '');
+    setScores((cur) => ({ ...cur, [uid]: { ...(cur[uid] || { a: '', b: '' }), [side]: d } }));
+  };
+
+  const removeNet = (roundIdx, gameIdx) => setRounds((rs) => rs.map((r, i) => {
+    if (i !== roundIdx) return r;
+    const freed = [...r.games[gameIdx].teamA, ...r.games[gameIdx].teamB];
+    return { ...r, games: r.games.filter((_, gi) => gi !== gameIdx), byes: [...r.byes, ...freed] };
+  }));
+
+  const addNet = (roundIdx) => setRounds((rs) => rs.map((r, i) => {
+    if (i !== roundIdx) return r;
+    if (r.byes.length < 4) { notify({ message: 'Need at least 4 byes to add a net.', type: 'warning' }); return r; }
+    const four = r.byes.slice(0, 4);
+    return { ...r, games: [...r.games, { uid: `n${roundIdx}_${Date.now()}`, teamA: [four[0], four[1]], teamB: [four[2], four[3]] }], byes: r.byes.slice(4) };
+  }));
+
+  const addRound = () => setRounds((rs) => [...rs, {
+    roundNumber: (rs.length ? Math.max(...rs.map((r) => r.roundNumber)) : 0) + 1,
+    games: [], byes: [...roster]
+  }]);
+
+  const removeRound = (roundIdx) => setRounds((rs) => rs.filter((_, i) => i !== roundIdx).map((r, idx) => ({ ...r, roundNumber: idx + 1 })));
+
+  const submit = async () => {
+    if (!name.trim()) { notify({ message: 'Give the tournament a name.', type: 'warning' }); return; }
+    for (const r of rounds) {
+      for (const g of r.games) {
+        const ids = [...g.teamA, ...g.teamB].map((p) => p.id);
+        if (g.teamA.length !== 2 || g.teamB.length !== 2 || new Set(ids).size !== 4) {
+          notify({ message: `Round ${r.roundNumber} has an incomplete net (needs 4 different players).`, type: 'warning' }); return;
+        }
+        const s = scores[g.uid] || {};
+        if (s.a === '' || s.a == null || s.b === '' || s.b == null) {
+          notify({ message: `Enter both scores in round ${r.roundNumber}.`, type: 'warning' }); return;
+        }
+        if (Number(s.a) === Number(s.b)) { notify({ message: `Scores can't tie (round ${r.roundNumber}).`, type: 'warning' }); return; }
+      }
+    }
+    setBusy(true);
+    try {
+      const payload = {
+        name: name.trim(),
+        tournamentDate: date || null,
+        playerIds: roster.map((r) => r.id),
+        rounds: rounds.filter((r) => r.games.length > 0).map((r) => ({
+          roundNumber: r.roundNumber,
+          games: r.games.map((g) => ({
+            teamAPlayerIds: g.teamA.map((p) => p.id),
+            teamBPlayerIds: g.teamB.map((p) => p.id),
+            teamAScore: Number.parseInt(scores[g.uid].a, 10),
+            teamBScore: Number.parseInt(scores[g.uid].b, 10)
+          }))
+        }))
+      };
+      await BackendApiService.editTourneyTournament(detail.id, payload);
+      notify({ message: 'Tournament updated.', type: 'info' });
+      onDone();
+    } catch (err) {
+      notify({ message: err.message || 'Failed to save tournament', type: 'error' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const renderGame = (roundIdx, g, gi) => {
+    const w = winnerByScore(scores[g.uid]);
+    const col = (side) => (
+      <View style={[styles.teamColumn, w === side && styles.teamColumnWin]}>
+        <View style={styles.team}>
+          {(side === 'a' ? g.teamA : g.teamB).map((p) => (
+            <PlayerChip key={p.id} player={p} lifted={lifted && lifted.roundIdx === roundIdx && lifted.id === p.id} onPress={() => tapPlayer(roundIdx, p.id)} />
+          ))}
+        </View>
+        <AppTextInput
+          value={(scores[g.uid] || {})[side] ?? ''}
+          onChangeText={(v) => changeScore(g.uid, side, v)}
+          keyboardType="number-pad"
+          placeholder="score"
+          style={styles.scoreInputWide}
+          inputStyle={[styles.scoreInputBox, w === side && styles.scoreInputWin]}
+        />
+      </View>
+    );
+    return (
+      <View key={g.uid} style={styles.gameCard}>
+        <View style={styles.gameHeader}>
+          <Text style={styles.netLabel}>Net {gi + 1}</Text>
+          <Pressable onPress={() => removeNet(roundIdx, gi)} hitSlop={8} style={styles.netRemove}>
+            <Text style={styles.netRemoveText}>×</Text>
+          </Pressable>
+        </View>
+        <View style={styles.teamRow}>
+          {col('a')}
+          <Text style={styles.vs}>vs</Text>
+          {col('b')}
+        </View>
+      </View>
+    );
+  };
+
+  return (
+    <>
+      <View style={styles.header}>
+        <Text style={styles.eyebrow}>Tourney · Edit</Text>
+      </View>
+
+      <Card style={styles.section}>
+        <AppTextInput label="Name" value={name} onChangeText={setName} />
+        <AppTextInput label="Tournament date" value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" autoCapitalize="none" />
+      </Card>
+
+      <Card style={styles.section}>
+        <View style={styles.rowBetween}>
+          <Text style={styles.sectionTitle}>Players</Text>
+          <Text style={styles.count}>{roster.length} selected{loadingPeople ? ' · loading' : ''}</Text>
+        </View>
+        <ScrollView style={styles.playerList} contentContainerStyle={styles.playerListContent} nestedScrollEnabled showsVerticalScrollIndicator>
+          {people.length === 0 ? (
+            <Text style={styles.mutedPad}>{loadingPeople ? 'Loading players…' : 'No players found.'}</Text>
+          ) : people.map((person) => {
+            const selected = inRoster(person.candidate);
+            return (
+              <Pressable
+                key={person.key}
+                onPress={() => (selected ? removePlayer(person.candidate) : addPlayer(person.candidate, person.profilePicUrl))}
+                style={({ pressed }) => [styles.playerRow, pressed && styles.playerRowPressed]}
+              >
+                <UserAvatar username={person.displayName} profilePicUrl={person.profilePicUrl} size="sm" />
+                <View style={styles.playerCopy}>
+                  <Text style={styles.playerName} numberOfLines={1}>{person.displayName}</Text>
+                  {person.guest ? <Text style={styles.playerBadgeGuest}>Guest</Text> : person.playedBefore ? <Text style={styles.playerBadge}>Played before</Text> : null}
+                </View>
+                <View style={[styles.checkbox, selected && styles.checkboxOn]}>
+                  {selected ? <Text style={styles.checkmark}>✓</Text> : null}
+                </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+        <View style={styles.addRow}>
+          <AppTextInput value={rawName} onChangeText={setRawName} placeholder="Add someone not on Critic" style={styles.addInput} onSubmitEditing={addRaw} />
+          <AppButton label="Add" onPress={addRaw} variant="secondary" style={styles.addButton} />
+        </View>
+      </Card>
+
+      {rounds.map((r, ri) => (
+        <Card key={ri} style={styles.section}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.sectionTitle}>Round {r.roundNumber}</Text>
+            <Pressable onPress={() => removeRound(ri)} hitSlop={8} style={styles.netRemove}>
+              <Text style={styles.netRemoveText}>×</Text>
+            </Pressable>
+          </View>
+          {r.games.map((g, gi) => renderGame(ri, g, gi))}
+          <Pressable onPress={() => addNet(ri)} style={styles.addNet}>
+            <Text style={styles.addNetText}>+ Add net</Text>
+          </Pressable>
+          {r.byes.length > 0 ? (
+            <View style={styles.byesCard}>
+              <Text style={styles.netLabel}>Byes</Text>
+              <View style={styles.byesRow}>
+                {r.byes.map((p) => (
+                  <PlayerChip key={p.id} player={p} lifted={lifted && lifted.roundIdx === ri && lifted.id === p.id} onPress={() => tapPlayer(ri, p.id)} />
+                ))}
+              </View>
+            </View>
+          ) : null}
+        </Card>
+      ))}
+
+      <Pressable onPress={addRound} style={styles.addNet}>
+        <Text style={styles.addNetText}>+ Add round</Text>
+      </Pressable>
+
+      <View style={styles.endConfirmRow}>
+        <AppButton label="Cancel" variant="ghost" onPress={onCancel} style={styles.endHalf} />
+        <AppButton label="Submit" onPress={submit} loading={busy} style={styles.endHalf} />
+      </View>
+    </>
+  );
+};
+
+// Kebab menu (Edit / Delete) shown on a finished tournament.
+const TourneyMenu = ({ onEdit, onDelete }) => {
+  const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  return (
+    <View style={styles.menuWrap}>
+      <Pressable onPress={() => { setOpen((o) => !o); setConfirming(false); }} hitSlop={8} style={styles.kebab}>
+        <Text style={styles.kebabText}>⋯</Text>
+      </Pressable>
+      {open ? (
+        <View style={styles.menu}>
+          {confirming ? (
+            <>
+              <Text style={styles.menuConfirm}>Delete this tournament?</Text>
+              <Pressable onPress={() => { setOpen(false); setConfirming(false); onDelete(); }} style={styles.menuItem}>
+                <Text style={styles.menuItemDanger}>Delete</Text>
+              </Pressable>
+              <Pressable onPress={() => setConfirming(false)} style={styles.menuItem}>
+                <Text style={styles.menuItemText}>Cancel</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Pressable onPress={() => { setOpen(false); onEdit(); }} style={styles.menuItem}>
+                <Text style={styles.menuItemText}>Edit</Text>
+              </Pressable>
+              <Pressable onPress={() => setConfirming(true)} style={styles.menuItem}>
+                <Text style={styles.menuItemDanger}>Delete</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
+      ) : null}
+    </View>
+  );
+};
+
+const TourneyDetailScreen = ({ route, navigation }) => {
   const tournamentId = route.params?.tournamentId;
   const { notify } = useNotifications();
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -465,17 +849,40 @@ const TourneyDetailScreen = ({ route }) => {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  const deleteTournament = useCallback(async () => {
+    try {
+      await BackendApiService.deleteTourneyTournament(tournamentId);
+      notify({ message: 'Tournament deleted.', type: 'info' });
+      navigation.navigate('Tourney');
+    } catch (err) {
+      notify({ message: err.message || 'Failed to delete tournament', type: 'error' });
+    }
+  }, [tournamentId, navigation, notify]);
+
   if (loading && !detail) {
     return <Screen><View style={styles.center}><ActivityIndicator color={colors.accent} /></View></Screen>;
   }
   if (!detail) return null;
 
+  if (editing) {
+    return (
+      <Screen>
+        <TourneyEditor detail={detail} onDone={() => { setEditing(false); load(); }} onCancel={() => setEditing(false)} />
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>Tourney · {detail.mode === 'HISTORICAL' ? 'Historical' : 'Live'}</Text>
-        <Text style={styles.title}>{detail.name}</Text>
-        <Text style={styles.sub}>{detail.playerCount} players · to {detail.pointsToWin}{detail.mode !== 'HISTORICAL' && detail.courtCount ? ` · ${detail.courtCount} net${detail.courtCount > 1 ? 's' : ''}` : ''}</Text>
+      <View style={styles.headerRow}>
+        <View style={styles.header}>
+          <Text style={styles.eyebrow}>Tourney · {detail.mode === 'HISTORICAL' ? 'Historical' : 'Live'}</Text>
+          <Text style={styles.title}>{detail.name}</Text>
+          <Text style={styles.sub}>{detail.playerCount} players · to {detail.pointsToWin}{detail.mode !== 'HISTORICAL' && detail.courtCount ? ` · ${detail.courtCount} net${detail.courtCount > 1 ? 's' : ''}` : ''}</Text>
+        </View>
+        {detail.status === 'COMPLETE' ? (
+          <TourneyMenu onEdit={() => setEditing(true)} onDelete={deleteTournament} />
+        ) : null}
       </View>
       <TourneyScoreboard standings={detail.playerStandings} />
       {detail.status === 'COMPLETE'
@@ -490,12 +897,40 @@ const TourneyDetailScreen = ({ route }) => {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.xxl },
-  header: { gap: spacing.xs },
+  header: { gap: spacing.xs, flex: 1, minWidth: 0 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   eyebrow: { ...text.muted, color: colors.textSubtle, textTransform: 'uppercase', fontSize: 12, lineHeight: 16, fontWeight: '800' },
   title: text.h1,
   sub: text.muted,
   section: { gap: spacing.md },
   sectionTitle: text.h3,
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  count: text.muted,
+  // Kebab menu
+  menuWrap: { position: 'relative' },
+  kebab: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20 },
+  kebabText: { color: colors.text, fontSize: 22, fontWeight: '900', lineHeight: 24 },
+  menu: { position: 'absolute', top: 42, right: 0, minWidth: 180, zIndex: 20, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderStrong, borderRadius: radius.md, paddingVertical: spacing.xs, gap: 2, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
+  menuItem: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.lg },
+  menuItemText: { color: colors.text, fontSize: 15, fontWeight: '700' },
+  menuItemDanger: { color: colors.danger || '#d64545', fontSize: 15, fontWeight: '700' },
+  menuConfirm: { ...text.muted, paddingHorizontal: spacing.lg, paddingTop: spacing.xs, paddingBottom: 2 },
+  // Editor player picker
+  playerList: { maxHeight: 300, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surfaceSoft },
+  playerListContent: { padding: spacing.xs },
+  playerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.sm, borderRadius: radius.sm },
+  playerRowPressed: { backgroundColor: colors.surfacePressed },
+  playerCopy: { flex: 1, minWidth: 0, gap: 2 },
+  playerName: { color: colors.text, fontSize: 16, lineHeight: 21, fontWeight: '700' },
+  playerBadge: { ...text.muted, color: colors.accent, fontSize: 12, fontWeight: '700' },
+  playerBadgeGuest: { ...text.muted, color: colors.textSubtle, fontSize: 12, fontWeight: '700' },
+  checkbox: { width: 24, height: 24, borderRadius: 6, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderStrong, alignItems: 'center', justifyContent: 'center' },
+  checkboxOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+  checkmark: { color: '#ffffff', fontSize: 15, fontWeight: '900', lineHeight: 18 },
+  mutedPad: { ...text.muted, padding: spacing.sm },
+  addRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, alignItems: 'flex-end' },
+  addInput: { flex: 1, minWidth: 190 },
+  addButton: { minWidth: 82 },
   endBtn: { marginTop: spacing.sm },
   endConfirmRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   endHalf: { flex: 1 },

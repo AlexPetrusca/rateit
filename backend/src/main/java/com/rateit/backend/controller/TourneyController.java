@@ -5,6 +5,7 @@ import com.rateit.backend.entity.dto.TourneyPlayerDto;
 import com.rateit.backend.entity.dto.TourneyTournamentDto;
 import com.rateit.backend.entity.rest.AddTourneyTournamentPlayerRequest;
 import com.rateit.backend.entity.rest.CommitTourneyRoundRequest;
+import com.rateit.backend.entity.rest.EditTourneyTournamentRequest;
 import com.rateit.backend.entity.rest.SaveTourneyPlayerRequest;
 import com.rateit.backend.entity.rest.SaveTourneyTeamRequest;
 import com.rateit.backend.entity.rest.SaveTourneyTournamentRequest;
@@ -81,6 +82,24 @@ public class TourneyController {
         JwtAuthenticationToken token
     ) {
         return ResponseEntity.ok(tourneyService.updateTournament(tournamentId, request, token.getToken().getSubject()));
+    }
+
+    @PutMapping("/tournaments/{tournamentId}/full")
+    public ResponseEntity<TourneyTournamentDto> editTournament(
+        @PathVariable Long tournamentId,
+        @RequestBody @Valid EditTourneyTournamentRequest request,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.ok(tourneyService.editTournament(tournamentId, request, token.getToken().getSubject()));
+    }
+
+    @DeleteMapping("/tournaments/{tournamentId}")
+    public ResponseEntity<Void> deleteTournament(
+        @PathVariable Long tournamentId,
+        JwtAuthenticationToken token
+    ) {
+        tourneyService.deleteTournament(tournamentId, token.getToken().getSubject());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/tournaments/{tournamentId}/players")

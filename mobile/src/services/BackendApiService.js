@@ -115,6 +115,15 @@ const BackendApiService = {
     body: jsonBody(payload)
   }, 'Failed to commit round'),
 
+  editTourneyTournament: (tournamentId, payload) => request(`/api/tourney/tournaments/${encodeURIComponent(tournamentId)}/full`, {
+    method: 'PUT',
+    body: jsonBody(payload)
+  }, 'Failed to save tournament'),
+
+  deleteTourneyTournament: (tournamentId) => request(`/api/tourney/tournaments/${encodeURIComponent(tournamentId)}`, {
+    method: 'DELETE'
+  }, 'Failed to delete tournament'),
+
   updateTourneyMatchScore: (tournamentId, matchId, payload) => request(`/api/tourney/tournaments/${encodeURIComponent(tournamentId)}/matches/${encodeURIComponent(matchId)}/score`, {
     method: 'PUT',
     body: jsonBody(payload)

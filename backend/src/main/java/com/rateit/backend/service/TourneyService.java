@@ -16,6 +16,7 @@ import com.rateit.backend.entity.dto.TourneyTournamentDto;
 import com.rateit.backend.entity.dto.TourneyTournamentPlayerDto;
 import com.rateit.backend.entity.rest.AddTourneyTournamentPlayerRequest;
 import com.rateit.backend.entity.rest.CommitTourneyRoundRequest;
+import com.rateit.backend.entity.rest.EditTourneyTournamentRequest;
 import com.rateit.backend.entity.rest.SaveTourneyPlayerRequest;
 import com.rateit.backend.entity.rest.SaveTourneyTeamRequest;
 import com.rateit.backend.entity.rest.SaveTourneyTournamentRequest;
@@ -331,6 +332,78 @@ public class TourneyService {
             tournament.setStatus(TourneyTournamentStatus.ACTIVE);
         }
         return buildDetail(tournament);
+    }
+
+    // Full replace used by the edit-finished-tournament screen: update name/date,
+    // reconcile the roster to exactly the given players, and rebuild every round's
+    // games (teams + scores) from scratch.
+    @Transactional
+    public TourneyTournamentDto editTournament(Long tournamentId, EditTourneyTournamentRequest request, String phoneNumber) {
+        TourneyTournament tournament = findOwnedTournament(tournamentId, phoneNumber);
+        tournament.setName(request.name().trim());
+        if (request.tournamentDate() != null) {
+            tournament.setTournamentDate(request.tournamentDate());
+        }
+
+        // Clear the existing schedule first so roster changes don't collide with it.
+        matchRepository.deleteByTournament(tournament);
+
+        // Reconcile the roster to exactly request.playerIds().
+        Set<Long> desired = new HashSet<>(request.playerIds());
+        Set<Long> present = new HashSet<>();
+        for (TourneyTournamentPlayer tp : tournamentPlayerRepository.findByTournamentOrderBySeedNumberAscCreatedAtAsc(tournament)) {
+            if (desired.contains(tp.getPlayer().getId())) {
+                present.add(tp.getPlayer().getId());
+            } else {
+                tournamentPlayerRepository.delete(tp);
+            }
+        }
+        for (Long playerId : request.playerIds()) {
+            if (!present.contains(playerId)) {
+                ensureTournamentPlayer(tournament, findOwnedPlayer(playerId, phoneNumber));
+            }
+        }
+
+        Map<Long, TourneyPlayer> byId = new LinkedHashMap<>();
+        for (TourneyTournamentPlayer tp : tournamentPlayerRepository.findByTournamentOrderBySeedNumberAscCreatedAtAsc(tournament)) {
+            byId.put(tp.getPlayer().getId(), tp.getPlayer());
+        }
+
+        List<TourneyMatch> toSave = new ArrayList<>();
+        for (EditTourneyTournamentRequest.EditRound round : request.rounds()) {
+            int net = 1;
+            for (CommitTourneyRoundRequest.RoundGame game : round.games()) {
+                TourneyTeam teamA = getOrCreateTeam(tournament,
+                    requirePlayer(byId, game.teamAPlayerIds().get(0)),
+                    requirePlayer(byId, game.teamAPlayerIds().get(1)));
+                TourneyTeam teamB = getOrCreateTeam(tournament,
+                    requirePlayer(byId, game.teamBPlayerIds().get(0)),
+                    requirePlayer(byId, game.teamBPlayerIds().get(1)));
+                toSave.add(TourneyMatch.builder()
+                    .tournament(tournament)
+                    .teamA(teamA)
+                    .teamB(teamB)
+                    .roundNumber(round.roundNumber())
+                    .roundName("Round " + round.roundNumber())
+                    .court("Net " + net)
+                    .teamAScore(game.teamAScore())
+                    .teamBScore(game.teamBScore())
+                    .build());
+                net++;
+            }
+        }
+        matchRepository.saveAll(toSave);
+        return buildDetail(tournament);
+    }
+
+    @Transactional
+    public void deleteTournament(Long tournamentId, String phoneNumber) {
+        TourneyTournament tournament = findOwnedTournament(tournamentId, phoneNumber);
+        matchRepository.deleteByTournament(tournament);
+        teamRepository.deleteAll(teamRepository.findByTournamentOrderByNameAsc(tournament));
+        tournamentPlayerRepository.deleteAll(
+            tournamentPlayerRepository.findByTournamentOrderBySeedNumberAscCreatedAtAsc(tournament));
+        tournamentRepository.delete(tournament);
     }
 
     @Transactional
