@@ -74,6 +74,9 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         @Param("visibility") Visibility visibility
     );
 
+    // "Recent feed" is one row per topic (rateableItem): the newest public rating
+    // on it. Older ratings on the same topic are reachable via the topic's own
+    // ratings list (tap the comment bubble), not as separate feed rows.
     @Query("""
         select r
         from Rating r
@@ -84,6 +87,13 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         where r.visibility = :visibility
           and item.visibility = :visibility
           and r.deletedAt is null
+          and r.id = (
+              select max(r2.id)
+              from Rating r2
+              where r2.rateableItem = item
+                and r2.visibility = :visibility
+                and r2.deletedAt is null
+          )
         order by r.createdAt desc
         """)
     List<Rating> findRecentByVisibility(@Param("visibility") Visibility visibility, Pageable pageable);
@@ -101,6 +111,16 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
           and r.visibility = :visibility
           and item.visibility = :visibility
           and r.deletedAt is null
+          and r.id = (
+              select max(r2.id)
+              from Rating r2
+              where r2.rateableItem = item
+                and r2.authorUser in (
+                    select f2.followedUser from Follow f2 where f2.followerUser = :user
+                )
+                and r2.visibility = :visibility
+                and r2.deletedAt is null
+          )
         order by r.createdAt desc
         """)
     List<Rating> findRecentByFollowedUsersAndVisibility(
