@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
   cardTitle: text.h3,
   cardSub: { ...text.muted, fontSize: 12, color: colors.textSubtle, textTransform: 'uppercase', fontWeight: '800' },
   muted: { ...text.muted },
-  streakList: { maxHeight: 126 },
+  streakList: { flex: 1 },
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   partnerName: { flex: 1, minWidth: 0, color: colors.text, fontSize: 15, lineHeight: 20, fontWeight: '700' },
   streakCount: { minWidth: 34, textAlign: 'right', color: colors.accent, fontSize: 20, lineHeight: 24, fontWeight: '900', fontVariant: ['tabular-nums'] },
