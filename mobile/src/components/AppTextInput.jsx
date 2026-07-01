@@ -13,6 +13,8 @@ const AppTextInput = forwardRef(({
   autoCapitalize = 'sentences',
   style,
   inputStyle,
+  onFocus,
+  onBlur,
   ...inputProps
 }, ref) => {
   const [focused, setFocused] = useState(false);
@@ -25,8 +27,8 @@ const AppTextInput = forwardRef(({
         {...inputProps}
         value={value}
         onChangeText={onChangeText}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onFocus={(e) => { setFocused(true); onFocus?.(e); }}
+        onBlur={(e) => { setFocused(false); onBlur?.(e); }}
         placeholder={placeholder}
         placeholderTextColor={colors.textSubtle}
         selectionColor={colors.accent}

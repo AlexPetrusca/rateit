@@ -183,7 +183,7 @@ const TourneyCreateScreen = ({ navigation }) => {
       }
 
       notify({ message: 'Tournament created.', type: 'info' });
-      navigation.navigate('Tourney');
+      navigation.replace('TourneyDetail', { tournamentId: tournament.id });
     } catch (err) {
       const message = err.message || 'Failed to create tournament';
       setError(message);
