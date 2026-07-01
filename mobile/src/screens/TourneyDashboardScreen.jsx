@@ -342,9 +342,13 @@ const styles = StyleSheet.create({
   metricLabel: { color: colors.textMuted, fontSize: 13, lineHeight: 17, fontWeight: '700' },
   metricHelper: { color: colors.textSubtle, fontSize: 11, lineHeight: 14 },
   metricTextCentered: { textAlign: 'center' },
+  // Fixed (not min) height on both columns, matched to the two stacked
+  // MetricCards in sideStats (112 + 112 + spacing.sm gap), so streakList's
+  // flex:1 has an unambiguous height to fill rather than relying on
+  // cross-axis stretch to size an already flex:1 child.
   middleGrid: { flexDirection: 'row', gap: spacing.md, alignItems: 'stretch' },
-  streakCard: { flex: 1.12, minHeight: 178, gap: spacing.sm },
-  sideStats: { flex: 1, gap: spacing.sm },
+  streakCard: { flex: 1.12, height: 232, gap: spacing.sm },
+  sideStats: { flex: 1, height: 232, gap: spacing.sm },
   cardHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.sm },
   cardTitle: text.h3,
   cardSub: { ...text.muted, fontSize: 12, color: colors.textSubtle, textTransform: 'uppercase', fontWeight: '800' },
