@@ -120,12 +120,12 @@ const ProfileScreen = ({ navigation, route }) => {
               onPress={() => navigation.navigate('TourneyDashboard')}
               style={({ pressed }) => [styles.tourneyBadge, styles.tourneyBadgeOwn, pressed && styles.profileIconButtonPressed]}
             >
-              <Text style={styles.tourneyBadgeText}>ELO {Math.round(profile.tourneyElo)}</Text>
+              <Text style={styles.tourneyBadgeText}>{Math.round(profile.tourneyElo)}</Text>
               <HandDrawnIcon name="tourneyTrophy" color={colors.textMuted} size={18} />
             </Pressable>
           ) : (
             <View style={[styles.tourneyBadge, styles.tourneyBadgeOther]}>
-              <Text style={styles.tourneyBadgeText}>ELO {Math.round(profile.tourneyElo)}</Text>
+              <Text style={styles.tourneyBadgeText}>{Math.round(profile.tourneyElo)}</Text>
               <HandDrawnIcon name="tourneyTrophy" color={colors.textMuted} size={18} />
             </View>
           )
