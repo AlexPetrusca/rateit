@@ -334,6 +334,49 @@ const HistoricalEditor = ({ detail, onChange }) => {
   );
 };
 
+const EndTournament = ({ detail, onChange }) => {
+  const { notify } = useNotifications();
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  if (detail.status === 'COMPLETE') {
+    return <Text style={styles.endedNote}>This tournament has ended.</Text>;
+  }
+
+  const end = async () => {
+    setBusy(true);
+    try {
+      await BackendApiService.updateTourneyTournament(detail.id, {
+        name: detail.name,
+        location: detail.location,
+        tournamentDate: detail.tournamentDate,
+        status: 'COMPLETE',
+        format: detail.format,
+        mode: detail.mode,
+        courtCount: detail.courtCount,
+        pointsToWin: detail.pointsToWin,
+        notes: detail.notes
+      });
+      notify({ message: 'Tournament ended.', type: 'info' });
+      await onChange();
+    } catch (err) {
+      notify({ message: err.message || 'Failed to end tournament', type: 'error' });
+      setBusy(false);
+      setConfirming(false);
+    }
+  };
+
+  if (!confirming) {
+    return <AppButton label="End tournament" variant="secondary" onPress={() => setConfirming(true)} style={styles.endBtn} />;
+  }
+  return (
+    <View style={styles.endConfirmRow}>
+      <AppButton label="Back" variant="ghost" onPress={() => setConfirming(false)} style={styles.endHalf} />
+      <AppButton label="Confirm" onPress={end} loading={busy} style={styles.endHalf} />
+    </View>
+  );
+};
+
 const TourneyDetailScreen = ({ route }) => {
   const tournamentId = route.params?.tournamentId;
   const { notify } = useNotifications();
@@ -368,6 +411,7 @@ const TourneyDetailScreen = ({ route }) => {
       {detail.mode === 'HISTORICAL'
         ? <HistoricalEditor detail={detail} onChange={load} />
         : <LiveRunner detail={detail} onChange={load} />}
+      <EndTournament detail={detail} onChange={load} />
     </Screen>
   );
 };
@@ -380,6 +424,10 @@ const styles = StyleSheet.create({
   sub: text.muted,
   section: { gap: spacing.md },
   sectionTitle: text.h3,
+  endBtn: { marginTop: spacing.sm },
+  endConfirmRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  endHalf: { flex: 1 },
+  endedNote: { ...text.muted, textAlign: 'center', marginTop: spacing.sm },
   hint: { ...text.muted, fontSize: 13 },
   gameCard: { gap: spacing.xs, padding: spacing.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surfaceSoft },
   gameHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
