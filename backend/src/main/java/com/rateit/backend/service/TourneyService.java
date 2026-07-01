@@ -320,6 +320,8 @@ public class TourneyService {
                 .roundNumber(roundNumber)
                 .roundName("Round " + roundNumber)
                 .court("Net " + net)
+                .teamAScore(game.teamAScore())
+                .teamBScore(game.teamBScore())
                 .build());
             net++;
         }

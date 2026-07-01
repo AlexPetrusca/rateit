@@ -15,7 +15,9 @@ public record CommitTourneyRoundRequest(
 ) {
     public record RoundGame(
         @NotNull @Size(min = 2, max = 2) List<Long> teamAPlayerIds,
-        @NotNull @Size(min = 2, max = 2) List<Long> teamBPlayerIds
+        @NotNull @Size(min = 2, max = 2) List<Long> teamBPlayerIds,
+        Integer teamAScore,
+        Integer teamBScore
     ) {
     }
 }

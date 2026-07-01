@@ -74,7 +74,7 @@ export const proposeNextRound = (detail) => {
   // strength (each is a high+low pair), so pairing them makes competitive games.
   const games = [];
   for (let i = 0; i + 1 < teams.length; i += 2) {
-    games.push({ net: games.length + 1, teamA: teams[i], teamB: teams[i + 1] });
+    games.push({ uid: `g${nextRoundNumber}_${games.length}`, net: games.length + 1, teamA: teams[i], teamB: teams[i + 1] });
   }
 
   return { roundNumber: nextRoundNumber, games, byes };

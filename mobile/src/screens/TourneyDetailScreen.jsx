@@ -9,7 +9,7 @@ import TourneyRoundBuilder from '../components/TourneyRoundBuilder.jsx';
 import TourneyScoreboard from '../components/TourneyScoreboard.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import BackendApiService from '../services/BackendApiService.js';
-import { proposeNextRound, roundToCommitPayload } from '../utils/tourneyPairing.js';
+import { proposeNextRound } from '../utils/tourneyPairing.js';
 import { colors, radius, spacing, text } from '../theme.js';
 
 // Swap two players (by id) anywhere in a proposed round (games or byes).
@@ -82,6 +82,7 @@ const LiveRunner = ({ detail, onChange }) => {
     if (!scoringActive) {
       setRound(proposeNextRound(detail));
       setLifted(null);
+      setScores({});
     }
   }, [detail, scoringActive]);
 
@@ -122,22 +123,44 @@ const LiveRunner = ({ detail, onChange }) => {
     const four = r.byes.slice(0, 4);
     return {
       ...r,
-      games: [...r.games, { net: r.games.length + 1, teamA: [four[0], four[1]], teamB: [four[2], four[3]] }],
+      games: [...r.games, { uid: `g${r.roundNumber}_${Date.now()}`, net: r.games.length + 1, teamA: [four[0], four[1]], teamB: [four[2], four[3]] }],
       byes: r.byes.slice(4)
     };
   });
 
-  const startRound = async () => {
+  // Commit the round's teams AND scores in one call.
+  const submit = async () => {
     if (!round || round.games.length === 0) {
-      notify({ message: 'Not enough players for a game (need at least 4).', type: 'warning' });
+      notify({ message: 'Add at least one net (4 players).', type: 'warning' });
       return;
     }
+    const invalid = round.games.some((g) => {
+      const s = scores[g.uid] || {};
+      const w = winnerSide(s);
+      if (!w) return true;
+      const loser = w === 'a' ? s.b : s.a;
+      return loser === '' || loser == null;
+    });
+    if (invalid) { notify({ message: `Each game needs a winner (${pointsToWin}) and the other team's score.`, type: 'warning' }); return; }
     setBusy(true);
     try {
-      await BackendApiService.commitTourneyRound(detail.id, roundToCommitPayload(round));
+      const payload = {
+        roundNumber: round.roundNumber,
+        games: round.games.map((g) => {
+          const s = scores[g.uid];
+          const w = winnerSide(s);
+          return {
+            teamAPlayerIds: g.teamA.map((p) => p.id),
+            teamBPlayerIds: g.teamB.map((p) => p.id),
+            teamAScore: w === 'a' ? pointsToWin : Number.parseInt(s.a, 10),
+            teamBScore: w === 'b' ? pointsToWin : Number.parseInt(s.b, 10)
+          };
+        })
+      };
+      await BackendApiService.commitTourneyRound(detail.id, payload);
       await onChange();
     } catch (err) {
-      notify({ message: err.message || 'Failed to start round', type: 'error' });
+      notify({ message: err.message || 'Failed to submit round', type: 'error' });
     } finally {
       setBusy(false);
     }
@@ -210,29 +233,47 @@ const LiveRunner = ({ detail, onChange }) => {
     );
   }
 
+  const teamColumn = (g, side, isWin) => (
+    <View style={[styles.teamColumn, isWin && styles.teamColumnWin]}>
+      <View style={styles.team}>
+        {(side === 'a' ? g.teamA : g.teamB).map((p) => (
+          <PlayerChip key={p.id} player={p} lifted={lifted === p.id} onPress={() => tapPlayer(p.id)} />
+        ))}
+      </View>
+      <AppTextInput
+        value={isWin ? String(pointsToWin) : ((scores[g.uid] || {})[side] ?? '')}
+        editable={!isWin}
+        onChangeText={(v) => changeScore(g.uid, side, v)}
+        keyboardType="number-pad"
+        placeholder="score"
+        style={styles.scoreInputWide}
+        inputStyle={[styles.scoreInputBox, isWin && styles.scoreInputWin]}
+      />
+    </View>
+  );
+
   return (
     <Card style={styles.section}>
       <Text style={styles.sectionTitle}>Round {round?.roundNumber || 1}</Text>
-      <Text style={styles.hint}>Tap a player, then tap another to swap them between games/byes.</Text>
-      {(round?.games || []).map((g, i) => (
-        <View key={i} style={styles.gameCard}>
-          <View style={styles.gameHeader}>
-            <Text style={styles.netLabel}>Net {g.net}</Text>
-            <Pressable onPress={() => removeNet(i)} hitSlop={8} style={styles.netRemove}>
-              <Text style={styles.netRemoveText}>×</Text>
-            </Pressable>
-          </View>
-          <View style={styles.teamRow}>
-            <View style={styles.team}>
-              {g.teamA.map((p) => <PlayerChip key={p.id} player={p} lifted={lifted === p.id} onPress={() => tapPlayer(p.id)} />)}
+      <Text style={styles.hint}>Tap a player then another to swap. Type each game&apos;s scores — the team that reaches {pointsToWin} highlights red as the winner.</Text>
+      {(round?.games || []).map((g, i) => {
+        const w = winnerSide(scores[g.uid]);
+        return (
+          <View key={g.uid} style={styles.gameCard}>
+            <View style={styles.gameHeader}>
+              <Text style={styles.netLabel}>Net {i + 1}</Text>
+              <Pressable onPress={() => removeNet(i)} hitSlop={8} style={styles.netRemove}>
+                <Text style={styles.netRemoveText}>×</Text>
+              </Pressable>
             </View>
-            <Text style={styles.vs}>vs</Text>
-            <View style={styles.team}>
-              {g.teamB.map((p) => <PlayerChip key={p.id} player={p} lifted={lifted === p.id} onPress={() => tapPlayer(p.id)} />)}
+            <View style={styles.teamRow}>
+              {teamColumn(g, 'a', w === 'a')}
+              <Text style={styles.vs}>vs</Text>
+              {teamColumn(g, 'b', w === 'b')}
             </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
       <Pressable onPress={addNet} style={styles.addNet}>
         <Text style={styles.addNetText}>+ Add net</Text>
       </Pressable>
@@ -247,7 +288,7 @@ const LiveRunner = ({ detail, onChange }) => {
       {(round?.games?.length || 0) === 0 ? (
         <Text style={styles.hint}>Add at least 4 players to start a round.</Text>
       ) : (
-        <AppButton label={`Start round ${round?.roundNumber || 1}`} onPress={startRound} loading={busy} />
+        <AppButton label="Submit" onPress={submit} loading={busy} />
       )}
     </Card>
   );
@@ -334,6 +375,35 @@ const HistoricalEditor = ({ detail, onChange }) => {
   );
 };
 
+// Read-only games summary shown once a tournament has ended.
+const TourneyResults = ({ detail }) => {
+  const matches = detail.matches || [];
+  const rounds = [...new Set(matches.map((m) => m.roundNumber))].sort((a, b) => a - b);
+  if (matches.length === 0) return null;
+  return (
+    <Card style={styles.section}>
+      <Text style={styles.sectionTitle}>Games</Text>
+      {rounds.map((r) => (
+        <View key={r} style={styles.scoreGame}>
+          <Text style={styles.netLabel}>Round {r}</Text>
+          {matches.filter((m) => m.roundNumber === r).map((m) => {
+            const done = m.teamAScore != null && m.teamBScore != null;
+            const aWon = done && m.teamAScore > m.teamBScore;
+            const bWon = done && m.teamBScore > m.teamAScore;
+            return (
+              <View key={m.id} style={styles.scoreRow}>
+                <Text style={[styles.scoreTeam, styles.scoreTeamLeft, aWon && styles.scoreTeamTextWin]} numberOfLines={2}>{m.teamAName}</Text>
+                <Text style={styles.resultScore}>{m.teamAScore ?? '–'} : {m.teamBScore ?? '–'}</Text>
+                <Text style={[styles.scoreTeam, styles.scoreTeamRight, bWon && styles.scoreTeamTextWin]} numberOfLines={2}>{m.teamBName}</Text>
+              </View>
+            );
+          })}
+        </View>
+      ))}
+    </Card>
+  );
+};
+
 const EndTournament = ({ detail, onChange }) => {
   const { notify } = useNotifications();
   const [confirming, setConfirming] = useState(false);
@@ -408,9 +478,11 @@ const TourneyDetailScreen = ({ route }) => {
         <Text style={styles.sub}>{detail.playerCount} players · to {detail.pointsToWin}{detail.mode !== 'HISTORICAL' && detail.courtCount ? ` · ${detail.courtCount} net${detail.courtCount > 1 ? 's' : ''}` : ''}</Text>
       </View>
       <TourneyScoreboard standings={detail.playerStandings} />
-      {detail.mode === 'HISTORICAL'
-        ? <HistoricalEditor detail={detail} onChange={load} />
-        : <LiveRunner detail={detail} onChange={load} />}
+      {detail.status === 'COMPLETE'
+        ? <TourneyResults detail={detail} />
+        : detail.mode === 'HISTORICAL'
+          ? <HistoricalEditor detail={detail} onChange={load} />
+          : <LiveRunner detail={detail} onChange={load} />}
       <EndTournament detail={detail} onChange={load} />
     </Screen>
   );
@@ -437,7 +509,10 @@ const styles = StyleSheet.create({
   addNetText: { color: colors.textMuted, fontWeight: '800' },
   netLabel: { ...text.muted, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' },
   teamRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  team: { flex: 1, gap: spacing.xs },
+  team: { gap: spacing.xs },
+  teamColumn: { flex: 1, minWidth: 0, gap: spacing.xs, padding: spacing.xs, borderRadius: radius.sm },
+  teamColumnWin: { backgroundColor: colors.accentSoft },
+  scoreInputWide: { width: 84, alignSelf: 'center' },
   vs: { ...text.muted, fontWeight: '700' },
   byesCard: { gap: spacing.xs, padding: spacing.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderStrong, borderRadius: radius.md, borderStyle: 'dashed' },
   byesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
@@ -457,6 +532,7 @@ const styles = StyleSheet.create({
   scoreInputBox: { textAlign: 'center', paddingHorizontal: 4, minHeight: 44 },
   scoreInputWin: { color: colors.accent, borderColor: colors.accent, fontWeight: '800' },
   scoreDash: { ...text.muted },
+  resultScore: { color: colors.text, fontWeight: '800', fontVariant: ['tabular-nums'], paddingHorizontal: spacing.sm },
   slotRow: { flexDirection: 'row', gap: spacing.xs },
   slot: { flex: 1, padding: spacing.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: radius.sm, backgroundColor: colors.surfaceSoft, gap: 2 },
   slotLabel: { ...text.muted, fontSize: 10, textTransform: 'uppercase', fontWeight: '800' },
