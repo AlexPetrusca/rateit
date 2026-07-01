@@ -30,6 +30,7 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
   selectedRef.current = selected;
   const last = useRef({ x: 0, y: 0 });
   const dragInfo = useRef(null);
+  const boardRef = useRef(null);
   const pan = useRef(new Animated.ValueXY()).current;
 
   const assignedIds = useMemo(() => {
@@ -39,7 +40,15 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
   }, [nets]);
   const pool = participants.filter((p) => !assignedIds.has(p.id));
 
-  const positionGhost = (x, y) => pan.setValue({ x: x - 46, y: y - 20 });
+  // Position the ghost (absolute inside the board) under the pointer. Using the
+  // board's live viewport offset makes it stick to the finger regardless of page
+  // scroll or transformed ancestors (which break position:fixed).
+  const positionGhost = (x, y) => {
+    const r = boardRef.current?.getBoundingClientRect?.();
+    const ox = r ? r.left : 0;
+    const oy = r ? r.top : 0;
+    pan.setValue({ x: x - ox - 46, y: y - oy - 18 });
+  };
 
   const place = (player, fromZone, target) => {
     if (!target || target === fromZone) return;
@@ -124,7 +133,7 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
   );
 
   return (
-    <View style={styles.board}>
+    <View ref={boardRef} style={styles.board}>
       <View style={styles.tabs}>
         {nets.map((n, i) => (
           <Pressable key={i} onPress={() => setSelected(i)} style={[styles.tab, i === selected && styles.tabActive]}>
@@ -185,7 +194,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
   smallBtn: { minHeight: 40, paddingVertical: 9, paddingHorizontal: spacing.lg },
   smallBtnText: { fontSize: 14, lineHeight: 17 },
-  ghost: { position: 'fixed', top: 0, left: 0, zIndex: 9999, minHeight: 40, paddingHorizontal: spacing.md, justifyContent: 'center', borderRadius: radius.pill, backgroundColor: colors.accent, boxShadow: '0 6px 16px rgba(0,0,0,0.4)' },
+  ghost: { position: 'absolute', top: 0, left: 0, zIndex: 9999, minHeight: 40, paddingHorizontal: spacing.md, justifyContent: 'center', borderRadius: radius.pill, backgroundColor: colors.accent, boxShadow: '0 6px 16px rgba(0,0,0,0.4)' },
   ghostText: { color: '#ffffff', fontWeight: '800' }
 });
 
