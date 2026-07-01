@@ -111,7 +111,7 @@ const ProfileScreen = ({ navigation, route }) => {
 
   const header = profile ? (
     <View style={styles.profileHeader}>
-      <Card style={styles.profileCard}>
+      <Card style={[styles.profileCard, isOwnProfile && styles.profileCardOwn]}>
         {profile.tourneyElo != null ? (
           isOwnProfile ? (
             <Pressable
@@ -154,9 +154,7 @@ const ProfileScreen = ({ navigation, route }) => {
               <Text style={styles.countLabel}>Followers</Text>
             </Pressable>
           </View>
-          {isOwnProfile ? (
-            <AppButton label="Sign out" variant="ghost" onPress={logout} style={styles.profileAction} />
-          ) : (
+          {isOwnProfile ? null : (
             <AppButton
               label={profile.followRelation === 'FOLLOWING' ? 'Following' : 'Follow'}
               variant={profile.followRelation === 'FOLLOWING' ? 'secondary' : 'primary'}
@@ -166,6 +164,9 @@ const ProfileScreen = ({ navigation, route }) => {
             />
           )}
         </View>
+        {isOwnProfile ? (
+          <AppButton label="Sign out" variant="ghost" onPress={logout} style={styles.signOutButton} />
+        ) : null}
       </Card>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Posts</Text>
@@ -236,6 +237,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderRadius: 20
+  },
+  // Extra room at the bottom so the absolutely-positioned Sign out button
+  // (pinned to the card's bottom-left corner) doesn't overlap the counts row.
+  profileCardOwn: {
+    paddingBottom: spacing.xl + spacing.lg
   },
   profileCopy: {
     flex: 1,
@@ -315,6 +321,16 @@ const styles = StyleSheet.create({
     minHeight: 40,
     paddingVertical: 9,
     paddingHorizontal: spacing.lg
+  },
+  signOutButton: {
+    position: 'absolute',
+    zIndex: 1,
+    elevation: 1,
+    left: spacing.lg,
+    bottom: spacing.sm,
+    minHeight: 36,
+    paddingVertical: 7,
+    paddingHorizontal: spacing.md
   },
   sectionHeader: {
     flexDirection: 'row',
