@@ -23,10 +23,17 @@ const RatingFeedItem = ({
   openCardOnlyWhenTruncated = false,
   showReply = false,
   commentOpensRerate = false,
+  onCommentOpen,
+  commentNumberOfLines,
+  renderTopicRatings,
   cardStyle
 }) => {
   const [activeEditKey, setActiveEditKey] = useState(null);
   const [editDrafts, setEditDrafts] = useState({});
+  const [showTopicRatings, setShowTopicRatings] = useState(false);
+  // Topic fan-out mode: the bubble shows the topic's rating count and expands to
+  // all ratings on the topic instead of this rating's comments.
+  const topicFanOut = Boolean(renderTopicRatings);
   const comments = interactions.commentsByRating[item.ratingId] || [];
   const isCommentsOpen = interactions.expandedRatings.includes(item.ratingId);
   const rootComposerKey = interactions.getComposerKey(item.ratingId, 'comment');
@@ -97,6 +104,8 @@ const RatingFeedItem = ({
     );
   };
 
+  const topicFanOutContent = topicFanOut && showTopicRatings ? renderTopicRatings(item) : null;
+
   const expandedContent = isCommentsOpen && (comments.length > 0 || isRootComposerOpen) ? (
     <View style={{ gap: 8 }}>
       {comments.length > 0 ? (
@@ -138,6 +147,8 @@ const RatingFeedItem = ({
           }}
           expandedReplyKeys={interactions.expandedReplyKeys}
           onToggleReplies={interactions.toggleReplies}
+          onCommentPress={onCommentOpen ? (comment) => onCommentOpen(item, comment) : undefined}
+          commentNumberOfLines={commentNumberOfLines}
         />
       ) : null}
       {isRootComposerOpen ? renderCommentComposer() : null}
@@ -181,18 +192,22 @@ const RatingFeedItem = ({
           <PostActions
             liked={item.likedByCurrentUser}
             likeCount={item.likeCount}
-            commentCount={item.commentCount}
+            commentCount={topicFanOut ? (item.rateableItem?.ratingCount ?? item.commentCount) : item.commentCount}
             onLike={() => interactions.toggleLike(item)}
             onRerate={() => interactions.toggleRerateComposer(item)}
-            onComment={commentOpensRerate ? () => interactions.toggleRerateComposer(item) : toggleComments}
+            onComment={topicFanOut
+              ? () => setShowTopicRatings((open) => !open)
+              : commentOpensRerate ? () => interactions.toggleRerateComposer(item) : toggleComments}
             onReply={showReply ? () => interactions.openCommentComposer(item.ratingId) : undefined}
             onEdit={canEdit ? () => onEditPress?.(item.ratingId) : undefined}
             shareUrl={shareUrl}
-            commentLabel={isCommentsOpen ? 'Hide comments' : 'Comments'}
+            commentLabel={topicFanOut
+              ? (showTopicRatings ? 'Hide ratings' : 'Ratings')
+              : (isCommentsOpen ? 'Hide comments' : 'Comments')}
             replyLabel="Reply"
           />
         )}
-        expandedContent={expandedContent}
+        expandedContent={topicFanOut ? topicFanOutContent : expandedContent}
       />
       {rerateComposer ? <View style={{ marginTop: 16 }}>{rerateComposer}</View> : null}
     </View>

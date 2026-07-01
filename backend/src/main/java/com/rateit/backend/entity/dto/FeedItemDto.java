@@ -24,13 +24,23 @@ public record FeedItemDto(
     Scale ratingScale
 ) {
     public static FeedItemDto fromRating(Rating rating) {
-        return fromRating(rating, 0, 0, false);
+        return fromRating(rating, 0, 0, 0, false);
     }
 
     public static FeedItemDto fromRating(
         Rating rating,
         long likeCount,
         long commentCount,
+        boolean likedByCurrentUser
+    ) {
+        return fromRating(rating, likeCount, commentCount, 0, likedByCurrentUser);
+    }
+
+    public static FeedItemDto fromRating(
+        Rating rating,
+        long likeCount,
+        long commentCount,
+        long ratingCount,
         boolean likedByCurrentUser
     ) {
         User author = rating.getAuthorUser();
@@ -58,7 +68,8 @@ public record FeedItemDto(
                 item.getId(),
                 item.getItemType(),
                 ratingDeleted ? "This post has been deleted." : item.getBody(),
-                ratingDeleted || mediaAsset == null ? null : mediaAsset.getObjectKey()
+                ratingDeleted || mediaAsset == null ? null : mediaAsset.getObjectKey(),
+                ratingCount
             ),
             new Scale(
                 scale.getName(),
@@ -80,7 +91,8 @@ public record FeedItemDto(
         Long id,
         RateableItemType type,
         String body,
-        String mediaObjectKey
+        String mediaObjectKey,
+        long ratingCount
     ) {
     }
 

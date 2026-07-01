@@ -215,6 +215,16 @@ public class FeedService {
                 row -> ((Number) row[1]).longValue()
             ));
 
+        List<Long> rateableItemIds = ratings.stream()
+            .map(rating -> rating.getRateableItem().getId())
+            .distinct()
+            .toList();
+        Map<Long, Long> ratingCounts = ratingRepository.countVisibleByRateableItemIds(rateableItemIds, Visibility.PUBLIC).stream()
+            .collect(Collectors.toMap(
+                row -> ((Number) row[0]).longValue(),
+                row -> ((Number) row[1]).longValue()
+            ));
+
         Set<Long> likedRatingIds = ratingLikeRepository.findLikedRatingIdsByUserAndRatingIds(currentUser, ratingIds)
             .stream()
             .collect(Collectors.toSet());
@@ -224,6 +234,7 @@ public class FeedService {
                 rating,
                 likeCounts.getOrDefault(rating.getId(), 0L),
                 commentCounts.getOrDefault(rating.getId(), 0L),
+                ratingCounts.getOrDefault(rating.getRateableItem().getId(), 0L),
                 likedRatingIds.contains(rating.getId())
             ))
             .toList();

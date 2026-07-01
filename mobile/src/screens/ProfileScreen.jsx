@@ -5,6 +5,7 @@ import Card from '../components/Card.jsx';
 import HandDrawnIcon from '../components/HandDrawnIcon.jsx';
 import FeedList from '../components/FeedList.jsx';
 import RatingFeedItem from '../components/RatingFeedItem.jsx';
+import TopicRatingsInline from '../components/TopicRatingsInline.jsx';
 import Screen from '../components/Screen.jsx';
 import UserAvatar from '../components/UserAvatar.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -188,8 +189,16 @@ const ProfileScreen = ({ navigation, route }) => {
               rateableItemId: post.rateableItem?.id,
               openReviewId: post.ratingId
             })}
+            renderTopicRatings={(it) => (
+              <TopicRatingsInline
+                rateableItemId={it.rateableItem?.id}
+                excludeRatingId={it.ratingId}
+                currentUserId={currentUserId}
+                notify={notify}
+                navigation={navigation}
+              />
+            )}
             onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
-            commentOpensRerate
           />
         )}
         ListHeaderComponent={header}

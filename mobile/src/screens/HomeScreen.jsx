@@ -3,6 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import FeedList from '../components/FeedList.jsx';
 import RatingFeedItem from '../components/RatingFeedItem.jsx';
 import Screen from '../components/Screen.jsx';
+import TopicRatingsInline from '../components/TopicRatingsInline.jsx';
 import StoryBar from '../components/StoryBar.jsx';
 import { getRatingShareUrl } from '../config.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -145,8 +146,16 @@ const HomeScreen = ({ navigation, route }) => {
             reviewNumberOfLines={6}
             openCardOnlyWhenTruncated
             showReply={false}
-            commentOpensRerate
             refresh={refresh}
+            renderTopicRatings={(it) => (
+              <TopicRatingsInline
+                rateableItemId={it.rateableItem?.id}
+                excludeRatingId={it.ratingId}
+                currentUserId={user?.userId ?? user?.id}
+                notify={notify}
+                navigation={navigation}
+              />
+            )}
             onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
             onTopicPress={(rateableItemId) => navigation.navigate('Topic', { rateableItemId })}
             onCardPress={(post) => navigation.navigate('Topic', {

@@ -140,6 +140,19 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     );
 
     @Query("""
+        select r.rateableItem.id, count(r)
+        from Rating r
+        where r.rateableItem.id in :rateableItemIds
+          and r.visibility = :visibility
+          and r.deletedAt is null
+        group by r.rateableItem.id
+        """)
+    List<Object[]> countVisibleByRateableItemIds(
+        @Param("rateableItemIds") java.util.Collection<Long> rateableItemIds,
+        @Param("visibility") Visibility visibility
+    );
+
+    @Query("""
         select avg(r.score)
         from Rating r
         where r.rateableItem.id = :rateableItemId
