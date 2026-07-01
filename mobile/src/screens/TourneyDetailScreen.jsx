@@ -46,6 +46,31 @@ const LiveRunner = ({ detail, onChange }) => {
   const latestRound = rounds.length ? rounds[rounds.length - 1] : 0;
   const latestMatches = useMemo(() => matches.filter((m) => m.roundNumber === latestRound), [matches, latestRound]);
   const scoringActive = latestRound > 0 && latestMatches.some((m) => !m.completed);
+  const pointsToWin = detail.pointsToWin || 15;
+
+  // A team "wins" once it reaches the winning score; only one side can.
+  const winnerSide = (s) => {
+    const aWin = Number(s?.a) >= pointsToWin;
+    const bWin = Number(s?.b) >= pointsToWin;
+    if (aWin && !bWin) return 'a';
+    if (bWin && !aWin) return 'b';
+    return null;
+  };
+
+  // Picking a winner (tap or typing the winning score) locks their score to the
+  // winning score and clears the other side if it was also at/above it.
+  const setWinner = (matchId, side) => setScores((cur) => {
+    const s = { ...(cur[matchId] || { a: '', b: '' }) };
+    if (side === 'a') { s.a = String(pointsToWin); if (Number(s.b) >= pointsToWin) s.b = ''; }
+    else { s.b = String(pointsToWin); if (Number(s.a) >= pointsToWin) s.a = ''; }
+    return { ...cur, [matchId]: s };
+  });
+
+  const changeScore = (matchId, side, value) => {
+    const digits = value.replace(/[^0-9]/g, '');
+    if (digits !== '' && Number(digits) >= pointsToWin) { setWinner(matchId, side); return; }
+    setScores((cur) => ({ ...cur, [matchId]: { ...(cur[matchId] || { a: '', b: '' }), [side]: digits } }));
+  };
 
   const [round, setRound] = useState(null); // editable proposed groupings
   const [lifted, setLifted] = useState(null);
@@ -98,11 +123,14 @@ const LiveRunner = ({ detail, onChange }) => {
   };
 
   const finishRound = async () => {
-    const missing = latestMatches.some((m) => {
+    const invalid = latestMatches.some((m) => {
       const s = scores[m.id] || {};
-      return s.a === '' || s.b === '' || s.a == null || s.b == null;
+      const w = winnerSide(s);
+      if (!w) return true; // one team must reach the winning score
+      const loser = w === 'a' ? s.b : s.a;
+      return loser === '' || loser == null; // the losing team still needs a score
     });
-    if (missing) { notify({ message: 'Enter a score for every game.', type: 'warning' }); return; }
+    if (invalid) { notify({ message: `Each game needs a winner (${pointsToWin}) and the other team's score.`, type: 'warning' }); return; }
     setBusy(true);
     try {
       for (const m of latestMatches) {
@@ -124,30 +152,39 @@ const LiveRunner = ({ detail, onChange }) => {
     return (
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>Round {latestRound} · enter scores</Text>
-        {latestMatches.map((m) => (
-          <View key={m.id} style={styles.scoreGame}>
-            <Text style={styles.netLabel}>{m.court || 'Net'}</Text>
-            <View style={styles.scoreRow}>
-              <Text style={styles.scoreTeam} numberOfLines={2}>{m.teamAName}</Text>
-              <AppTextInput
-                value={(scores[m.id]?.a) ?? ''}
-                onChangeText={(v) => setScores((cur) => ({ ...cur, [m.id]: { ...cur[m.id], a: v.replace(/[^0-9]/g, '') } }))}
-                keyboardType="number-pad"
-                style={styles.scoreInput}
-                inputStyle={styles.scoreInputBox}
-              />
-              <Text style={styles.scoreDash}>–</Text>
-              <AppTextInput
-                value={(scores[m.id]?.b) ?? ''}
-                onChangeText={(v) => setScores((cur) => ({ ...cur, [m.id]: { ...cur[m.id], b: v.replace(/[^0-9]/g, '') } }))}
-                keyboardType="number-pad"
-                style={styles.scoreInput}
-                inputStyle={styles.scoreInputBox}
-              />
-              <Text style={styles.scoreTeam} numberOfLines={2}>{m.teamBName}</Text>
+        <Text style={styles.hint}>Tap the winning team (or type {pointsToWin}); enter the other team&apos;s score.</Text>
+        {latestMatches.map((m) => {
+          const s = scores[m.id] || { a: '', b: '' };
+          const w = winnerSide(s);
+          const cell = (side, name) => {
+            const isWin = w === side;
+            return (
+              <View style={styles.teamCell}>
+                <Pressable onPress={() => setWinner(m.id, side)} style={[styles.teamPill, isWin && styles.teamPillWin]}>
+                  <Text style={[styles.teamPillText, isWin && styles.teamPillTextWin]} numberOfLines={2}>{name}</Text>
+                </Pressable>
+                <AppTextInput
+                  value={isWin ? String(pointsToWin) : (s[side] ?? '')}
+                  editable={!isWin}
+                  onChangeText={(v) => changeScore(m.id, side, v)}
+                  keyboardType="number-pad"
+                  style={styles.scoreInput}
+                  inputStyle={[styles.scoreInputBox, isWin && styles.scoreInputWin]}
+                />
+              </View>
+            );
+          };
+          return (
+            <View key={m.id} style={styles.scoreGame}>
+              <Text style={styles.netLabel}>{m.court || 'Net'}</Text>
+              <View style={styles.scoreRow}>
+                {cell('a', m.teamAName)}
+                <Text style={styles.scoreDash}>–</Text>
+                {cell('b', m.teamBName)}
+              </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
         <AppButton label="Finish round" onPress={finishRound} loading={busy} />
       </Card>
     );
@@ -328,11 +365,17 @@ const styles = StyleSheet.create({
   chipText: { color: colors.text, fontWeight: '700' },
   chipTextLifted: { color: '#ffffff' },
   scoreGame: { gap: spacing.xs },
-  scoreRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  scoreRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs },
   scoreTeam: { flex: 1, minWidth: 0, color: colors.text, fontWeight: '700', fontSize: 13 },
   scoreInput: { width: 52 },
   scoreInputBox: { textAlign: 'center', paddingHorizontal: 4, minHeight: 44 },
-  scoreDash: { ...text.muted },
+  scoreInputWin: { color: colors.textSubtle, backgroundColor: colors.surfaceMuted },
+  scoreDash: { ...text.muted, marginTop: 10 },
+  teamCell: { flex: 1, minWidth: 0, alignItems: 'center', gap: spacing.xs },
+  teamPill: { width: '100%', minHeight: 40, paddingHorizontal: spacing.sm, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, backgroundColor: colors.surfaceSoft },
+  teamPillWin: { backgroundColor: '#e7c14a', borderColor: '#e7c14a' },
+  teamPillText: { color: colors.text, fontWeight: '700', fontSize: 13, textAlign: 'center' },
+  teamPillTextWin: { color: '#1a1400' },
   slotRow: { flexDirection: 'row', gap: spacing.xs },
   slot: { flex: 1, padding: spacing.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: radius.sm, backgroundColor: colors.surfaceSoft, gap: 2 },
   slotLabel: { ...text.muted, fontSize: 10, textTransform: 'uppercase', fontWeight: '800' },
