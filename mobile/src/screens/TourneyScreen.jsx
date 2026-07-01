@@ -6,6 +6,7 @@ import Card from '../components/Card.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import Screen from '../components/Screen.jsx';
 import StatusMessage from '../components/StatusMessage.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import BackendApiService from '../services/BackendApiService.js';
 import { colors, spacing, text } from '../theme.js';
@@ -29,6 +30,8 @@ const formatTournamentDate = (value) => {
 
 const TourneyScreen = ({ navigation }) => {
   const { notify } = useNotifications();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ROLE_ADMIN';
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -60,12 +63,14 @@ const TourneyScreen = ({ navigation }) => {
             <Text style={styles.eyebrow}>Tourney</Text>
             <Text style={styles.title}>Past tournaments</Text>
           </View>
-          <AppButton
-            label="Create"
-            onPress={() => navigation.navigate('TourneyCreate')}
-            style={styles.createButton}
-            textStyle={styles.createButtonText}
-          />
+          {isAdmin ? (
+            <AppButton
+              label="Create"
+              onPress={() => navigation.navigate('TourneyCreate')}
+              style={styles.createButton}
+              textStyle={styles.createButtonText}
+            />
+          ) : null}
         </View>
       </View>
       <StatusMessage message={error} type="error" />

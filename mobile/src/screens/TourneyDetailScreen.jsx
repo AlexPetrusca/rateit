@@ -5,8 +5,10 @@ import AppButton from '../components/AppButton.jsx';
 import AppTextInput from '../components/AppTextInput.jsx';
 import Card from '../components/Card.jsx';
 import Screen from '../components/Screen.jsx';
+import TourneyHistoricalCreator from '../components/TourneyHistoricalCreator.jsx';
 import TourneyScoreboard from '../components/TourneyScoreboard.jsx';
 import UserAvatar from '../components/UserAvatar.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import BackendApiService from '../services/BackendApiService.js';
 import { proposeNextRound } from '../utils/tourneyPairing.js';
@@ -764,6 +766,8 @@ const TourneyMenu = ({ onEdit, onDelete }) => {
 const TourneyDetailScreen = ({ route, navigation }) => {
   const tournamentId = route.params?.tournamentId;
   const { notify } = useNotifications();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ROLE_ADMIN';
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -795,13 +799,16 @@ const TourneyDetailScreen = ({ route, navigation }) => {
   }
   if (!detail) return null;
 
-  if (editing) {
+  if (editing && isAdmin) {
     return (
       <Screen>
         <TourneyEditor detail={detail} onDone={() => { setEditing(false); load(); }} onCancel={() => setEditing(false)} />
       </Screen>
     );
   }
+
+  // Non-admins get a read-only view: leaderboard + game-by-game, no editing.
+  const hideScoreboard = isAdmin && detail.mode === 'HISTORICAL' && detail.status !== 'COMPLETE';
 
   return (
     <Screen>
@@ -811,15 +818,17 @@ const TourneyDetailScreen = ({ route, navigation }) => {
           <Text style={styles.title}>{detail.name}</Text>
           <Text style={styles.sub}>{detail.playerCount} players · to {detail.pointsToWin}{detail.mode !== 'HISTORICAL' && detail.courtCount ? ` · ${detail.courtCount} net${detail.courtCount > 1 ? 's' : ''}` : ''}</Text>
         </View>
-        {detail.status === 'COMPLETE' ? (
+        {isAdmin && detail.status === 'COMPLETE' ? (
           <TourneyMenu onEdit={() => setEditing(true)} onDelete={deleteTournament} />
         ) : null}
       </View>
-      <TourneyScoreboard standings={detail.playerStandings} />
-      {detail.status === 'COMPLETE' ? (
+      {hideScoreboard ? null : <TourneyScoreboard standings={detail.playerStandings} />}
+      {!isAdmin ? (
+        <TourneyResults detail={detail} />
+      ) : detail.status === 'COMPLETE' ? (
         <TourneyResults detail={detail} />
       ) : detail.mode === 'HISTORICAL' ? (
-        <TourneyEditor detail={detail} showMeta={false} markComplete onDone={load} />
+        <TourneyHistoricalCreator detail={detail} onDone={load} />
       ) : (
         <>
           <LiveRunner detail={detail} onChange={load} />

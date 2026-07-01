@@ -23,6 +23,7 @@ import com.rateit.backend.entity.rest.SaveTourneyTournamentRequest;
 import com.rateit.backend.entity.rest.UpdateTourneyMatchScoreRequest;
 import com.rateit.backend.entity.types.Resource;
 import com.rateit.backend.entity.types.TourneyTournamentFormat;
+import com.rateit.backend.entity.types.UserRoles;
 import com.rateit.backend.entity.types.TourneyTournamentMode;
 import com.rateit.backend.entity.types.TourneyTournamentStatus;
 import com.rateit.backend.exception.AuthorizationException;
@@ -88,6 +89,7 @@ public class TourneyService {
 
     @Transactional
     public TourneyPlayerDto createPlayer(SaveTourneyPlayerRequest request, String phoneNumber) {
+        requireAdmin(phoneNumber);
         User owner = userService.findByPhoneNumber(phoneNumber);
         User criticUser = request.criticUserId() == null ? null : userService.findById(request.criticUserId());
         TourneyPlayer player = TourneyPlayer.builder()
@@ -101,8 +103,8 @@ public class TourneyService {
 
     @Transactional(readOnly = true)
     public List<TourneyTournamentDto> listTournaments(String phoneNumber) {
-        User owner = userService.findByPhoneNumber(phoneNumber);
-        return tournamentRepository.findByOwnerUserOrderByTournamentDateDescCreatedAtDesc(owner)
+        userService.findByPhoneNumber(phoneNumber); // auth check; tournaments are viewable by everyone
+        return tournamentRepository.findAllByOrderByTournamentDateDescCreatedAtDesc()
             .stream()
             .map(tournament -> TourneyTournamentDto.summary(
                 tournament,
@@ -115,6 +117,7 @@ public class TourneyService {
 
     @Transactional
     public TourneyTournamentDto createTournament(SaveTourneyTournamentRequest request, String phoneNumber) {
+        requireAdmin(phoneNumber);
         User owner = userService.findByPhoneNumber(phoneNumber);
         TourneyTournament tournament = TourneyTournament.builder()
             .ownerUser(owner)
@@ -149,7 +152,10 @@ public class TourneyService {
 
     @Transactional(readOnly = true)
     public TourneyTournamentDto getTournamentDetail(Long tournamentId, String phoneNumber) {
-        return buildDetail(findOwnedTournament(tournamentId, phoneNumber));
+        userService.findByPhoneNumber(phoneNumber); // auth check; any user may view a tournament
+        TourneyTournament tournament = tournamentRepository.findById(tournamentId)
+            .orElseThrow(() -> ResourceNotFoundException.resource(Resource.TOURNEY_TOURNAMENT, tournamentId));
+        return buildDetail(tournament);
     }
 
     @Transactional
@@ -429,7 +435,17 @@ public class TourneyService {
         return player;
     }
 
+    private void requireAdmin(String phoneNumber) {
+        User user = userService.findByPhoneNumber(phoneNumber);
+        if (!UserRoles.ADMIN.equals(user.getRole())) {
+            throw AuthorizationException.forbidden("Only admins can manage tournaments");
+        }
+    }
+
+    // Every mutation resolves the tournament through here, so admin enforcement
+    // lives in one place. Reads use a separate lookup that skips this check.
     private TourneyTournament findOwnedTournament(Long tournamentId, String phoneNumber) {
+        requireAdmin(phoneNumber);
         TourneyTournament tournament = tournamentRepository.findById(tournamentId)
             .orElseThrow(() -> ResourceNotFoundException.resource(Resource.TOURNEY_TOURNAMENT, tournamentId));
         User owner = userService.findByPhoneNumber(phoneNumber);

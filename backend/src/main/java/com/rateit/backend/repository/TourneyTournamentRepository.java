@@ -8,4 +8,6 @@ import java.util.List;
 
 public interface TourneyTournamentRepository extends JpaRepository<TourneyTournament, Long> {
     List<TourneyTournament> findByOwnerUserOrderByTournamentDateDescCreatedAtDesc(User ownerUser);
+
+    List<TourneyTournament> findAllByOrderByTournamentDateDescCreatedAtDesc();
 }
