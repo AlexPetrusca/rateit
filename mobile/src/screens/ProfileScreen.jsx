@@ -190,6 +190,11 @@ const ProfileScreen = ({ navigation, route }) => {
               rateableItemId: post.rateableItem?.id,
               openReviewId: post.ratingId
             })}
+            onCommentOpen={(post, comment) => navigation.navigate('Topic', {
+              rateableItemId: post.rateableItem?.id,
+              openReviewId: post.ratingId,
+              highlightCommentId: comment?.id
+            })}
             renderTopicRatings={(it, suppressComposer) => (
               <TopicRatingsInline
                 rateableItemId={it.rateableItem?.id}

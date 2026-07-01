@@ -164,6 +164,11 @@ const HomeScreen = ({ navigation, route }) => {
               rateableItemId: post.rateableItem?.id,
               openReviewId: post.ratingId
             })}
+            onCommentOpen={(post, comment) => navigation.navigate('Topic', {
+              rateableItemId: post.rateableItem?.id,
+              openReviewId: post.ratingId,
+              highlightCommentId: comment?.id
+            })}
             onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
             shareUrl={getRatingShareUrl(item.rateableItem?.id, item.ratingId)}
           />
