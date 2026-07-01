@@ -8,7 +8,7 @@ import { colors, radius, spacing, text } from '../theme.js';
 // than PanResponder, which didn't reliably deliver continuous moves on web.
 // touchAction:'none' stops the browser from hijacking the touch as a scroll.
 // Players with a Critic account show a profile-pic circle; chips already placed
-// in a net show an "x" to send them back to the buys pool without dragging.
+// in a net show an "x" to send them back to the byes pool without dragging.
 const DraggableChip = memo(({ player, zone, onPickup, onRemove }) => (
   <View
     style={styles.chip}
@@ -114,7 +114,7 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
     document.addEventListener('pointercancel', onUp);
   }).current;
 
-  // Tap the "x" on a placed chip to send it back to the buys pool. Stable so
+  // Tap the "x" on a placed chip to send it back to the byes pool. Stable so
   // memoized chips don't re-render.
   const removeChip = useRef((player, fromZone) => {
     const sel = selectedRef.current;
@@ -175,7 +175,7 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
       </View>
 
       <View nativeID="tzone-pool" style={styles.pool}>
-        <Text style={styles.zoneLabel}>Buys</Text>
+        <Text style={styles.zoneLabel}>Byes</Text>
         <View style={styles.zoneList}>
           {pool.length === 0 ? <Text style={styles.zoneEmpty}>Everyone is placed.</Text> : pool.map((p) => (
             <DraggableChip key={p.id} player={p} zone="pool" onPickup={onPickup} />
