@@ -10,4 +10,6 @@ public interface TourneyTournamentRepository extends JpaRepository<TourneyTourna
     List<TourneyTournament> findByOwnerUserOrderByTournamentDateDescCreatedAtDesc(User ownerUser);
 
     List<TourneyTournament> findAllByOrderByTournamentDateDescCreatedAtDesc();
+
+    List<TourneyTournament> findAllByOrderByTournamentDateAscCreatedAtAscIdAsc();
 }

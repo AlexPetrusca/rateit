@@ -2,6 +2,7 @@ package com.rateit.backend.service;
 
 import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.Follow;
+import com.rateit.backend.entity.TourneyPlayerRating;
 import com.rateit.backend.entity.types.UserRoles;
 import com.rateit.backend.entity.dto.AdminDeleteUsersResultDto;
 import com.rateit.backend.entity.dto.UserProfileDto;
@@ -21,8 +22,10 @@ import com.rateit.backend.repository.RatingCommentRepository;
 import com.rateit.backend.repository.RatingLikeRepository;
 import com.rateit.backend.repository.RatingRepository;
 import com.rateit.backend.repository.RatingScaleRepository;
+import com.rateit.backend.repository.TourneyPlayerRatingRepository;
 import com.rateit.backend.repository.UserRepository;
 import com.rateit.backend.repository.UserExternalAccountRepository;
+import com.rateit.backend.service.TourneyEloService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,6 +53,7 @@ public class UserService {
     private final FollowRepository followRepository;
     private final FriendshipRepository friendshipRepository;
     private final ExternalReviewRepository externalReviewRepository;
+    private final TourneyPlayerRatingRepository tourneyPlayerRatingRepository;
     private final AdminPostService adminPostService;
 
     public List<User> getAll() {
@@ -139,7 +144,8 @@ public class UserService {
             user,
             getFollowRelation(currentUser, user),
             followRepository.countByFollowedUser(user),
-            followRepository.countByFollowerUser(user)
+            followRepository.countByFollowerUser(user),
+            getTourneyElo(user)
         );
     }
 
@@ -203,6 +209,16 @@ public class UserService {
         return findByPhoneNumberIncludingDeleted(phoneNumber)
             .filter(user -> user.getDeletedAt() == null)
             .orElseThrow(() -> ResourceNotFoundException.user(phoneNumber));
+    }
+
+    private BigDecimal getTourneyElo(User user) {
+        return tourneyPlayerRatingRepository.findAllByCriticUserIdAndRatingSystemOrderByLastRatedAtDescRatingDescIdAsc(
+                user.getId(),
+                TourneyEloService.RATING_SYSTEM
+            ).stream()
+            .findFirst()
+            .map(TourneyPlayerRating::getRating)
+            .orElse(null);
     }
 
     public Optional<User> findByPhoneNumberIncludingDeleted(String phoneNumber) {

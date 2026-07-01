@@ -93,6 +93,7 @@ Use the shared components below before creating new copies:
 - Clicking a post opens the shared topic page for that rated item.
 - User profiles expose only public-safe profile information: avatar, username, handle, and visible posts.
 - Mobile profiles mirror the frontend banner with avatar, username, handle, follower/following counts, a post total, settings for the signed-in user, and a directly accessible sign-out action.
+- The trophy button on the signed-in user's mobile profile opens a Tourney dashboard with tournaments played, points, games won, partner win-streaks, tournaments won, average placement, and a tournament-level Elo graph; the dashboard links onward to the full tournament list.
 - The profile editor starts as a focused page for updating the signed-in user's profile picture, including square crop/size controls before upload.
 - The post editor lets the signed-in author update the topic text, review text, and rating score, and it conditionally tombstones the post only when comment threads still need to stay intact.
 - The backlog page renders the `To Do` section from `wiki/build-status.md` as a readable in-app project board.

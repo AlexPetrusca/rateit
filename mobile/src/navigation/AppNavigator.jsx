@@ -26,7 +26,9 @@ import SearchUsersScreen from '../screens/SearchUsersScreen.jsx';
 import SuggestionSubmitScreen from '../screens/SuggestionSubmitScreen.jsx';
 import TopicScreen from '../screens/TopicScreen.jsx';
 import TourneyCreateScreen from '../screens/TourneyCreateScreen.jsx';
+import TourneyDashboardScreen from '../screens/TourneyDashboardScreen.jsx';
 import TourneyDetailScreen from '../screens/TourneyDetailScreen.jsx';
+import TourneyLeaderboardScreen from '../screens/TourneyLeaderboardScreen.jsx';
 import TourneyScreen from '../screens/TourneyScreen.jsx';
 import { APP_PUBLIC_URL } from '../config.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -60,6 +62,8 @@ const linking = {
       Backlog: 'backlog',
       SuggestionSubmit: 'suggestions/new',
       Tourney: 'tourney',
+      TourneyDashboard: 'tourney/dashboard',
+      TourneyLeaderboard: 'tourney/leaderboard',
       TourneyCreate: 'tourney/new',
       TourneyDetail: 'tournaments/:tournamentId',
       InstallInfo: 'install'
@@ -84,6 +88,18 @@ const webTabIcons = {
   Create: require('../../assets/tab-icons/create_hd.png'),
   Search: require('../../assets/tab-icons/search_hd.png'),
   Me: require('../../assets/tab-icons/profile_hd.png')
+};
+
+const tourneyTabIcons = {
+  TourneyDashboard: require('../../assets/tab-icons/tourney-dashboard.png'),
+  Tourney: require('../../assets/tab-icons/tourney-list.png'),
+  TourneyLeaderboard: require('../../assets/tab-icons/tourney-trophy.png')
+};
+
+const webTourneyTabIcons = {
+  TourneyDashboard: require('../../assets/tab-icons/tourney-dashboard_hd.png'),
+  Tourney: require('../../assets/tab-icons/tourney-list_hd.png'),
+  TourneyLeaderboard: require('../../assets/tab-icons/tourney-trophy_hd.png')
 };
 
 const tabOptions = ({ route }) => {
@@ -118,12 +134,14 @@ const tabOptions = ({ route }) => {
 };
 
 const TAB_NAMES = Object.keys(tabIcons);
-const SLOT_W = 320 / TAB_NAMES.length; // 64
+const TOURNEY_TAB_NAMES = Object.keys(tourneyTabIcons);
+const WEB_NAV_W = 320;
 const BUBBLE_W = 40;
 
-const WebNavBar = ({ activeTab, onNavigate }) => {
+const WebNavBar = ({ activeTab, onNavigate, tabNames = TAB_NAMES, icons = webTabIcons }) => {
   const [hidden, setHidden] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(() => Math.max(0, TAB_NAMES.indexOf(activeTab)));
+  const slotWidth = WEB_NAV_W / tabNames.length;
+  const [activeIndex, setActiveIndex] = useState(() => Math.max(0, tabNames.indexOf(activeTab)));
 
   useEffect(() => {
     const handler = ({ detail }) => setHidden(detail === 'down');
@@ -133,21 +151,29 @@ const WebNavBar = ({ activeTab, onNavigate }) => {
 
   // Sync bubble to nav state for back/forward + deep links; press sets it instantly.
   useEffect(() => {
-    const idx = TAB_NAMES.indexOf(activeTab);
+    const idx = tabNames.indexOf(activeTab);
     if (idx >= 0) setActiveIndex(idx);
-  }, [activeTab]);
+  }, [activeTab, tabNames]);
 
   return (
     <View style={[styles.webTabBar, hidden && styles.webTabBarHidden]}>
-      <View style={[styles.bubble, { transform: [{ translateX: activeIndex * SLOT_W }] }]} />
-      {TAB_NAMES.map((name, i) => (
+      <View
+        style={[
+          styles.bubble,
+          {
+            left: (slotWidth - BUBBLE_W) / 2,
+            transform: [{ translateX: activeIndex * slotWidth }]
+          }
+        ]}
+      />
+      {tabNames.map((name, i) => (
         <Pressable
           key={name}
           style={styles.webTabItem}
           onPress={() => { setHidden(false); setActiveIndex(i); onNavigate(name); }}
         >
           <View style={styles.webTabIconWrap}>
-            <Image source={webTabIcons[name]} style={styles.webTabIcon} />
+            <Image source={icons[name]} style={styles.webTabIcon} />
           </View>
         </Pressable>
       ))}
@@ -186,7 +212,9 @@ const AppNavigator = () => {
   const isAdmin = user?.role === 'ROLE_ADMIN';
   const navigationRef = useNavigationContainerRef();
   const [activeTab, setActiveTab] = useState('Home');
+  const [activeTourneyTab, setActiveTourneyTab] = useState('TourneyDashboard');
   const [showNav, setShowNav] = useState(true);
+  const [showTourneyNav, setShowTourneyNav] = useState(false);
 
   const handleStateChange = useCallback(() => {
     // getCurrentRoute() returns the deepest focused route, regardless of how the
@@ -195,6 +223,9 @@ const AppNavigator = () => {
     const name = navigationRef.getCurrentRoute?.()?.name;
     if (TAB_NAMES.includes(name)) {
       setActiveTab(name);
+    }
+    if (TOURNEY_TAB_NAMES.includes(name)) {
+      setActiveTourneyTab(name);
     }
     setShowNav(
       name !== 'Topic'
@@ -205,10 +236,15 @@ const AppNavigator = () => {
       // full-screen flow — hide the main nav bar.
       && !String(name || '').startsWith('Tourney')
     );
+    setShowTourneyNav(TOURNEY_TAB_NAMES.includes(name));
   }, [navigationRef]);
 
   const navigateToTab = useCallback((name) => {
     navigationRef.navigate('MainTabs', { screen: name });
+  }, [navigationRef]);
+
+  const navigateToTourneyTab = useCallback((name) => {
+    navigationRef.navigate(name);
   }, [navigationRef]);
 
   if (isLoading) {
@@ -255,7 +291,9 @@ const AppNavigator = () => {
             <Stack.Screen name="Menu" component={MenuScreen} />
             <Stack.Screen name="Backlog" component={BacklogScreen} />
             <Stack.Screen name="SuggestionSubmit" component={SuggestionSubmitScreen} options={{ title: 'Suggestion' }} />
+            <Stack.Screen name="TourneyDashboard" component={TourneyDashboardScreen} />
             <Stack.Screen name="Tourney" component={TourneyScreen} />
+            <Stack.Screen name="TourneyLeaderboard" component={TourneyLeaderboardScreen} />
             <Stack.Screen name="TourneyCreate" component={TourneyCreateScreen} />
             <Stack.Screen name="TourneyDetail" component={TourneyDetailScreen} />
             <Stack.Screen name="InstallInfo" component={InstallInfoScreen} options={{ title: 'Install' }} />
@@ -273,6 +311,14 @@ const AppNavigator = () => {
         )}
       </Stack.Navigator>
       {Platform.OS === 'web' && isAuthenticated && showNav && <WebNavBar activeTab={activeTab} onNavigate={navigateToTab} />}
+      {Platform.OS === 'web' && isAuthenticated && showTourneyNav ? (
+        <WebNavBar
+          activeTab={activeTourneyTab}
+          onNavigate={navigateToTourneyTab}
+          tabNames={TOURNEY_TAB_NAMES}
+          icons={webTourneyTabIcons}
+        />
+      ) : null}
     </NavigationContainer>
   );
 };
@@ -288,9 +334,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: '50%',
     bottom: 18,
-    width: 320,
+    width: WEB_NAV_W,
     height: 58,
-    marginLeft: -160,
+    marginLeft: -(WEB_NAV_W / 2),
     zIndex: 9999,
     flexDirection: 'row',
     paddingVertical: 5,
@@ -319,7 +365,6 @@ const styles = StyleSheet.create({
   bubble: {
     position: 'absolute',
     top: 9,
-    left: (SLOT_W - BUBBLE_W) / 2,
     width: BUBBLE_W,
     height: BUBBLE_W,
     borderRadius: BUBBLE_W / 2,

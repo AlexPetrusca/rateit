@@ -34,12 +34,19 @@ public class TourneyEloEvent extends BaseEntity {
     @JoinColumn(name = "match_id")
     private TourneyMatch match;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tournament_id")
+    private TourneyTournament tournament;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type", nullable = false)
     private TourneyEloEventType eventType;
 
     @Column(name = "rating_system", nullable = false)
     private String ratingSystem;
+
+    @Column(name = "event_order")
+    private Long eventOrder;
 
     @Column(name = "rating_before", nullable = false, precision = 10, scale = 2)
     private BigDecimal ratingBefore;

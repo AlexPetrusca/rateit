@@ -19,6 +19,7 @@ import com.rateit.backend.repository.RatingCommentRepository;
 import com.rateit.backend.repository.RatingLikeRepository;
 import com.rateit.backend.repository.RatingRepository;
 import com.rateit.backend.repository.RatingScaleRepository;
+import com.rateit.backend.repository.TourneyPlayerRatingRepository;
 import com.rateit.backend.repository.UserRepository;
 import com.rateit.backend.repository.UserExternalAccountRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -82,6 +83,9 @@ class UserServiceTest {
     private ExternalReviewRepository externalReviewRepository;
 
     @Mock
+    private TourneyPlayerRatingRepository tourneyPlayerRatingRepository;
+
+    @Mock
     private AdminPostService adminPostService;
 
     private UserService userService;
@@ -101,6 +105,7 @@ class UserServiceTest {
             followRepository,
             friendshipRepository,
             externalReviewRepository,
+            tourneyPlayerRatingRepository,
             adminPostService
         );
     }
@@ -174,6 +179,7 @@ class UserServiceTest {
         assertEquals(FollowRelation.SELF, profile.followRelation());
         assertEquals(0, profile.followerCount());
         assertEquals(0, profile.followingCount());
+        assertEquals(null, profile.tourneyElo());
     }
 
     @Test

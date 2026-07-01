@@ -137,6 +137,10 @@ const BackendApiService = {
 
   getTourneyCriticUsers: () => request('/api/tourney/critic-users', {}, 'Failed to fetch critic users'),
 
+  getMyTourneyEloHistory: () => request('/api/tourney/elo/me', {}, 'Failed to fetch Elo history'),
+
+  getTourneyLeaderboard: () => request('/api/tourney/leaderboard', {}, 'Failed to fetch leaderboard'),
+
   createTourneyPlayer: (playerData) => request('/api/tourney/players', {
     method: 'POST',
     body: jsonBody(playerData)

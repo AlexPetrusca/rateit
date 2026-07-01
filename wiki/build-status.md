@@ -52,6 +52,8 @@ Maintenance rule: keep this page current when features are started, completed, d
 
 ## Completed
 
+- The profile trophy now opens a Tourney metrics dashboard with tournaments played, total points, games won, partner win-streaks, tournaments won, average placement, and a tournament-level Elo graph, with a link through to the tournament list.
+- Partner-swap Elo now regenerates from tournament history after tournament edits, with everyone starting at 1000 and score margin used as a capped secondary delta multiplier.
 - Added a single-node remote deployment preset that disables the local-only mocker backend, ingress controller, metrics sidecars, and heavier observability workloads so the app can fit on a small remote node.
 - Local backend startup with Java 25 in WSL.
 - The create-account setup now expands inline on the login page after OTP verification instead of sending verified users to a separate handoff screen.

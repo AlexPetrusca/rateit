@@ -112,25 +112,33 @@ const ProfileScreen = ({ navigation, route }) => {
   const header = profile ? (
     <View style={styles.profileHeader}>
       <Card style={styles.profileCard}>
+        {profile.tourneyElo != null ? (
+          isOwnProfile ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open tourney dashboard"
+              onPress={() => navigation.navigate('TourneyDashboard')}
+              style={({ pressed }) => [styles.tourneyBadge, styles.tourneyBadgeOwn, pressed && styles.profileIconButtonPressed]}
+            >
+              <Text style={styles.tourneyBadgeText}>ELO {Math.round(profile.tourneyElo)}</Text>
+              <HandDrawnIcon name="tourneyTrophy" color={colors.textMuted} size={18} />
+            </Pressable>
+          ) : (
+            <View style={[styles.tourneyBadge, styles.tourneyBadgeOther]}>
+              <Text style={styles.tourneyBadgeText}>ELO {Math.round(profile.tourneyElo)}</Text>
+              <HandDrawnIcon name="tourneyTrophy" color={colors.textMuted} size={18} />
+            </View>
+          )
+        ) : null}
         {isOwnProfile ? (
-          <>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Open tourney"
-              onPress={() => navigation.navigate('Tourney')}
-              style={({ pressed }) => [styles.tourneyButton, pressed && styles.profileIconButtonPressed]}
-            >
-              <Text style={styles.tourneyIcon}>🏆</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Open settings"
-              onPress={() => (navigation.getParent() || navigation).navigate('ProfileEditor')}
-              style={({ pressed }) => [styles.settingsButton, pressed && styles.profileIconButtonPressed]}
-            >
-              <HandDrawnIcon name="gear" color={colors.textMuted} />
-            </Pressable>
-          </>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open settings"
+            onPress={() => (navigation.getParent() || navigation).navigate('ProfileEditor')}
+            style={({ pressed }) => [styles.settingsButton, pressed && styles.profileIconButtonPressed]}
+          >
+            <HandDrawnIcon name="gear" color={colors.textMuted} />
+          </Pressable>
         ) : null}
         <UserAvatar username={profile.username} profilePicUrl={profile.profilePicUrl} size={width < 375 ? 'lg' : 'xl'} />
         <View style={[styles.profileCopy, isOwnProfile && styles.profileCopyOwn]}>
@@ -236,7 +244,7 @@ const styles = StyleSheet.create({
     paddingTop: 2
   },
   profileCopyOwn: {
-    paddingRight: 82
+    paddingRight: 132
   },
   name: {
     ...text.h2
@@ -271,24 +279,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 22
   },
-  tourneyButton: {
+  profileIconButtonPressed: {
+    backgroundColor: colors.surfacePressed
+  },
+  tourneyBadge: {
     position: 'absolute',
     zIndex: 1,
     elevation: 1,
     top: spacing.sm,
-    right: spacing.sm + 48,
-    width: 44,
-    height: 44,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 22
+    gap: 8,
+    height: 44,
+    paddingHorizontal: 12,
+    borderRadius: 22,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.borderStrong
   },
-  profileIconButtonPressed: {
-    backgroundColor: colors.surfacePressed
+  tourneyBadgeOwn: {
+    right: spacing.sm + 48
   },
-  tourneyIcon: {
-    fontSize: 23,
-    lineHeight: 28
+  tourneyBadgeOther: {
+    right: spacing.sm
+  },
+  tourneyBadgeText: {
+    color: colors.text,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '800',
+    letterSpacing: 0
   },
   profileAction: {
     alignSelf: 'flex-start',

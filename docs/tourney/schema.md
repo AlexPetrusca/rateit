@@ -48,13 +48,16 @@ Tournament standings:
 - Team standings are derived by team from matches.
 - Player standings are derived by expanding each match to the two players on each side.
 
-## Future Elo
+## Elo
 
 `tourney_player_ratings`
 - Current rating per player and rating system.
-- Starts with player Elo, but can support other systems by `rating_system`.
+- Current partner-swap Elo uses `partner_swap_elo_v1`.
+- Players start at 1000.
+- Ratings are derived state and are regenerated from tournament history after tournament/match mutations.
 
 `tourney_elo_events`
 - Rating history/event log.
 - Can link to a match for match-result updates or stand alone for manual adjustments.
 - Stores rating before, rating after, and delta so ratings are auditable.
+- Events store a deterministic `event_order`; graph dots are reduced to one post-tournament point per tournament.

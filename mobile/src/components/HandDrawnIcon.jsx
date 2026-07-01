@@ -20,6 +20,7 @@ const icons = {
   reply: require('../../assets/icons/reply.png'),
   search: require('../../assets/icons/search.png'),
   share: require('../../assets/icons/share.png'),
+  tourneyTrophy: require('../../assets/tab-icons/tourney-trophy.png'),
   upload: require('../../assets/icons/upload.png'),
   x: require('../../assets/icons/x.png')
 };

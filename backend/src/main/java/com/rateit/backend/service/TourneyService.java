@@ -7,6 +7,8 @@ import com.rateit.backend.entity.TourneyTournament;
 import com.rateit.backend.entity.TourneyTournamentPlayer;
 import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.dto.TourneyCriticUserDto;
+import com.rateit.backend.entity.dto.TourneyLeaderboardRowDto;
+import com.rateit.backend.entity.dto.TourneyEloPointDto;
 import com.rateit.backend.entity.dto.TourneyMatchDto;
 import com.rateit.backend.entity.dto.TourneyPlayerDto;
 import com.rateit.backend.entity.dto.TourneyPlayerStandingDto;
@@ -58,6 +60,7 @@ public class TourneyService {
     private final TourneyMatchRepository matchRepository;
     private final UserService userService;
     private final UserRepository userRepository;
+    private final TourneyEloService tourneyEloService;
 
     @Transactional(readOnly = true)
     public List<TourneyPlayerDto> listPlayers(String phoneNumber) {
@@ -85,6 +88,16 @@ public class TourneyService {
             .sorted(Comparator.comparing(TourneyCriticUserDto::playedBefore).reversed()
                 .thenComparing(dto -> dto.username() == null ? "" : dto.username().toLowerCase()))
             .toList();
+    }
+
+    @Transactional
+    public List<TourneyEloPointDto> getMyEloHistory(String phoneNumber) {
+        return tourneyEloService.getMyEloHistory(phoneNumber);
+    }
+
+    @Transactional
+    public List<TourneyLeaderboardRowDto> getLeaderboard() {
+        return tourneyEloService.getLeaderboard();
     }
 
     @Transactional
@@ -132,7 +145,9 @@ public class TourneyService {
             .notes(trimToNull(request.notes()))
             .build();
 
-        return getTournamentDetail(tournamentRepository.save(tournament).getId(), phoneNumber);
+        TourneyTournament saved = tournamentRepository.save(tournament);
+        tourneyEloService.regenerateAll();
+        return getTournamentDetail(saved.getId(), phoneNumber);
     }
 
     @Transactional
@@ -147,6 +162,7 @@ public class TourneyService {
         tournament.setCourtCount(request.courtCount() == null ? tournament.getCourtCount() : request.courtCount());
         tournament.setPointsToWin(request.pointsToWin() == null ? tournament.getPointsToWin() : request.pointsToWin());
         tournament.setNotes(trimToNull(request.notes()));
+        tourneyEloService.regenerateAll();
         return buildDetail(tournament);
     }
 
@@ -279,6 +295,7 @@ public class TourneyService {
             tournament.setStatus(TourneyTournamentStatus.ACTIVE);
         }
 
+        tourneyEloService.regenerateAll();
         return buildDetail(tournament);
     }
 
@@ -299,6 +316,7 @@ public class TourneyService {
         match.setTeamAScore(request.teamAScore());
         match.setTeamBScore(request.teamBScore());
         match.setCourt(trimToNull(request.court()));
+        tourneyEloService.regenerateAll();
         return buildDetail(tournament);
     }
 
@@ -337,6 +355,7 @@ public class TourneyService {
         if (tournament.getStatus() == TourneyTournamentStatus.DRAFT && !toSave.isEmpty()) {
             tournament.setStatus(TourneyTournamentStatus.ACTIVE);
         }
+        tourneyEloService.regenerateAll();
         return buildDetail(tournament);
     }
 
@@ -402,6 +421,7 @@ public class TourneyService {
             }
         }
         matchRepository.saveAll(toSave);
+        tourneyEloService.regenerateAll();
         return buildDetail(tournament);
     }
 
@@ -413,6 +433,7 @@ public class TourneyService {
         tournamentPlayerRepository.deleteAll(
             tournamentPlayerRepository.findByTournamentOrderBySeedNumberAscCreatedAtAsc(tournament));
         tournamentRepository.delete(tournament);
+        tourneyEloService.regenerateAll();
     }
 
     @Transactional
@@ -424,6 +445,7 @@ public class TourneyService {
             throw ResourceNotFoundException.resource(Resource.TOURNEY_MATCH, matchId);
         }
         matchRepository.delete(match);
+        tourneyEloService.regenerateAll();
         return buildDetail(tournament);
     }
 

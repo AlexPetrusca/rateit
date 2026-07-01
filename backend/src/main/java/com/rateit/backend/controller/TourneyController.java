@@ -1,6 +1,8 @@
 package com.rateit.backend.controller;
 
 import com.rateit.backend.entity.dto.TourneyCriticUserDto;
+import com.rateit.backend.entity.dto.TourneyLeaderboardRowDto;
+import com.rateit.backend.entity.dto.TourneyEloPointDto;
 import com.rateit.backend.entity.dto.TourneyPlayerDto;
 import com.rateit.backend.entity.dto.TourneyTournamentDto;
 import com.rateit.backend.entity.rest.AddTourneyTournamentPlayerRequest;
@@ -42,6 +44,16 @@ public class TourneyController {
     @GetMapping("/critic-users")
     public ResponseEntity<List<TourneyCriticUserDto>> listCriticUsers(JwtAuthenticationToken token) {
         return ResponseEntity.ok(tourneyService.listCriticUsers(token.getToken().getSubject()));
+    }
+
+    @GetMapping("/elo/me")
+    public ResponseEntity<List<TourneyEloPointDto>> getMyEloHistory(JwtAuthenticationToken token) {
+        return ResponseEntity.ok(tourneyService.getMyEloHistory(token.getToken().getSubject()));
+    }
+
+    @GetMapping("/leaderboard")
+    public ResponseEntity<List<TourneyLeaderboardRowDto>> getLeaderboard(JwtAuthenticationToken token) {
+        return ResponseEntity.ok(tourneyService.getLeaderboard());
     }
 
     @PostMapping("/players")

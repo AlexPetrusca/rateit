@@ -112,12 +112,16 @@ Backend product behavior:
 
 Elo:
 
-- Rating tables exist for future Elo support.
-- Elo calculation and rating update workflows have not been implemented yet.
+- Partner-swap Elo is implemented as derived state under `partner_swap_elo_v1`.
+- Ratings regenerate whenever tournament history is created, edited, deleted, or rescored.
+- Regeneration processes tournaments by tournament date, then creation/id tiebreaks, then games by round/id.
+- Team win probability uses the average Elo of the two partners. Each player starts at 1000, and both partners receive the same per-match delta.
+- Score margin affects the delta through a capped multiplier, so margin matters but win/loss remains the dominant signal.
+- `/api/tourney/elo/me` returns the signed-in user's Elo graph points, one point per tournament.
 
 Testing:
 
-- Backend tests passed after the initial implementation.
+- Backend tests passed after the Elo implementation.
 - More focused tourney tests are still needed for schedule generation, standings, match scoring, and authorization.
 
 Git/deploy hygiene:
@@ -158,4 +162,3 @@ Root deploy can include the current Critic Expo frontend only when explicitly re
 ```bash
 ./deploy.sh --with-frontend
 ```
-
