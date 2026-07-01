@@ -569,7 +569,7 @@ public class TourneyService {
         Map<Long, MutableStanding> standings = new LinkedHashMap<>();
         tournamentPlayers.forEach(tp -> standings.put(
             tp.getPlayer().getId(),
-            new MutableStanding(tp.getPlayer().getId(), tp.getPlayer().getDisplayName())
+            new MutableStanding(tp.getPlayer().getId(), tp.getPlayer().getDisplayName(), profilePicOf(tp.getPlayer()))
         ));
 
         for (TourneyMatch match : matches) {
@@ -592,6 +592,10 @@ public class TourneyService {
             .sorted(STANDING_COMPARATOR)
             .map(MutableStanding::toPlayerDto)
             .toList();
+    }
+
+    private String profilePicOf(TourneyPlayer player) {
+        return player.getCriticUser() == null ? null : player.getCriticUser().getProfilePicUrl();
     }
 
     private static final Comparator<MutableStanding> STANDING_COMPARATOR = Comparator
@@ -635,6 +639,7 @@ public class TourneyService {
     private static class MutableStanding {
         private final Long id;
         private final String name;
+        private final String profilePicUrl;
         private int played;
         private int wins;
         private int losses;
@@ -642,8 +647,13 @@ public class TourneyService {
         private int pointsAgainst;
 
         MutableStanding(Long id, String name) {
+            this(id, name, null);
+        }
+
+        MutableStanding(Long id, String name, String profilePicUrl) {
             this.id = id;
             this.name = name;
+            this.profilePicUrl = profilePicUrl;
         }
 
         int wins() {
@@ -667,7 +677,7 @@ public class TourneyService {
         }
 
         TourneyPlayerStandingDto toPlayerDto() {
-            return new TourneyPlayerStandingDto(id, name, played, wins, losses, pointsFor, pointsAgainst, pointDifferential());
+            return new TourneyPlayerStandingDto(id, name, profilePicUrl, played, wins, losses, pointsFor, pointsAgainst, pointDifferential());
         }
     }
 }

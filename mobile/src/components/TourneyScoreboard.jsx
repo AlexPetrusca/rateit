@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Card from './Card.jsx';
+import UserAvatar from './UserAvatar.jsx';
 import { colors, spacing, text } from '../theme.js';
 
 // Players ranked by wins (tiebreak point differential) — playerStandings comes
@@ -18,6 +19,7 @@ const TourneyScoreboard = ({ standings = [], title = 'Scoreboard' }) => (
     ) : standings.map((s, i) => (
       <View key={s.playerId} style={styles.row}>
         <Text style={styles.rank}>{i + 1}</Text>
+        <UserAvatar username={s.playerName} profilePicUrl={s.profilePicUrl} size="sm" />
         <Text style={styles.name} numberOfLines={1}>{s.playerName}</Text>
         <View style={styles.statCols}>
           <Text style={styles.stat}>{s.wins}-{s.losses}</Text>

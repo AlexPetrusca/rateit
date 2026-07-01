@@ -136,7 +136,7 @@ public class TourneyEloService {
             Map<Long, MutableStanding> standings = buildPlayerStandings(tournamentPlayers, matches);
             int placement = 1;
             for (MutableStanding standing : standings.values().stream().sorted(PLAYER_STANDING_COMPARATOR).toList()) {
-                MutableLeaderboardRow row = rowsByPlayerId.computeIfAbsent(standing.id, ignored -> new MutableLeaderboardRow(standing.id, standing.name));
+                MutableLeaderboardRow row = rowsByPlayerId.computeIfAbsent(standing.id, ignored -> new MutableLeaderboardRow(standing.id, standing.name, standing.profilePicUrl));
                 row.tournamentsPlayed++;
                 row.totalPlacement += placement++;
                 row.wins += standing.wins();
@@ -166,6 +166,7 @@ public class TourneyEloService {
                 rank++,
                 row.playerId,
                 row.playerName,
+                row.profilePicUrl,
                 elo,
                 averagePlacement,
                 row.wins
@@ -214,7 +215,7 @@ public class TourneyEloService {
         Map<Long, MutableStanding> standings = new LinkedHashMap<>();
         tournamentPlayers.forEach(tp -> standings.put(
             tp.getPlayer().getId(),
-            new MutableStanding(tp.getPlayer().getId(), tp.getPlayer().getDisplayName())
+            new MutableStanding(tp.getPlayer().getId(), tp.getPlayer().getDisplayName(), profilePicOf(tp.getPlayer()))
         ));
 
         for (TourneyMatch match : matches) {
@@ -262,6 +263,10 @@ public class TourneyEloService {
 
     private double expectedScore(double teamRating, double opponentRating) {
         return 1.0 / (1.0 + Math.pow(10.0, (opponentRating - teamRating) / 400.0));
+    }
+
+    private String profilePicOf(TourneyPlayer player) {
+        return player.getCriticUser() == null ? null : player.getCriticUser().getProfilePicUrl();
     }
 
     private double marginMultiplier(int teamAScore, int teamBScore) {
@@ -315,15 +320,17 @@ public class TourneyEloService {
     private static class MutableStanding {
         private final Long id;
         private final String name;
+        private final String profilePicUrl;
         private int played;
         private int wins;
         private int losses;
         private int pointsFor;
         private int pointsAgainst;
 
-        MutableStanding(Long id, String name) {
+        MutableStanding(Long id, String name, String profilePicUrl) {
             this.id = id;
             this.name = name;
+            this.profilePicUrl = profilePicUrl;
         }
 
         int wins() {
@@ -346,12 +353,14 @@ public class TourneyEloService {
     private static class MutableLeaderboardRow {
         private final Long playerId;
         private final String playerName;
+        private final String profilePicUrl;
         private int tournamentsPlayed;
         private int totalPlacement;
         private int wins;
 
-        MutableLeaderboardRow(Long playerId, String playerName) {
+        MutableLeaderboardRow(Long playerId, String playerName, String profilePicUrl) {
             this.playerId = playerId;
+            this.profilePicUrl = profilePicUrl;
             this.playerName = playerName;
         }
     }

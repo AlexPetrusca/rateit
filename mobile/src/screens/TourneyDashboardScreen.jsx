@@ -6,6 +6,7 @@ import AppButton from '../components/AppButton.jsx';
 import Card from '../components/Card.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import Screen from '../components/Screen.jsx';
+import UserAvatar from '../components/UserAvatar.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import BackendApiService from '../services/BackendApiService.js';
@@ -293,6 +294,7 @@ const TourneyDashboardScreen = ({ navigation }) => {
             <ScrollView style={styles.streakList} nestedScrollEnabled showsVerticalScrollIndicator>
               {metrics.partnerStreaks.map(({ partner, streak }) => (
                 <View key={partner.id} style={styles.streakRow}>
+                  <UserAvatar username={partner.displayName} profilePicUrl={partner.profilePicUrl} size="sm" />
                   <Text style={styles.partnerName} numberOfLines={1}>{partner.displayName}</Text>
                   <Text style={styles.streakCount}>{streak}</Text>
                 </View>

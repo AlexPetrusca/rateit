@@ -3,6 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Card from '../components/Card.jsx';
 import Screen from '../components/Screen.jsx';
+import UserAvatar from '../components/UserAvatar.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import BackendApiService from '../services/BackendApiService.js';
 import { colors, radius, spacing, text } from '../theme.js';
@@ -97,6 +98,7 @@ const LeaderboardRow = ({ row, columnDefs, compact, displayRank }) => (
       <Text style={[styles.rankText, compact && styles.rankTextCompact]}>{displayRank}</Text>
     </View>
     <View style={[styles.cell, styles.playerCell, compact && styles.cellCompact, { width: columnDefs[1].width, flex: columnDefs[1].flex, minWidth: columnDefs[1].minWidth }]}>
+      <UserAvatar username={row.playerName} profilePicUrl={row.profilePicUrl} size={compact ? 24 : 28} />
       <Text style={[styles.playerText, compact && styles.playerTextCompact]} numberOfLines={1}>{row.playerName}</Text>
     </View>
     <View style={[styles.cell, styles.numericCell, compact && styles.cellCompact, { width: columnDefs[2].width }]}>
@@ -323,7 +325,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start'
   },
   playerCell: {
-    flexShrink: 1
+    flexShrink: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs
   },
   numericCell: {
     alignItems: 'flex-end'
@@ -340,6 +345,8 @@ const styles = StyleSheet.create({
     lineHeight: 15
   },
   playerText: {
+    flexShrink: 1,
+    minWidth: 0,
     color: colors.text,
     fontSize: 15,
     lineHeight: 19,
