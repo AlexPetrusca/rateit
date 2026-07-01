@@ -49,7 +49,13 @@ public class TourneyEloService {
     @Transactional(propagation = Propagation.MANDATORY)
     public void regenerateAll() {
         eloEventRepository.deleteByRatingSystem(RATING_SYSTEM);
+        eloEventRepository.flush();
         playerRatingRepository.deleteByRatingSystem(RATING_SYSTEM);
+        playerRatingRepository.flush();
+        // Without the flushes above, Hibernate's default action-queue ordering
+        // executes pending inserts before pending deletes, so the fresh rows
+        // saved below would violate the (player, rating_system) unique
+        // constraint against the not-yet-executed deletes of the old rows.
 
         Map<Long, MutableRating> ratings = new LinkedHashMap<>();
         List<TourneyEloEvent> events = new ArrayList<>();
