@@ -80,6 +80,31 @@ public class TourneyEloService {
             .toList());
     }
 
+    // Per-player Elo change within a single tournament: (rating after their last
+    // event in it) - (rating before their first event in it). For a tournament
+    // that isn't finished yet, this reflects the change from just the rounds
+    // committed so far, since events are regenerated after every write.
+    @Transactional
+    public Map<Long, BigDecimal> getEloDeltasForTournament(Long tournamentId) {
+        if (eloEventRepository.countByRatingSystem(RATING_SYSTEM) == 0) {
+            regenerateAll();
+        }
+
+        Map<Long, BigDecimal[]> beforeAfterByPlayerId = new LinkedHashMap<>();
+        for (TourneyEloEvent event : eloEventRepository.findByTournamentIdAndRatingSystemOrderByEventOrderAscIdAsc(tournamentId, RATING_SYSTEM)) {
+            Long playerId = event.getPlayer().getId();
+            BigDecimal[] beforeAfter = beforeAfterByPlayerId.computeIfAbsent(
+                playerId,
+                ignored -> new BigDecimal[]{event.getRatingBefore(), event.getRatingAfter()}
+            );
+            beforeAfter[1] = event.getRatingAfter();
+        }
+
+        Map<Long, BigDecimal> deltas = new LinkedHashMap<>();
+        beforeAfterByPlayerId.forEach((playerId, beforeAfter) -> deltas.put(playerId, beforeAfter[1].subtract(beforeAfter[0])));
+        return deltas;
+    }
+
     @Transactional
     public List<TourneyEloPointDto> getMyEloHistory(String phoneNumber) {
         if (eloEventRepository.countByRatingSystem(RATING_SYSTEM) == 0) {

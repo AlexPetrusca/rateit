@@ -220,7 +220,8 @@ const AppNavigator = () => {
     // getCurrentRoute() returns the deepest focused route, regardless of how the
     // state tree is nested (client nav vs deep link) — more reliable than parsing
     // state.routes[index] by hand.
-    const name = navigationRef.getCurrentRoute?.()?.name;
+    const route = navigationRef.getCurrentRoute?.();
+    const name = route?.name;
     if (TAB_NAMES.includes(name)) {
       setActiveTab(name);
     }
@@ -236,7 +237,10 @@ const AppNavigator = () => {
       // full-screen flow — hide the main nav bar.
       && !String(name || '').startsWith('Tourney')
     );
-    setShowTourneyNav(TOURNEY_TAB_NAMES.includes(name));
+    // An ended tournament's detail view is read-only, so it's safe to surface the
+    // tourney tab bar there too (TourneyDetailScreen sets this param once the
+    // tournament is COMPLETE), unlike an in-progress live/historical entry flow.
+    setShowTourneyNav(TOURNEY_TAB_NAMES.includes(name) || (name === 'TourneyDetail' && Boolean(route?.params?.tourneyNavVisible)));
   }, [navigationRef]);
 
   const navigateToTab = useCallback((name) => {

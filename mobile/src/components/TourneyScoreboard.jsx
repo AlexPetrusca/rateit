@@ -4,31 +4,40 @@ import UserAvatar from './UserAvatar.jsx';
 import { colors, spacing, text } from '../theme.js';
 
 // Players ranked by wins (tiebreak point differential) — playerStandings comes
-// pre-sorted from the backend.
+// pre-sorted from the backend. The second stat column is each player's Elo
+// change within this tournament (from just the rounds played so far, if live).
+const formatEloDelta = (value) => {
+  const rounded = Math.round(Number(value ?? 0));
+  return rounded > 0 ? `+${rounded}` : String(rounded);
+};
+
 const TourneyScoreboard = ({ standings = [], title = 'Scoreboard' }) => (
   <Card style={styles.card}>
     <View style={styles.headerRow}>
       <Text style={styles.title}>{title}</Text>
       <View style={styles.statCols}>
         <Text style={styles.statHead}>W-L</Text>
-        <Text style={styles.statHead}>+/-</Text>
+        <Text style={styles.statHead}>ELO</Text>
       </View>
     </View>
     {standings.length === 0 ? (
       <Text style={styles.muted}>No games played yet.</Text>
-    ) : standings.map((s, i) => (
-      <View key={s.playerId} style={styles.row}>
-        <Text style={styles.rank}>{i + 1}</Text>
-        <UserAvatar username={s.playerName} profilePicUrl={s.profilePicUrl} size="sm" />
-        <Text style={styles.name} numberOfLines={1}>{s.playerName}</Text>
-        <View style={styles.statCols}>
-          <Text style={styles.stat}>{s.wins}-{s.losses}</Text>
-          <Text style={[styles.stat, s.pointDifferential > 0 && styles.pos, s.pointDifferential < 0 && styles.neg]}>
-            {s.pointDifferential > 0 ? `+${s.pointDifferential}` : s.pointDifferential}
-          </Text>
+    ) : standings.map((s, i) => {
+      const eloDelta = Number(s.eloDelta ?? 0);
+      return (
+        <View key={s.playerId} style={styles.row}>
+          <Text style={styles.rank}>{i + 1}</Text>
+          <UserAvatar username={s.playerName} profilePicUrl={s.profilePicUrl} size="sm" />
+          <Text style={styles.name} numberOfLines={1}>{s.playerName}</Text>
+          <View style={styles.statCols}>
+            <Text style={styles.stat}>{s.wins}-{s.losses}</Text>
+            <Text style={[styles.stat, eloDelta > 0 && styles.pos, eloDelta < 0 && styles.neg]}>
+              {formatEloDelta(s.eloDelta)}
+            </Text>
+          </View>
         </View>
-      </View>
-    ))}
+      );
+    })}
   </Card>
 );
 

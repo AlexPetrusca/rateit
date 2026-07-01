@@ -11,6 +11,7 @@ public interface TourneyEloEventRepository extends JpaRepository<TourneyEloEvent
     List<TourneyEloEvent> findByPlayerOrderByCreatedAtDesc(TourneyPlayer player);
     List<TourneyEloEvent> findByMatch(TourneyMatch match);
     List<TourneyEloEvent> findByPlayerAndRatingSystemOrderByEventOrderAscIdAsc(TourneyPlayer player, String ratingSystem);
+    List<TourneyEloEvent> findByTournamentIdAndRatingSystemOrderByEventOrderAscIdAsc(Long tournamentId, String ratingSystem);
     long countByRatingSystem(String ratingSystem);
     void deleteByRatingSystem(String ratingSystem);
 }

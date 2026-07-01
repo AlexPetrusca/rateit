@@ -543,7 +543,7 @@ public class TourneyService {
             teamDtos,
             matchDtos,
             buildTeamStandings(teams, matches),
-            buildPlayerStandings(tournamentPlayers, matches)
+            buildPlayerStandings(tournament, tournamentPlayers, matches)
         );
     }
 
@@ -565,7 +565,7 @@ public class TourneyService {
             .toList();
     }
 
-    private List<TourneyPlayerStandingDto> buildPlayerStandings(List<TourneyTournamentPlayer> tournamentPlayers, List<TourneyMatch> matches) {
+    private List<TourneyPlayerStandingDto> buildPlayerStandings(TourneyTournament tournament, List<TourneyTournamentPlayer> tournamentPlayers, List<TourneyMatch> matches) {
         Map<Long, MutableStanding> standings = new LinkedHashMap<>();
         tournamentPlayers.forEach(tp -> standings.put(
             tp.getPlayer().getId(),
@@ -587,6 +587,9 @@ public class TourneyService {
                 }
             }
         }
+
+        Map<Long, java.math.BigDecimal> eloDeltas = tourneyEloService.getEloDeltasForTournament(tournament.getId());
+        standings.forEach((playerId, standing) -> standing.eloDelta = eloDeltas.get(playerId));
 
         return standings.values().stream()
             .sorted(STANDING_COMPARATOR)
@@ -645,6 +648,7 @@ public class TourneyService {
         private int losses;
         private int pointsFor;
         private int pointsAgainst;
+        private java.math.BigDecimal eloDelta;
 
         MutableStanding(Long id, String name) {
             this(id, name, null);
@@ -677,7 +681,7 @@ public class TourneyService {
         }
 
         TourneyPlayerStandingDto toPlayerDto() {
-            return new TourneyPlayerStandingDto(id, name, profilePicUrl, played, wins, losses, pointsFor, pointsAgainst, pointDifferential());
+            return new TourneyPlayerStandingDto(id, name, profilePicUrl, played, wins, losses, pointsFor, pointsAgainst, pointDifferential(), eloDelta);
         }
     }
 }

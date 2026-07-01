@@ -1,5 +1,7 @@
 package com.rateit.backend.entity.dto;
 
+import java.math.BigDecimal;
+
 public record TourneyPlayerStandingDto(
     Long playerId,
     String playerName,
@@ -9,6 +11,7 @@ public record TourneyPlayerStandingDto(
     int losses,
     int pointsFor,
     int pointsAgainst,
-    int pointDifferential
+    int pointDifferential,
+    BigDecimal eloDelta
 ) {
 }

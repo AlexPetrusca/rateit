@@ -269,9 +269,9 @@ const TourneyDashboardScreen = ({ navigation }) => {
           <Text style={styles.title}>Dashboard</Text>
         </View>
         <AppButton
-          label="Tournaments"
+          label="Back to Critic"
           variant="secondary"
-          onPress={() => navigation.navigate('Tourney')}
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
           style={styles.headerButton}
           textStyle={styles.headerButtonText}
         />
@@ -291,7 +291,7 @@ const TourneyDashboardScreen = ({ navigation }) => {
           {metrics.partnerStreaks.length === 0 ? (
             <Text style={styles.muted}>Win your latest game with a partner and they will show up here.</Text>
           ) : (
-            <ScrollView style={styles.streakList} nestedScrollEnabled showsVerticalScrollIndicator>
+            <ScrollView style={styles.streakList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
               {metrics.partnerStreaks.map(({ partner, streak }) => (
                 <View key={partner.id} style={styles.streakRow}>
                   <UserAvatar username={partner.displayName} profilePicUrl={partner.profilePicUrl} size="sm" />

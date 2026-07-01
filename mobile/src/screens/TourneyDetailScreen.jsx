@@ -784,6 +784,13 @@ const TourneyDetailScreen = ({ route, navigation }) => {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  // Surface the tourney tab bar for ended tournaments (a read-only view), so
+  // there's an easy way out besides the back button. Live/historical entry
+  // stays a full-screen flow with the bar hidden.
+  useEffect(() => {
+    navigation.setParams({ tourneyNavVisible: detail?.status === 'COMPLETE' });
+  }, [detail?.status, navigation]);
+
   const deleteTournament = useCallback(async () => {
     try {
       await BackendApiService.deleteTourneyTournament(tournamentId);
