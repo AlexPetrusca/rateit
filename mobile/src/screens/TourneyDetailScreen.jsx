@@ -106,6 +106,27 @@ const LiveRunner = ({ detail, onChange }) => {
     setLifted(null);
   };
 
+  // Remove a net: its players go back to byes (they sit this round out).
+  const removeNet = (index) => setRound((r) => {
+    const freed = [...r.games[index].teamA, ...r.games[index].teamB];
+    return {
+      ...r,
+      games: r.games.filter((_, i) => i !== index).map((g, i) => ({ ...g, net: i + 1 })),
+      byes: [...r.byes, ...freed]
+    };
+  });
+
+  // Add a net: pull 4 players out of byes into a new game.
+  const addNet = () => setRound((r) => {
+    if (r.byes.length < 4) { notify({ message: 'Need at least 4 byes to add a net.', type: 'warning' }); return r; }
+    const four = r.byes.slice(0, 4);
+    return {
+      ...r,
+      games: [...r.games, { net: r.games.length + 1, teamA: [four[0], four[1]], teamB: [four[2], four[3]] }],
+      byes: r.byes.slice(4)
+    };
+  });
+
   const startRound = async () => {
     if (!round || round.games.length === 0) {
       notify({ message: 'Not enough players for a game (need at least 4).', type: 'warning' });
@@ -195,7 +216,12 @@ const LiveRunner = ({ detail, onChange }) => {
       <Text style={styles.hint}>Tap a player, then tap another to swap them between games/byes.</Text>
       {(round?.games || []).map((g, i) => (
         <View key={i} style={styles.gameCard}>
-          <Text style={styles.netLabel}>Net {g.net}</Text>
+          <View style={styles.gameHeader}>
+            <Text style={styles.netLabel}>Net {g.net}</Text>
+            <Pressable onPress={() => removeNet(i)} hitSlop={8} style={styles.netRemove}>
+              <Text style={styles.netRemoveText}>×</Text>
+            </Pressable>
+          </View>
           <View style={styles.teamRow}>
             <View style={styles.team}>
               {g.teamA.map((p) => <PlayerChip key={p.id} player={p} lifted={lifted === p.id} onPress={() => tapPlayer(p.id)} />)}
@@ -207,6 +233,9 @@ const LiveRunner = ({ detail, onChange }) => {
           </View>
         </View>
       ))}
+      <Pressable onPress={addNet} style={styles.addNet}>
+        <Text style={styles.addNetText}>+ Add net</Text>
+      </Pressable>
       {(round?.byes?.length || 0) > 0 ? (
         <View style={styles.byesCard}>
           <Text style={styles.netLabel}>Byes</Text>
@@ -353,6 +382,11 @@ const styles = StyleSheet.create({
   sectionTitle: text.h3,
   hint: { ...text.muted, fontSize: 13 },
   gameCard: { gap: spacing.xs, padding: spacing.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surfaceSoft },
+  gameHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  netRemove: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
+  netRemoveText: { color: colors.textMuted, fontSize: 18, fontWeight: '800', lineHeight: 20 },
+  addNet: { minHeight: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderStrong, borderStyle: 'dashed' },
+  addNetText: { color: colors.textMuted, fontWeight: '800' },
   netLabel: { ...text.muted, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' },
   teamRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   team: { flex: 1, gap: spacing.xs },
