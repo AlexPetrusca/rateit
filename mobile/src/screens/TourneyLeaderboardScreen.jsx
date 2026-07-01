@@ -12,7 +12,6 @@ const SORT_DIRECTIONS = {
   rank: 'asc',
   playerName: 'asc',
   elo: 'desc',
-  averagePlacement: 'asc',
   wins: 'desc'
 };
 
@@ -22,14 +21,12 @@ const getColumnDefs = (compact) => (
         { key: 'rank', label: '', width: 34, align: 'center', sortable: false },
         { key: 'playerName', label: 'Player', flex: 1, minWidth: 104, align: 'left', sortable: true },
         { key: 'elo', label: 'ELO', width: 46, align: 'right', sortable: true },
-        { key: 'averagePlacement', label: 'Placement', width: 76, align: 'right', sortable: true },
         { key: 'wins', label: 'Wins', width: 44, align: 'right', sortable: true }
       ]
     : [
         { key: 'rank', label: '', width: 64, align: 'center', sortable: false },
         { key: 'playerName', label: 'Player', width: 190, flex: 1, align: 'left', sortable: true },
         { key: 'elo', label: 'ELO', width: 84, align: 'right', sortable: true },
-        { key: 'averagePlacement', label: 'Avg placement', width: 112, align: 'right', sortable: true },
         { key: 'wins', label: 'Wins', width: 92, align: 'right', sortable: true }
       ]
 );
@@ -44,12 +41,6 @@ const compareValues = (left, right, key, direction) => {
     result = leftValue - rightValue;
   }
   return direction === 'asc' ? result : -result;
-};
-
-const formatAveragePlacement = (value) => {
-  if (value == null || Number.isNaN(Number(value))) return '—';
-  const numeric = Number(value);
-  return numeric % 1 === 0 ? String(Math.round(numeric)) : numeric.toFixed(1);
 };
 
 const LeaderboardHeaderCell = ({ column, sortKey, onPress, compact }) => {
@@ -105,9 +96,6 @@ const LeaderboardRow = ({ row, columnDefs, compact, displayRank }) => (
       <Text style={[styles.numericText, compact && styles.numericTextCompact]}>{Math.round(Number(row.elo ?? 1000))}</Text>
     </View>
     <View style={[styles.cell, styles.numericCell, compact && styles.cellCompact, { width: columnDefs[3].width }]}>
-      <Text style={[styles.numericText, compact && styles.numericTextCompact]}>{formatAveragePlacement(row.averagePlacement)}</Text>
-    </View>
-    <View style={[styles.cell, styles.numericCell, compact && styles.cellCompact, { width: columnDefs[4].width }]}>
       <Text style={[styles.numericText, compact && styles.numericTextCompact]}>{row.wins}</Text>
     </View>
   </View>
@@ -328,6 +316,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
     gap: spacing.xs
   },
   numericCell: {
