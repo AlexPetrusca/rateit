@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import CommentThread from '../components/CommentThread.jsx';
 import RatingComposer from '../components/RatingComposer.jsx';
 import RatingFeedItem from '../components/RatingFeedItem.jsx';
 import HandDrawnIcon from '../components/HandDrawnIcon.jsx';
@@ -47,6 +48,7 @@ const TopicScreen = ({ navigation, route }) => {
   const [composerText, setComposerText] = useState('');
   const [saving, setSaving] = useState(false);
   const [openReview, setOpenReview] = useState(null);
+  const [highlightCommentId, setHighlightCommentId] = useState(null);
 
   const updateItem = useCallback((ratingId, updater) => {
     setItems((current) => current.map((item) => (item.ratingId === ratingId ? updater(item) : item)));
@@ -78,13 +80,30 @@ const TopicScreen = ({ navigation, route }) => {
     loadTopic();
   }, [loadTopic]);
 
+  // Deep link from a feed comment: open the rating modal and highlight the tapped
+  // comment. Consume the params once so reopening by tapping the rating later
+  // doesn't re-highlight/re-scroll.
   useEffect(() => {
     const openReviewId = route.params?.openReviewId;
+    if (openReviewId == null) {
+      return;
+    }
     const review = items.find((item) => String(item.ratingId) === String(openReviewId));
     if (review) {
       setOpenReview(review);
+      setHighlightCommentId(route.params?.highlightCommentId ?? null);
+      navigation.setParams({ openReviewId: undefined, highlightCommentId: undefined });
     }
-  }, [items, route.params?.openReviewId]);
+  }, [items, route.params?.openReviewId, route.params?.highlightCommentId, navigation]);
+
+  // Load the open review's comments so the modal can show them fully expanded.
+  const modalScrollRef = useRef(null);
+  useEffect(() => {
+    if (openReview) {
+      interactions.loadComments(openReview.ratingId, true).catch(() => {});
+    }
+  }, [openReview]); // eslint-disable-line react-hooks/exhaustive-deps
+  const modalComments = openReview ? (interactions.commentsByRating[openReview.ratingId] || []) : [];
 
   const topicTitle = topic?.title || topic?.body || items[0]?.rateableItem?.title || items[0]?.rateableItem?.body || 'Topic';
   const mediaObjectKey = topic?.mediaObjectKey || items[0]?.rateableItem?.mediaObjectKey;
@@ -132,7 +151,7 @@ const TopicScreen = ({ navigation, route }) => {
     }
   };
 
-  const closeReview = () => setOpenReview(null);
+  const closeReview = () => { setOpenReview(null); setHighlightCommentId(null); };
   const closeTopic = () => navigation.canGoBack()
     ? navigation.goBack()
     : navigation.navigate('MainTabs', { screen: 'Home' });
@@ -217,7 +236,7 @@ const TopicScreen = ({ navigation, route }) => {
               refresh={loadTopic}
               onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
               onTopicPress={() => null}
-              onCardPress={() => setOpenReview(item)}
+              onCardPress={() => { setOpenReview(item); setHighlightCommentId(null); }}
               onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
               showMedia={false}
               showTopicText={false}
@@ -272,8 +291,33 @@ const TopicScreen = ({ navigation, route }) => {
       >
         <Pressable style={styles.modalBackdrop} onPress={closeReview}>
           <Pressable style={styles.modalContent} onPress={(event) => event.stopPropagation()}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScroll}>
+            <ScrollView ref={modalScrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScroll}>
               <PostCard post={openReview} style={styles.modalCard} />
+              {modalComments.length > 0 ? (
+                <View style={styles.modalComments}>
+                  <CommentThread
+                    comments={modalComments}
+                    currentUserId={user?.userId ?? user?.id}
+                    highlightCommentId={highlightCommentId}
+                    scrollRef={modalScrollRef}
+                    autoExpandDepth={Infinity}
+                    autoExpandFlatLimit={Infinity}
+                    onAuthorPress={(userId) => { closeReview(); navigation.navigate('Profile', { userId }); }}
+                    onLikePress={async (comment) => {
+                      try {
+                        if (comment.likedByCurrentUser) {
+                          await BackendApiService.unlikeComment(comment.id);
+                        } else {
+                          await BackendApiService.likeComment(comment.id);
+                        }
+                        await interactions.loadComments(openReview.ratingId, true);
+                      } catch (error) {
+                        notify({ message: error.message || 'Failed to like comment', type: 'error' });
+                      }
+                    }}
+                  />
+                </View>
+              ) : null}
             </ScrollView>
             <Pressable
               accessibilityRole="button"
@@ -294,7 +338,12 @@ const TopicScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#090d16'
+    backgroundColor: '#090d16',
+    // Holding the image to peek would otherwise start a native text selection on
+    // iOS Safari. Inputs opt back in via AppTextInput's userSelect: 'text'.
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none'
   },
   hidden: {
     opacity: 0
@@ -419,6 +468,13 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     backgroundColor: 'rgba(22, 22, 25, 0.98)'
+  },
+  modalComments: {
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: 'rgba(22, 22, 25, 0.98)',
+    borderRadius: 22
   },
   modalClose: {
     position: 'absolute',

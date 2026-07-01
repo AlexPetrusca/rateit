@@ -144,16 +144,18 @@ const HomeScreen = ({ navigation, route }) => {
             currentUserId={user?.userId ?? user?.id}
             interactions={interactions}
             reviewNumberOfLines={6}
+            commentNumberOfLines={6}
             openCardOnlyWhenTruncated
             showReply={false}
             refresh={refresh}
-            renderTopicRatings={(it) => (
+            renderTopicRatings={(it, suppressComposer) => (
               <TopicRatingsInline
                 rateableItemId={it.rateableItem?.id}
                 excludeRatingId={it.ratingId}
                 currentUserId={user?.userId ?? user?.id}
                 notify={notify}
                 navigation={navigation}
+                suppressComposer={suppressComposer}
               />
             )}
             onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}

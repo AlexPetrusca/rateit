@@ -34,7 +34,9 @@ export function usePeekHold({ delay = 220, moveThreshold = 12, onTap } = {}) {
   }, [clearTimer, delay]);
 
   const onTouchMove = useCallback((e) => {
-    if (!start.current) return;
+    // Once the peek has fired, ignore movement — it stays open until release.
+    // Movement only matters beforehand, to tell a hold apart from a scroll/swipe.
+    if (!start.current || fired.current) return;
     const t = point(e);
     if (Math.abs(t.pageX - start.current.x) > moveThreshold
       || Math.abs(t.pageY - start.current.y) > moveThreshold) {

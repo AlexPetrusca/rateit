@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useRef } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import PostActions from './PostActions.jsx';
 import RichText from './RichText.jsx';
 import UserAvatar from './UserAvatar.jsx';
@@ -30,11 +31,39 @@ const CommentThread = ({
   renderEditComposer,
   expandedReplyKeys = [],
   onToggleReplies,
+  onCommentPress,
+  commentNumberOfLines,
+  highlightCommentId,
+  scrollRef,
   autoExpandDepth = 3,
   autoExpandFlatLimit = 8,
   currentUserId
 }) => {
   const expandedSet = new Set(expandedReplyKeys);
+  const highlightViewRef = useRef(null);
+  const scrolledForRef = useRef(null);
+  const highlightAnim = useRef(new Animated.Value(0)).current;
+  const highlightBg = highlightAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['rgba(255, 59, 69, 0)', 'rgba(255, 59, 69, 0.18)']
+  });
+
+  // On landing on the deep-linked comment (once): flash it red, fade back to
+  // transparent after a beat, and scroll it into view in the enclosing modal.
+  const scrollToHighlight = () => {
+    if (scrolledForRef.current === highlightCommentId) return;
+    scrolledForRef.current = highlightCommentId;
+
+    highlightAnim.setValue(1);
+    Animated.timing(highlightAnim, { toValue: 0, duration: 700, delay: 1000, useNativeDriver: false }).start();
+
+    const sr = scrollRef?.current;
+    const view = highlightViewRef.current;
+    if (!sr || !view?.measureLayout) return;
+    const node = sr.getInnerViewNode?.() ?? sr.getScrollableNode?.();
+    if (!node) return;
+    view.measureLayout(node, (x, y) => sr.scrollTo?.({ y: Math.max(0, y - 24), animated: true }), () => {});
+  };
 
   const renderComments = (threadComments, depth = 0, autoState = { depthRemaining: autoExpandDepth, budget: { remaining: autoExpandFlatLimit } }) => (
     threadComments.map((comment) => {
@@ -53,14 +82,27 @@ const CommentThread = ({
         ? { depthRemaining: autoState.depthRemaining - 1, budget: { remaining: autoState.budget.remaining - 1 } }
         : null;
       const canEdit = Boolean(onEditPress) && currentUserId != null && comment.author?.userId === currentUserId;
+      const isHighlight = highlightCommentId != null && String(comment.id) === String(highlightCommentId);
 
       return (
-        <View key={comment.id} style={[styles.comment, depth > 1 && { marginLeft: Math.min(24, (depth - 1) * 6) }]}>
+        <View
+          key={comment.id}
+          ref={isHighlight ? highlightViewRef : undefined}
+          onLayout={isHighlight ? scrollToHighlight : undefined}
+          style={[styles.comment, depth > 1 && { marginLeft: Math.min(24, (depth - 1) * 6) }, isHighlight && styles.commentHighlight]}
+        >
+          {isHighlight ? <Animated.View pointerEvents="none" style={[styles.commentHighlightLayer, { backgroundColor: highlightBg }]} /> : null}
           <View style={styles.row}>
             <UserAvatar username={comment.author?.username} profilePicUrl={comment.author?.profilePicUrl} size="sm" />
             <View style={styles.body}>
               <Text style={styles.author}>{comment.author?.username || 'Someone'}</Text>
-              <RichText style={styles.text}>{comment.text}</RichText>
+              {onCommentPress ? (
+                <Pressable onPress={() => onCommentPress(comment)}>
+                  <RichText style={styles.text} numberOfLines={commentNumberOfLines}>{comment.text}</RichText>
+                </Pressable>
+              ) : (
+                <RichText style={styles.text} numberOfLines={commentNumberOfLines}>{comment.text}</RichText>
+              )}
               <PostActions
                 liked={Boolean(comment.likedByCurrentUser)}
                 likeCount={comment.likeCount || 0}
@@ -97,6 +139,15 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
     gap: spacing.sm
+  },
+  commentHighlight: {
+    borderRadius: 12,
+    paddingHorizontal: spacing.sm,
+    marginHorizontal: -spacing.sm
+  },
+  commentHighlightLayer: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 12
   },
   row: {
     flexDirection: 'row',

@@ -10,12 +10,11 @@ const CommentComposer = ({
   nested = false
 }) => (
   <RatingComposer
-    title={nested ? 'Reply rating' : 'Your rating'}
     score={score}
     onScoreChange={onScoreChange}
     textValue={text}
     onTextChange={onTextChange}
-    placeholder={nested ? 'Reply in thread' : 'Add your take on this take'}
+    placeholder="Add your take on this take"
     submitLabel="Reply"
     onSubmit={onSubmit}
     loading={loading}

@@ -1,11 +1,12 @@
 import { memo, useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import CommentComposer from './CommentComposer.jsx';
 import CommentThread from './CommentThread.jsx';
 import PostActions from './PostActions.jsx';
 import PostCard from './PostCard.jsx';
 import RatingComposer from './RatingComposer.jsx';
 import BackendApiService from '../services/BackendApiService.js';
+import { colors, spacing } from '../theme.js';
 
 const RatingFeedItem = ({
   item,
@@ -30,9 +31,9 @@ const RatingFeedItem = ({
 }) => {
   const [activeEditKey, setActiveEditKey] = useState(null);
   const [editDrafts, setEditDrafts] = useState({});
-  const [showTopicRatings, setShowTopicRatings] = useState(false);
-  // Topic fan-out mode: the bubble shows the topic's rating count and expands to
-  // all ratings on the topic instead of this rating's comments.
+  // Topic fan-out: when provided, the bubble expands to show this rating's
+  // comments read-only (no composer/reply/edit — comments can only be written
+  // on the other ratings shown below) plus the topic's other ratings.
   const topicFanOut = Boolean(renderTopicRatings);
   const comments = interactions.commentsByRating[item.ratingId] || [];
   const isCommentsOpen = interactions.expandedRatings.includes(item.ratingId);
@@ -104,56 +105,97 @@ const RatingFeedItem = ({
     );
   };
 
-  const topicFanOutContent = topicFanOut && showTopicRatings ? renderTopicRatings(item) : null;
-
-  const expandedContent = isCommentsOpen && (comments.length > 0 || isRootComposerOpen) ? (
-    <View style={{ gap: 8 }}>
-      {comments.length > 0 ? (
-        <CommentThread
-          comments={comments}
-          currentUserId={currentUserId}
-          onAuthorPress={onAuthorPress}
-          onLikePress={async (comment) => {
-            try {
-              if (comment.likedByCurrentUser) {
-                await BackendApiService.unlikeComment(comment.id);
-              } else {
-                await BackendApiService.likeComment(comment.id);
+  // Topic fan-out cards show this rating's comments (liking, replying, and
+  // expanding replies all still work — only the top-level "new comment"
+  // composer is hidden) plus the topic's other ratings, each with its own
+  // working comment composer.
+  const expandedContent = topicFanOut
+    ? (isCommentsOpen ? (
+      <View style={{ gap: 8 }}>
+        {comments.length > 0 ? (
+          <CommentThread
+            comments={comments}
+            currentUserId={currentUserId}
+            onAuthorPress={onAuthorPress}
+            onLikePress={async (comment) => {
+              try {
+                if (comment.likedByCurrentUser) {
+                  await BackendApiService.unlikeComment(comment.id);
+                } else {
+                  await BackendApiService.likeComment(comment.id);
+                }
+                await interactions.loadComments(item.ratingId, true);
+              } catch (error) {
+                interactions.notify?.({ message: error.message || 'Failed to like comment', type: 'error' });
               }
-              await interactions.loadComments(item.ratingId, true);
-            } catch (error) {
-              interactions.notify?.({ message: error.message || 'Failed to like comment', type: 'error' });
-            }
-          }}
-          onReplyPress={(comment) => {
-            const replyKey = interactions.getReplyKey(item.ratingId, comment.id);
-            interactions.setActiveComposer(interactions.activeComposer === replyKey ? rootComposerKey : replyKey);
-            setActiveEditKey(null);
-          }}
-          activeReplyKey={interactions.activeComposer}
-          activeEditKey={activeEditKey}
-          getReplyKey={(comment) => interactions.getReplyKey(item.ratingId, comment.id)}
-          getEditKey={(comment) => `edit:${comment.id}`}
-          renderReplyComposer={(comment) => renderCommentComposer(comment.id)}
-          renderEditComposer={renderEditComposer}
-          onEditPress={(comment) => {
-            const editKey = `edit:${comment.id}`;
-            setEditDrafts((current) => ({
-              ...current,
-              [editKey]: current[editKey] || { text: comment.text || '', score: String(comment.score || 2.5) }
-            }));
-            setActiveEditKey((current) => (current === editKey ? null : editKey));
-            interactions.setActiveComposer(null);
-          }}
-          expandedReplyKeys={interactions.expandedReplyKeys}
-          onToggleReplies={interactions.toggleReplies}
-          onCommentPress={onCommentOpen ? (comment) => onCommentOpen(item, comment) : undefined}
-          commentNumberOfLines={commentNumberOfLines}
-        />
-      ) : null}
-      {isRootComposerOpen ? renderCommentComposer() : null}
-    </View>
-  ) : null;
+            }}
+            onReplyPress={(comment) => {
+              const replyKey = interactions.getReplyKey(item.ratingId, comment.id);
+              interactions.setActiveComposer(interactions.activeComposer === replyKey ? null : replyKey);
+              setActiveEditKey(null);
+            }}
+            activeReplyKey={interactions.activeComposer}
+            getReplyKey={(comment) => interactions.getReplyKey(item.ratingId, comment.id)}
+            renderReplyComposer={(comment) => renderCommentComposer(comment.id)}
+            expandedReplyKeys={interactions.expandedReplyKeys}
+            onToggleReplies={interactions.toggleReplies}
+            onCommentPress={onCommentOpen ? (comment) => onCommentOpen(item, comment) : undefined}
+            commentNumberOfLines={commentNumberOfLines}
+          />
+        ) : null}
+        <View style={styles.otherRatings}>
+          {renderTopicRatings(item, String(interactions.activeComposer || '').startsWith(`${item.ratingId}:`))}
+        </View>
+      </View>
+    ) : null)
+    : (isCommentsOpen && (comments.length > 0 || isRootComposerOpen) ? (
+      <View style={{ gap: 8 }}>
+        {comments.length > 0 ? (
+          <CommentThread
+            comments={comments}
+            currentUserId={currentUserId}
+            onAuthorPress={onAuthorPress}
+            onLikePress={async (comment) => {
+              try {
+                if (comment.likedByCurrentUser) {
+                  await BackendApiService.unlikeComment(comment.id);
+                } else {
+                  await BackendApiService.likeComment(comment.id);
+                }
+                await interactions.loadComments(item.ratingId, true);
+              } catch (error) {
+                interactions.notify?.({ message: error.message || 'Failed to like comment', type: 'error' });
+              }
+            }}
+            onReplyPress={(comment) => {
+              const replyKey = interactions.getReplyKey(item.ratingId, comment.id);
+              interactions.setActiveComposer(interactions.activeComposer === replyKey ? rootComposerKey : replyKey);
+              setActiveEditKey(null);
+            }}
+            activeReplyKey={interactions.activeComposer}
+            activeEditKey={activeEditKey}
+            getReplyKey={(comment) => interactions.getReplyKey(item.ratingId, comment.id)}
+            getEditKey={(comment) => `edit:${comment.id}`}
+            renderReplyComposer={(comment) => renderCommentComposer(comment.id)}
+            renderEditComposer={renderEditComposer}
+            onEditPress={(comment) => {
+              const editKey = `edit:${comment.id}`;
+              setEditDrafts((current) => ({
+                ...current,
+                [editKey]: current[editKey] || { text: comment.text || '', score: String(comment.score || 2.5) }
+              }));
+              setActiveEditKey((current) => (current === editKey ? null : editKey));
+              interactions.setActiveComposer(null);
+            }}
+            expandedReplyKeys={interactions.expandedReplyKeys}
+            onToggleReplies={interactions.toggleReplies}
+            onCommentPress={onCommentOpen ? (comment) => onCommentOpen(item, comment) : undefined}
+            commentNumberOfLines={commentNumberOfLines}
+          />
+        ) : null}
+        {isRootComposerOpen ? renderCommentComposer() : null}
+      </View>
+    ) : null);
 
   const rerateComposer = interactions.activeComposer === rerateKey ? (
     <RatingComposer
@@ -192,27 +234,35 @@ const RatingFeedItem = ({
           <PostActions
             liked={item.likedByCurrentUser}
             likeCount={item.likeCount}
-            commentCount={topicFanOut ? (item.rateableItem?.ratingCount ?? item.commentCount) : item.commentCount}
+            commentCount={item.commentCount}
             onLike={() => interactions.toggleLike(item)}
             onRerate={() => interactions.toggleRerateComposer(item)}
             onComment={topicFanOut
-              ? () => setShowTopicRatings((open) => !open)
+              ? () => interactions.toggleComments(item.ratingId)
               : commentOpensRerate ? () => interactions.toggleRerateComposer(item) : toggleComments}
             onReply={showReply ? () => interactions.openCommentComposer(item.ratingId) : undefined}
             onEdit={canEdit ? () => onEditPress?.(item.ratingId) : undefined}
             shareUrl={shareUrl}
-            commentLabel={topicFanOut
-              ? (showTopicRatings ? 'Hide ratings' : 'Ratings')
-              : (isCommentsOpen ? 'Hide comments' : 'Comments')}
+            commentLabel={isCommentsOpen ? 'Hide comments' : 'Comments'}
             replyLabel="Reply"
           />
         )}
-        expandedContent={topicFanOut ? topicFanOutContent : expandedContent}
+        expandedContent={expandedContent}
       />
       {rerateComposer ? <View style={{ marginTop: 16 }}>{rerateComposer}</View> : null}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  otherRatings: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    gap: spacing.sm
+  }
+});
 
 // The feed re-renders its parent on every pagination tick (and on any shared
 // interaction-state change), which would otherwise rebuild every visible card's

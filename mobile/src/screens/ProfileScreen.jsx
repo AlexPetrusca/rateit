@@ -182,6 +182,7 @@ const ProfileScreen = ({ navigation, route }) => {
             item={item}
             currentUserId={currentUserId}
             interactions={interactions}
+            commentNumberOfLines={6}
             refresh={loadProfile}
             onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
             onTopicPress={(rateableItemId) => navigation.navigate('Topic', { rateableItemId })}
@@ -189,13 +190,14 @@ const ProfileScreen = ({ navigation, route }) => {
               rateableItemId: post.rateableItem?.id,
               openReviewId: post.ratingId
             })}
-            renderTopicRatings={(it) => (
+            renderTopicRatings={(it, suppressComposer) => (
               <TopicRatingsInline
                 rateableItemId={it.rateableItem?.id}
                 excludeRatingId={it.ratingId}
                 currentUserId={currentUserId}
                 notify={notify}
                 navigation={navigation}
+                suppressComposer={suppressComposer}
               />
             )}
             onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
