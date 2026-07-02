@@ -843,7 +843,7 @@ const TourneyDetailScreen = ({ route, navigation }) => {
     <Screen>
       <View style={styles.headerRow}>
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>Tourney · {detail.mode === 'HISTORICAL' ? 'Historical' : 'Live'}</Text>
+          <Text style={styles.eyebrow}>Tourney · {detail.status === 'COMPLETE' ? 'Complete' : 'Live'}</Text>
           <Text style={styles.title}>{detail.name}</Text>
           <Text style={styles.sub}>{detail.playerCount} players · to {detail.pointsToWin}{detail.mode !== 'HISTORICAL' && detail.courtCount ? ` · ${detail.courtCount} net${detail.courtCount > 1 ? 's' : ''}` : ''}</Text>
         </View>

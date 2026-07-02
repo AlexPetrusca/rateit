@@ -88,8 +88,8 @@ const TourneyScreen = ({ navigation }) => {
             <Card style={styles.tournamentRow}>
               <View style={styles.rowTop}>
                 <Text style={styles.tournamentName} numberOfLines={1}>{item.name}</Text>
-                <Text style={[styles.badge, item.mode === 'HISTORICAL' ? styles.badgeHist : styles.badgeLive]}>
-                  {item.mode === 'HISTORICAL' ? 'Historical' : 'Live'}
+                <Text style={[styles.badge, item.status === 'COMPLETE' ? styles.badgeHist : styles.badgeLive]}>
+                  {item.status === 'COMPLETE' ? 'Complete' : 'Live'}
                 </Text>
               </View>
               <Text style={styles.tournamentDate}>{formatTournamentDate(item.tournamentDate)} · {item.playerCount} players</Text>
