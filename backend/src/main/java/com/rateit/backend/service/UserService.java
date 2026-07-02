@@ -41,6 +41,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserService {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserService.class);
+
     private final UserRepository userRepository;
     private final RatingRepository ratingRepository;
     private final RatingCommentRepository ratingCommentRepository;
@@ -158,10 +160,28 @@ public class UserService {
         User currentUser = findByPhoneNumber(currentPhoneNumber);
         int normalizedLimit = Math.max(1, Math.min(limit, 20));
 
-        return userRepository.searchVisibleUsersByUsername(normalizedQuery, PageRequest.of(0, normalizedLimit))
-            .stream()
+        List<User> matches;
+        try {
+            // Ranked, typo-tolerant match (exact > prefix > substring > fuzzy).
+            matches = userRepository.searchVisibleUsersByUsernameFuzzy(
+                normalizedQuery, escapeLike(normalizedQuery), SEARCH_SIMILARITY_THRESHOLD, normalizedLimit);
+        } catch (Exception e) {
+            // pg_trgm not available — fall back to plain substring matching.
+            log.warn("Fuzzy username search unavailable, falling back to substring: {}", e.getMessage());
+            matches = userRepository.searchVisibleUsersByUsername(normalizedQuery, PageRequest.of(0, normalizedLimit));
+        }
+
+        return matches.stream()
             .map(user -> UserSearchResultDto.fromUser(user, getFollowRelation(currentUser, user)))
             .toList();
+    }
+
+    private static final double SEARCH_SIMILARITY_THRESHOLD = 0.3;
+
+    // Escape LIKE metacharacters so a query like "50%" matches literally rather
+    // than as a wildcard (paired with `escape '\'` in the query).
+    private String escapeLike(String value) {
+        return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 
     public List<UserSearchResultDto> listFollowers(long userId, String currentPhoneNumber) {

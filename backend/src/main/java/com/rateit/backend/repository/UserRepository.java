@@ -25,6 +25,36 @@ public interface UserRepository extends JpaRepository<User, Long> {
         """)
     List<User> searchVisibleUsersByUsername(@Param("query") String query, Pageable pageable);
 
+    // Ranked, typo-tolerant username search. Match tiers (exact > prefix >
+    // substring > fuzzy trigram) order results by likely intent; within them,
+    // trigram similarity ranks relevance, then shorter/alphabetical usernames.
+    // `likeQuery` is the caller-escaped form for the LIKE tiers; `query` is raw
+    // for exact/similarity. Requires the pg_trgm extension (similarity()).
+    @Query(value = """
+        select * from users u
+        where u.deleted_at is null
+          and u.username is not null
+          and (
+            lower(u.username) like lower(:likeQuery) || '%' escape '\\'
+            or lower(u.username) like '%' || lower(:likeQuery) || '%' escape '\\'
+            or similarity(lower(u.username), lower(:query)) >= :threshold
+          )
+        order by
+          (lower(u.username) = lower(:query)) desc,
+          (lower(u.username) like lower(:likeQuery) || '%' escape '\\') desc,
+          (lower(u.username) like '%' || lower(:likeQuery) || '%' escape '\\') desc,
+          similarity(lower(u.username), lower(:query)) desc,
+          length(u.username) asc,
+          lower(u.username) asc
+        limit :limit
+        """, nativeQuery = true)
+    List<User> searchVisibleUsersByUsernameFuzzy(
+        @Param("query") String query,
+        @Param("likeQuery") String likeQuery,
+        @Param("threshold") double threshold,
+        @Param("limit") int limit
+    );
+
     @Query("""
         select u from User u
         where u.deletedAt is null
