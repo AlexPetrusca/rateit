@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Switch, Text, View } from 'react-native';
 import AppButton from '../components/AppButton.jsx';
 import Card from '../components/Card.jsx';
 import HandDrawnIcon from '../components/HandDrawnIcon.jsx';
@@ -121,7 +121,7 @@ const CreateScreen = ({ navigation, route }) => {
       } else if (editPromptId) {
         const hasMedia = selectedFile || existingMedia.mediaObjectKey;
         if (!body.trim() && !hasMedia) {
-          setError('Add text or a photo to create a prompt.');
+          setError('Add text or a photo to post a topic.');
           return;
         }
         const { mediaObjectKey, mediaContentType } = await uploadMedia();
@@ -129,7 +129,7 @@ const CreateScreen = ({ navigation, route }) => {
       } else {
         const hasMedia = selectedFile || existingMedia.mediaObjectKey;
         const validationError = postMode === 'prompt'
-          ? (!body.trim() && !hasMedia ? 'Add text or a photo to create a prompt.' : '')
+          ? (!body.trim() && !hasMedia ? 'Add text or a photo to post a topic.' : '')
           : validateCreateRatingDraft({ body, selectedFile: hasMedia, score });
         if (validationError) {
           setError(validationError);
@@ -150,7 +150,7 @@ const CreateScreen = ({ navigation, route }) => {
         }
       }
       notify({
-        message: editPromptId ? 'Prompt updated.' : postMode === 'prompt' ? 'Prompt posted.' : 'Rating posted.',
+        message: editPromptId ? 'Topic updated.' : postMode === 'prompt' ? 'Topic posted.' : 'Rating posted.',
         type: 'info'
       });
       navigation.navigate('Home');
@@ -169,10 +169,10 @@ const CreateScreen = ({ navigation, route }) => {
     setError('');
     try {
       await BackendApiService.deletePrompt(editPromptId);
-      notify({ message: 'Prompt deleted.', type: 'info' });
+      notify({ message: 'Topic deleted.', type: 'info' });
       navigation.navigate('Home');
     } catch (err) {
-      setError(err.message || 'Failed to delete prompt');
+      setError(err.message || 'Failed to delete topic');
     } finally {
       setSaving(false);
     }
@@ -207,27 +207,22 @@ const CreateScreen = ({ navigation, route }) => {
 
   return (
     <Screen
-      title={editPromptId ? 'Edit prompt' : 'Create'}
-      subtitle={editPromptId ? 'Edit your prompt or delete it.' : 'Rate text or a photo.'}
+      title={editPromptId ? 'Edit topic' : 'Create'}
+      subtitle={editPromptId ? 'Edit your topic or delete it.' : 'Post a topic — with your rating, or on its own.'}
     >
       {editPromptId ? null : (
-        <View style={styles.modeToggle}>
-          {['rate', 'prompt'].map((mode) => {
-            const selected = postMode === mode;
-            return (
-              <Pressable
-                key={mode}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                onPress={() => setPostMode(mode)}
-                style={[styles.modeOption, selected && styles.modeOptionSelected]}
-              >
-                <Text style={[styles.modeText, selected && styles.modeTextSelected]}>
-                  {mode === 'rate' ? 'Rate' : 'Prompt'}
-                </Text>
-              </Pressable>
-            );
-          })}
+        <View style={styles.ratingToggleRow}>
+          <View style={styles.ratingToggleCopy}>
+            <Text style={styles.ratingToggleLabel}>Add a rating</Text>
+            <Text style={styles.ratingToggleHint}>Turn off to just post the topic for others to rate.</Text>
+          </View>
+          <Switch
+            value={postMode === 'rate'}
+            onValueChange={(on) => setPostMode(on ? 'rate' : 'prompt')}
+            trackColor={{ true: colors.accent, false: colors.borderStrong }}
+            thumbColor="#ffffff"
+            ios_backgroundColor={colors.borderStrong}
+          />
         </View>
       )}
       <StatusMessage message={error} type="error" />
@@ -302,31 +297,31 @@ const CreateScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  modeToggle: {
+  ratingToggleRow: {
     flexDirection: 'row',
-    padding: 3,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    padding: spacing.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.borderStrong,
     borderRadius: 15,
     backgroundColor: colors.surfaceSoft
   },
-  modeOption: {
+  ratingToggleCopy: {
     flex: 1,
-    minHeight: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12
+    minWidth: 0,
+    gap: 2
   },
-  modeOptionSelected: {
-    backgroundColor: colors.surfacePressed
-  },
-  modeText: {
-    color: colors.textMuted,
+  ratingToggleLabel: {
+    color: colors.text,
     fontSize: 15,
     fontWeight: '700'
   },
-  modeTextSelected: {
-    color: colors.text
+  ratingToggleHint: {
+    ...text.muted,
+    fontSize: 12,
+    lineHeight: 16
   },
   previewWrap: {
     gap: spacing.sm
