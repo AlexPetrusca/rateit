@@ -805,6 +805,18 @@ const TourneyDetailScreen = ({ route, navigation }) => {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  // Auto-refresh for players watching a live tournament: poll while it's in
+  // progress so they see rounds/scores as the admin enters them, without
+  // needing to leave and come back. Admins are excluded — they're the ones
+  // editing, and refetching would clobber their in-progress round entry.
+  useEffect(() => {
+    if (isAdmin || !detail || detail.status === 'COMPLETE') {
+      return undefined;
+    }
+    const id = setInterval(() => { load(); }, 10000);
+    return () => clearInterval(id);
+  }, [isAdmin, detail?.status, load]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Surface the tourney tab bar for ended tournaments (a read-only view), so
   // there's an easy way out besides the back button. Live/historical entry
   // stays a full-screen flow with the bar hidden.
