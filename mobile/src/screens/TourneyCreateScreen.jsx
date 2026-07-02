@@ -8,6 +8,7 @@ import StatusMessage from '../components/StatusMessage.jsx';
 import UserAvatar from '../components/UserAvatar.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import BackendApiService from '../services/BackendApiService.js';
+import { emitTourneyChanged } from '../utils/liveTourneyEvents.js';
 import { colors, radius, spacing, text } from '../theme.js';
 
 const SPORTS = [
@@ -182,6 +183,7 @@ const TourneyCreateScreen = ({ navigation }) => {
         });
       }
 
+      emitTourneyChanged();
       notify({ message: 'Tournament created.', type: 'info' });
       navigation.replace('TourneyDetail', { tournamentId: tournament.id });
     } catch (err) {

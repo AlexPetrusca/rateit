@@ -20,7 +20,7 @@ public interface TourneyTournamentRepository extends JpaRepository<TourneyTourna
     @Query("""
         select t from TourneyTournament t
         where t.mode = com.rateit.backend.entity.types.TourneyTournamentMode.LIVE
-          and t.status = com.rateit.backend.entity.types.TourneyTournamentStatus.ACTIVE
+          and t.status <> com.rateit.backend.entity.types.TourneyTournamentStatus.COMPLETE
           and exists (
             select 1 from TourneyTournamentPlayer tp
             where tp.tournament = t and tp.player.criticUser.id = :criticUserId

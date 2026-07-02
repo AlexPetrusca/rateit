@@ -12,6 +12,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import BackendApiService from '../services/BackendApiService.js';
 import { proposeNextRound } from '../utils/tourneyPairing.js';
+import { emitTourneyChanged } from '../utils/liveTourneyEvents.js';
 import { colors, radius, spacing, text } from '../theme.js';
 
 // Swap two players (by id) anywhere in a proposed round (games or byes).
@@ -365,6 +366,7 @@ const EndTournament = ({ detail, onChange }) => {
         pointsToWin: detail.pointsToWin,
         notes: detail.notes
       });
+      emitTourneyChanged();
       notify({ message: 'Tournament ended.', type: 'info' });
       await onChange();
     } catch (err) {
@@ -813,6 +815,7 @@ const TourneyDetailScreen = ({ route, navigation }) => {
   const deleteTournament = useCallback(async () => {
     try {
       await BackendApiService.deleteTourneyTournament(tournamentId);
+      emitTourneyChanged();
       notify({ message: 'Tournament deleted.', type: 'info' });
       navigation.navigate('Tourney');
     } catch (err) {

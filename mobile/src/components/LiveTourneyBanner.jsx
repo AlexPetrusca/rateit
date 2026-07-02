@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text } from 'react-native';
 import BackendApiService from '../services/BackendApiService.js';
+import { onTourneyChanged } from '../utils/liveTourneyEvents.js';
 import { colors } from '../theme.js';
 
 const POLL_MS = 30000;
@@ -30,7 +31,8 @@ const LiveTourneyBanner = ({ isAuthenticated, onOpen }) => {
     };
     check();
     const id = setInterval(check, POLL_MS);
-    return () => { active = false; clearInterval(id); };
+    const unsubscribe = onTourneyChanged(check);
+    return () => { active = false; clearInterval(id); unsubscribe(); };
   }, [isAuthenticated]);
 
   useEffect(() => {
