@@ -141,6 +141,8 @@ const BackendApiService = {
 
   getTourneyLeaderboard: () => request('/api/tourney/leaderboard', {}, 'Failed to fetch leaderboard'),
 
+  getMyLiveTourney: () => request('/api/tourney/live/me', {}, 'Failed to check live tournament'),
+
   createTourneyPlayer: (playerData) => request('/api/tourney/players', {
     method: 'POST',
     body: jsonBody(playerData)

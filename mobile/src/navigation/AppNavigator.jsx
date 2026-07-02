@@ -11,6 +11,7 @@ import AdminPostsScreen from '../screens/admin/AdminPostsScreen.jsx';
 import AdminSuggestionsScreen from '../screens/admin/AdminSuggestionsScreen.jsx';
 import AdminUsersScreen from '../screens/admin/AdminUsersScreen.jsx';
 import BacklogScreen from '../screens/BacklogScreen.jsx';
+import LiveTourneyBanner from '../components/LiveTourneyBanner.jsx';
 import CreateScreen from '../screens/CreateScreen.jsx';
 import DraftsScreen from '../screens/DraftsScreen.jsx';
 import FollowListScreen from '../screens/FollowListScreen.jsx';
@@ -274,6 +275,12 @@ const AppNavigator = () => {
 
   return (
     <NavigationContainer ref={navigationRef} linking={linking} theme={theme} onReady={handleStateChange} onStateChange={handleStateChange}>
+      <View style={styles.appColumn}>
+        <LiveTourneyBanner
+          isAuthenticated={isAuthenticated}
+          onOpen={(tournamentId) => navigationRef.navigate('TourneyDetail', { tournamentId })}
+        />
+        <View style={styles.navHost}>
       <Stack.Navigator screenOptions={stackOptions}>
         {!isAuthenticated ? (
           <>
@@ -314,6 +321,8 @@ const AppNavigator = () => {
           </>
         )}
       </Stack.Navigator>
+        </View>
+      </View>
       {Platform.OS === 'web' && isAuthenticated && showNav && <WebNavBar activeTab={activeTab} onNavigate={navigateToTab} />}
       {Platform.OS === 'web' && isAuthenticated && showTourneyNav ? (
         <WebNavBar
@@ -333,6 +342,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background
+  },
+  appColumn: {
+    flex: 1
+  },
+  navHost: {
+    flex: 1
   },
   webTabBar: {
     position: 'absolute',

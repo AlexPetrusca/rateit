@@ -8,6 +8,7 @@ import com.rateit.backend.entity.TourneyTournamentPlayer;
 import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.dto.TourneyCriticUserDto;
 import com.rateit.backend.entity.dto.TourneyLeaderboardRowDto;
+import com.rateit.backend.entity.dto.TourneyLiveBannerDto;
 import com.rateit.backend.entity.dto.TourneyEloPointDto;
 import com.rateit.backend.entity.dto.TourneyMatchDto;
 import com.rateit.backend.entity.dto.TourneyPlayerDto;
@@ -98,6 +99,16 @@ public class TourneyService {
     @Transactional
     public List<TourneyLeaderboardRowDto> getLeaderboard() {
         return tourneyEloService.getLeaderboard();
+    }
+
+    @Transactional(readOnly = true)
+    public TourneyLiveBannerDto getMyLiveTournament(String phoneNumber) {
+        User user = userService.findByPhoneNumber(phoneNumber);
+        return tournamentRepository.findActiveLiveForCriticUser(user.getId())
+            .stream()
+            .findFirst()
+            .map(t -> new TourneyLiveBannerDto(t.getId(), t.getName()))
+            .orElse(null);
     }
 
     @Transactional

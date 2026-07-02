@@ -2,6 +2,7 @@ package com.rateit.backend.controller;
 
 import com.rateit.backend.entity.dto.TourneyCriticUserDto;
 import com.rateit.backend.entity.dto.TourneyLeaderboardRowDto;
+import com.rateit.backend.entity.dto.TourneyLiveBannerDto;
 import com.rateit.backend.entity.dto.TourneyEloPointDto;
 import com.rateit.backend.entity.dto.TourneyPlayerDto;
 import com.rateit.backend.entity.dto.TourneyTournamentDto;
@@ -54,6 +55,12 @@ public class TourneyController {
     @GetMapping("/leaderboard")
     public ResponseEntity<List<TourneyLeaderboardRowDto>> getLeaderboard(JwtAuthenticationToken token) {
         return ResponseEntity.ok(tourneyService.getLeaderboard());
+    }
+
+    @GetMapping("/live/me")
+    public ResponseEntity<TourneyLiveBannerDto> getMyLiveTournament(JwtAuthenticationToken token) {
+        TourneyLiveBannerDto live = tourneyService.getMyLiveTournament(token.getToken().getSubject());
+        return live == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(live);
     }
 
     @PostMapping("/players")
