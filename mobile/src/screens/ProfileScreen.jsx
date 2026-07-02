@@ -124,10 +124,15 @@ const ProfileScreen = ({ navigation, route }) => {
               <HandDrawnIcon name="tourneyTrophy" color={colors.textMuted} size={18} />
             </Pressable>
           ) : (
-            <View style={[styles.tourneyBadge, styles.tourneyBadgeOther]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open tourney leaderboard"
+              onPress={() => navigation.navigate('TourneyLeaderboard')}
+              style={({ pressed }) => [styles.tourneyBadge, styles.tourneyBadgeOther, pressed && styles.profileIconButtonPressed]}
+            >
               <Text style={styles.tourneyBadgeText}>{Math.round(profile.tourneyElo)}</Text>
               <HandDrawnIcon name="tourneyTrophy" color={colors.textMuted} size={18} />
-            </View>
+            </Pressable>
           )
         ) : null}
         {isOwnProfile ? (
