@@ -1928,7 +1928,7 @@ button:disabled {
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 100vh 0 0;
+    padding: calc(100vh - 72px) 0 0;
     border: 0;
     background: #090d16;
     position: relative;
@@ -3288,7 +3288,7 @@ button:disabled {
     }
 
     .topic-photo-shell {
-        padding-top: 100vh;
+        padding-top: calc(100vh - 72px);
     }
 
     .topic-photo-hero {
