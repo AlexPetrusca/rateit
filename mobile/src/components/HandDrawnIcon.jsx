@@ -37,7 +37,10 @@ const HandDrawnIcon = ({ name, color, size = 24 }) => {
     return <SvgUri uri={Asset.fromModule(svgIcons[name]).uri} width={size} height={size} color={color} />;
   }
 
-  return <Image source={icons[name]} resizeMode="contain" style={{ width: size, height: size, tintColor: color }} />;
+  // Pass tintColor as a prop, not in style: react-native-web ignores (and
+  // deprecates) style.tintColor, so on web the tint was dropped and active
+  // icons like the liked heart rendered in their baked grey instead of red.
+  return <Image source={icons[name]} resizeMode="contain" tintColor={color} style={{ width: size, height: size }} />;
 };
 
 export default HandDrawnIcon;
