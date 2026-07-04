@@ -45,3 +45,7 @@ values.secret.yaml
 # Local DB dumps
 backups/
 backup-*.sql
+
+# Local-only DB helper scripts
+wiki/bin/critic-db-restore.sh
+wiki/bin/critic-psql.sh
