@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import AppButton from '../components/AppButton.jsx';
 import Card from '../components/Card.jsx';
 import EmptyState from '../components/EmptyState.jsx';
@@ -9,7 +9,7 @@ import StatusMessage from '../components/StatusMessage.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import BackendApiService from '../services/BackendApiService.js';
-import { colors, spacing, text } from '../theme.js';
+import { colors, radius, spacing, text } from '../theme.js';
 
 const formatTournamentDate = (value) => {
   if (!value) {
@@ -35,6 +35,12 @@ const TourneyScreen = ({ navigation }) => {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const startCreate = (target, params) => {
+    setMenuOpen(false);
+    navigation.navigate(target, params);
+  };
 
   const loadTournaments = useCallback(async () => {
     setLoading(true);
@@ -66,7 +72,7 @@ const TourneyScreen = ({ navigation }) => {
           {isAdmin ? (
             <AppButton
               label="Create"
-              onPress={() => navigation.navigate('TourneyCreate')}
+              onPress={() => setMenuOpen(true)}
               style={styles.createButton}
               textStyle={styles.createButtonText}
             />
@@ -97,9 +103,46 @@ const TourneyScreen = ({ navigation }) => {
           </Pressable>
         )}
       />
+
+      <Modal animationType="fade" transparent visible={menuOpen} onRequestClose={() => setMenuOpen(false)}>
+        <Pressable style={styles.sheetBackdrop} onPress={() => setMenuOpen(false)}>
+          <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation()}>
+            <Text style={styles.sheetTitle}>Add to Tourney</Text>
+            <CreateOption
+              title="Historical"
+              subtitle="Back-fill a finished tournament with a chosen date."
+              onPress={() => startCreate('TourneyCreate', { flow: 'HISTORICAL' })}
+            />
+            <CreateOption
+              title="Live"
+              subtitle="Run a tournament round-by-round, starting today."
+              onPress={() => startCreate('TourneyCreate', { flow: 'LIVE' })}
+            />
+            <CreateOption
+              title="Match"
+              subtitle="Log a single rated match — two teams, one or more games."
+              onPress={() => startCreate('TourneyMatchCreate')}
+            />
+            <Pressable style={styles.sheetCancel} onPress={() => setMenuOpen(false)}>
+              <Text style={styles.sheetCancelText}>Cancel</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 };
+
+const CreateOption = ({ title, subtitle, onPress }) => (
+  <Pressable
+    accessibilityRole="button"
+    onPress={onPress}
+    style={({ pressed }) => [styles.sheetOption, pressed && styles.sheetOptionPressed]}
+  >
+    <Text style={styles.sheetOptionTitle}>{title}</Text>
+    <Text style={styles.sheetOptionSubtitle}>{subtitle}</Text>
+  </Pressable>
+);
 
 const styles = StyleSheet.create({
   header: {
@@ -172,6 +215,61 @@ const styles = StyleSheet.create({
   },
   tournamentDate: {
     ...text.muted
+  },
+  sheetBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)'
+  },
+  sheet: {
+    gap: spacing.sm,
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.borderStrong
+  },
+  sheetTitle: {
+    ...text.muted,
+    color: colors.textSubtle,
+    textTransform: 'uppercase',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800',
+    marginBottom: spacing.xs
+  },
+  sheetOption: {
+    gap: 2,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceSoft
+  },
+  sheetOptionPressed: {
+    backgroundColor: colors.surfacePressed
+  },
+  sheetOptionTitle: {
+    ...text.h3,
+    fontSize: 17
+  },
+  sheetOptionSubtitle: {
+    ...text.muted,
+    fontSize: 13,
+    lineHeight: 17
+  },
+  sheetCancel: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xs
+  },
+  sheetCancelText: {
+    color: colors.textMuted,
+    fontWeight: '700'
   }
 });
 

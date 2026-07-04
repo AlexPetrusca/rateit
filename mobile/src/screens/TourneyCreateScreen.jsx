@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import AppButton from '../components/AppButton.jsx';
 import AppTextInput from '../components/AppTextInput.jsx';
@@ -8,6 +8,7 @@ import StatusMessage from '../components/StatusMessage.jsx';
 import UserAvatar from '../components/UserAvatar.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import BackendApiService from '../services/BackendApiService.js';
+import { useTourneyPeople, normalizeName, playerKey, samePlayer } from '../hooks/useTourneyPeople.js';
 import { emitTourneyChanged } from '../utils/liveTourneyEvents.js';
 import { colors, radius, spacing, text } from '../theme.js';
 
@@ -24,66 +25,24 @@ const toNameDate = (iso) => {
   return `${m}-${d}-${y}`;
 };
 
-const normalizeName = (value) => value.trim().replace(/\s+/g, ' ');
-const playerKey = (player) => (
-  player.playerId ? `player:${player.playerId}` : player.criticUserId ? `critic:${player.criticUserId}` : `raw:${player.displayName.toLowerCase()}`
-);
-const samePlayer = (left, right) => {
-  if (left.playerId && right.playerId) {
-    return left.playerId === right.playerId;
-  }
-  if (left.criticUserId && right.criticUserId) {
-    return left.criticUserId === right.criticUserId;
-  }
-  return left.displayName.toLowerCase() === right.displayName.toLowerCase();
-};
-
-const TourneyCreateScreen = ({ navigation }) => {
+// Live/Historical is chosen up front in the Create popup and passed as a route
+// param, so this screen no longer shows the toggle — it just presets the mode.
+const TourneyCreateScreen = ({ navigation, route }) => {
   const { notify } = useNotifications();
+  const mode = route.params?.flow === 'HISTORICAL' ? 'HISTORICAL' : 'LIVE';
+  const isHistorical = mode === 'HISTORICAL';
+  const { people, loading: loadingUsers, ensureTourneyPlayer } = useTourneyPeople();
   const [sport, setSport] = useState('spikeball');
   const [sportOpen, setSportOpen] = useState(false);
   const [tournamentDate, setTournamentDate] = useState(todayIsoDate());
-  const [mode, setMode] = useState('LIVE');
   const [courtCount, setCourtCount] = useState('1');
   const [pointsToWin, setPointsToWin] = useState('15');
   const [rawName, setRawName] = useState('');
-  const [criticUsers, setCriticUsers] = useState([]);
-  const [existingPlayers, setExistingPlayers] = useState([]);
   const [selectedPlayers, setSelectedPlayers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const sportLabel = useMemo(() => SPORTS.find((s) => s.value === sport)?.label || 'Spikeball', [sport]);
-
-  // One selectable list of everyone: Critic users + saved non-Critic ("guest")
-  // players created on the fly in past tournaments, so they can be reused.
-  // Tournament veterans (played before, incl. saved guests) sort to the top.
-  const people = useMemo(() => {
-    const criticPeople = criticUsers.map((u) => ({
-      key: `critic:${u.userId}`,
-      displayName: u.username,
-      profilePicUrl: u.profilePicUrl,
-      guest: false,
-      playedBefore: u.playedBefore,
-      candidate: { displayName: u.username, criticUserId: u.userId, criticUsername: u.username }
-    }));
-    const criticNames = new Set(criticUsers.map((u) => u.username.toLowerCase()));
-    const guestPeople = existingPlayers
-      .filter((p) => p.criticUserId == null && !criticNames.has(p.displayName.toLowerCase()))
-      .map((p) => ({
-        key: `player:${p.id}`,
-        displayName: p.displayName,
-        profilePicUrl: null,
-        guest: true,
-        playedBefore: true,
-        candidate: { playerId: p.id, displayName: p.displayName }
-      }));
-    return [...criticPeople, ...guestPeople].sort((a, b) => (
-      (b.playedBefore === a.playedBefore ? 0 : b.playedBefore ? 1 : -1)
-      || a.displayName.toLowerCase().localeCompare(b.displayName.toLowerCase())
-    ));
-  }, [criticUsers, existingPlayers]);
 
   const isSelected = useCallback((candidate) => (
     selectedPlayers.some((selected) => samePlayer(selected, candidate))
@@ -99,26 +58,6 @@ const TourneyCreateScreen = ({ navigation }) => {
     setSelectedPlayers((current) => current.filter((selected) => !samePlayer(selected, player)));
   };
 
-  const loadData = useCallback(async () => {
-    setLoadingUsers(true);
-    try {
-      const [users, players] = await Promise.all([
-        BackendApiService.getTourneyCriticUsers(),
-        BackendApiService.getTourneyPlayers()
-      ]);
-      setCriticUsers(users);
-      setExistingPlayers(players);
-    } catch (err) {
-      notify({ message: err.message || 'Failed to load players', type: 'error' });
-    } finally {
-      setLoadingUsers(false);
-    }
-  }, [notify]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const addRawName = () => {
     const displayName = normalizeName(rawName);
     if (!displayName) {
@@ -133,25 +72,6 @@ const TourneyCreateScreen = ({ navigation }) => {
     () => selectedPlayers.filter((player) => !player.criticUserId && !player.playerId),
     [selectedPlayers]
   );
-
-  const ensureTourneyPlayer = async (player) => {
-    if (player.playerId) {
-      return player.playerId;
-    }
-    const existing = existingPlayers.find((candidate) => (
-      player.criticUserId
-        ? candidate.criticUserId === player.criticUserId
-        : candidate.displayName.toLowerCase() === player.displayName.toLowerCase()
-    ));
-    if (existing) {
-      return existing.id;
-    }
-    const created = await BackendApiService.createTourneyPlayer({
-      displayName: player.displayName,
-      criticUserId: player.criticUserId || null
-    });
-    return created.id;
-  };
 
   const createTournament = async () => {
     const normalizedPoints = Number.parseInt(pointsToWin, 10);
@@ -199,7 +119,7 @@ const TourneyCreateScreen = ({ navigation }) => {
     <Screen>
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Tourney</Text>
-        <Text style={styles.title}>Create tournament</Text>
+        <Text style={styles.title}>{isHistorical ? 'Historical tournament' : 'Live tournament'}</Text>
       </View>
       <StatusMessage message={error} type="error" />
 
@@ -238,34 +158,16 @@ const TourneyCreateScreen = ({ navigation }) => {
           ) : null}
         </View>
 
-        <AppTextInput label="Tournament date" value={tournamentDate} onChangeText={setTournamentDate} placeholder="YYYY-MM-DD" autoCapitalize="none" />
+        {/* Live tournaments are always dated today; only historical back-fills pick a date. */}
+        {isHistorical ? (
+          <AppTextInput label="Tournament date" value={tournamentDate} onChangeText={setTournamentDate} placeholder="YYYY-MM-DD" autoCapitalize="none" />
+        ) : null}
 
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Type</Text>
-          <View style={styles.segmented}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ selected: mode === 'LIVE' }}
-              onPress={() => setMode('LIVE')}
-              style={[styles.segment, mode === 'LIVE' && styles.segmentActive]}
-            >
-              <Text style={[styles.segmentText, mode === 'LIVE' && styles.segmentTextActive]}>Live</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ selected: mode === 'HISTORICAL' }}
-              onPress={() => setMode('HISTORICAL')}
-              style={[styles.segment, mode === 'HISTORICAL' && styles.segmentActive]}
-            >
-              <Text style={[styles.segmentText, mode === 'HISTORICAL' && styles.segmentTextActive]}>Historical</Text>
-            </Pressable>
-          </View>
-          <Text style={styles.hint}>
-            {mode === 'LIVE'
-              ? 'Run round-by-round; pairings are auto-generated each round (drag to adjust).'
-              : 'Back-fill a finished event: enter all matchups and scores yourself.'}
-          </Text>
-        </View>
+        <Text style={styles.hint}>
+          {isHistorical
+            ? 'Back-fill a finished event: enter all matchups and scores yourself.'
+            : 'Run round-by-round; pairings are auto-generated each round (drag to adjust).'}
+        </Text>
 
         {mode === 'LIVE' ? (
           <AppTextInput

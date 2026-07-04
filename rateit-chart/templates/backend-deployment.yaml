@@ -8,6 +8,12 @@ metadata:
     component: backend
 spec:
   replicas: {{ .Values.backend.replicaCount }}
+  # Recreate (not RollingUpdate) so the old pod is torn down before the new one
+  # starts. On the single small prod node, a rolling update briefly runs two
+  # backend pods at once, which overcommits memory, wedges the new container, and
+  # can flap the node NotReady. Trade a ~30-60s backend blip for a deploy that fits.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "critic.selectorLabels" . | nindent 6 }}

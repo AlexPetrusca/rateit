@@ -11,6 +11,7 @@ import com.rateit.backend.entity.User;
 import com.rateit.backend.entity.dto.TourneyLeaderboardRowDto;
 import com.rateit.backend.entity.dto.TourneyEloPointDto;
 import com.rateit.backend.entity.types.TourneyEloEventType;
+import com.rateit.backend.entity.types.TourneyTournamentMode;
 import com.rateit.backend.repository.TourneyEloEventRepository;
 import com.rateit.backend.repository.TourneyMatchRepository;
 import com.rateit.backend.repository.TourneyPlayerRatingRepository;
@@ -152,6 +153,11 @@ public class TourneyEloService {
         Map<Long, MutableLeaderboardRow> rowsByPlayerId = new LinkedHashMap<>();
 
         for (TourneyTournament tournament : tournamentRepository.findAllByOrderByTournamentDateAscCreatedAtAscIdAsc()) {
+            // Matches move Elo (via regenerateAll above) but are not tournaments, so
+            // they don't count toward tournaments-played, placement, or wins here.
+            if (tournament.getMode() == TourneyTournamentMode.MATCH) {
+                continue;
+            }
             List<TourneyTournamentPlayer> tournamentPlayers = tournamentPlayerRepository.findByTournamentOrderBySeedNumberAscCreatedAtAsc(tournament);
             if (tournamentPlayers.isEmpty()) {
                 continue;

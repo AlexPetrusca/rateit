@@ -19,6 +19,7 @@ import com.rateit.backend.entity.dto.TourneyTournamentDto;
 import com.rateit.backend.entity.dto.TourneyTournamentPlayerDto;
 import com.rateit.backend.entity.rest.AddTourneyTournamentPlayerRequest;
 import com.rateit.backend.entity.rest.CommitTourneyRoundRequest;
+import com.rateit.backend.entity.rest.CreateTourneyMatchRequest;
 import com.rateit.backend.entity.rest.EditTourneyTournamentRequest;
 import com.rateit.backend.entity.rest.SaveTourneyPlayerRequest;
 import com.rateit.backend.entity.rest.SaveTourneyTeamRequest;
@@ -42,6 +43,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -143,6 +146,9 @@ public class TourneyService {
         userService.findByPhoneNumber(phoneNumber); // auth check; tournaments are viewable by everyone
         return tournamentRepository.findAllByOrderByTournamentDateDescCreatedAtDesc()
             .stream()
+            // Rated one-off matches (mode=MATCH) still feed Elo, but they are not
+            // tournaments — keep them out of the list and every stat derived from it.
+            .filter(tournament -> tournament.getMode() != TourneyTournamentMode.MATCH)
             .map(tournament -> TourneyTournamentDto.summary(
                 tournament,
                 (int) tournamentPlayerRepository.countByTournament(tournament),
@@ -172,6 +178,78 @@ public class TourneyService {
         TourneyTournament saved = tournamentRepository.save(tournament);
         tourneyEloService.regenerateAll();
         return getTournamentDetail(saved.getId(), phoneNumber);
+    }
+
+    private static final DateTimeFormatter MATCH_NAME_DATE = DateTimeFormatter.ofPattern("MM-dd-yyyy");
+
+    // Create a rated one-off match: two fixed doubles teams and one row per game.
+    // Modeled as a COMPLETE tournament with mode=MATCH so the shared Elo engine
+    // rates each game in creation order, while it stays out of the tournaments list.
+    @Transactional
+    public TourneyTournamentDto createMatch(CreateTourneyMatchRequest request, String phoneNumber) {
+        requireAdmin(phoneNumber);
+        User owner = userService.findByPhoneNumber(phoneNumber);
+
+        List<Long> playerIds = new ArrayList<>();
+        playerIds.addAll(request.teamAPlayerIds());
+        playerIds.addAll(request.teamBPlayerIds());
+        if (new HashSet<>(playerIds).size() != 4) {
+            throw AuthorizationException.forbidden("A match needs four different players");
+        }
+        for (CreateTourneyMatchRequest.GameScore game : request.games()) {
+            if (game.teamAScore().equals(game.teamBScore())) {
+                throw AuthorizationException.forbidden("Each game must have a winner (no ties)");
+            }
+        }
+
+        TourneyPlayer teamAOne = findOwnedPlayer(request.teamAPlayerIds().get(0), phoneNumber);
+        TourneyPlayer teamATwo = findOwnedPlayer(request.teamAPlayerIds().get(1), phoneNumber);
+        TourneyPlayer teamBOne = findOwnedPlayer(request.teamBPlayerIds().get(0), phoneNumber);
+        TourneyPlayer teamBTwo = findOwnedPlayer(request.teamBPlayerIds().get(1), phoneNumber);
+
+        LocalDate matchDate = request.tournamentDate() == null ? LocalDate.now() : request.tournamentDate();
+        String event = trimToNull(request.event());
+        String style = trimToNull(request.scoringStyle());
+        String notes = event == null && style == null ? null
+            : (event == null ? "" : event) + (style == null ? "" : (event == null ? "" : " · ") + style);
+
+        TourneyTournament match = tournamentRepository.save(TourneyTournament.builder()
+            .ownerUser(owner)
+            .name("Match " + matchDate.format(MATCH_NAME_DATE))
+            .location(trimToNull(request.location()))
+            .tournamentDate(matchDate)
+            .status(TourneyTournamentStatus.COMPLETE)
+            .format(TourneyTournamentFormat.FIXED_TEAMS)
+            .mode(TourneyTournamentMode.MATCH)
+            .courtCount(1)
+            .notes(notes)
+            .build());
+
+        ensureTournamentPlayer(match, teamAOne);
+        ensureTournamentPlayer(match, teamATwo);
+        ensureTournamentPlayer(match, teamBOne);
+        ensureTournamentPlayer(match, teamBTwo);
+        TourneyTeam teamA = getOrCreateTeam(match, teamAOne, teamATwo);
+        TourneyTeam teamB = getOrCreateTeam(match, teamBOne, teamBTwo);
+
+        List<TourneyMatch> games = new ArrayList<>();
+        int gameNumber = 1;
+        for (CreateTourneyMatchRequest.GameScore game : request.games()) {
+            games.add(TourneyMatch.builder()
+                .tournament(match)
+                .teamA(teamA)
+                .teamB(teamB)
+                .roundNumber(gameNumber)
+                .roundName("Game " + gameNumber)
+                .teamAScore(game.teamAScore())
+                .teamBScore(game.teamBScore())
+                .build());
+            gameNumber++;
+        }
+        matchRepository.saveAll(games);
+
+        tourneyEloService.regenerateAll();
+        return buildDetail(match);
     }
 
     @Transactional

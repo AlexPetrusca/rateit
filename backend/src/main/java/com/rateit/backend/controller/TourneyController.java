@@ -8,6 +8,7 @@ import com.rateit.backend.entity.dto.TourneyPlayerDto;
 import com.rateit.backend.entity.dto.TourneyTournamentDto;
 import com.rateit.backend.entity.rest.AddTourneyTournamentPlayerRequest;
 import com.rateit.backend.entity.rest.CommitTourneyRoundRequest;
+import com.rateit.backend.entity.rest.CreateTourneyMatchRequest;
 import com.rateit.backend.entity.rest.EditTourneyTournamentRequest;
 import com.rateit.backend.entity.rest.SaveTourneyPlayerRequest;
 import com.rateit.backend.entity.rest.SaveTourneyTeamRequest;
@@ -93,6 +94,15 @@ public class TourneyController {
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(tourneyService.createTournament(request, token.getToken().getSubject()));
+    }
+
+    @PostMapping("/matches")
+    public ResponseEntity<TourneyTournamentDto> createMatch(
+        @RequestBody @Valid CreateTourneyMatchRequest request,
+        JwtAuthenticationToken token
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(tourneyService.createMatch(request, token.getToken().getSubject()));
     }
 
     @GetMapping("/tournaments/{tournamentId}")

@@ -27,6 +27,7 @@ import SearchUsersScreen from '../screens/SearchUsersScreen.jsx';
 import SuggestionSubmitScreen from '../screens/SuggestionSubmitScreen.jsx';
 import TopicScreen from '../screens/TopicScreen.jsx';
 import TourneyCreateScreen from '../screens/TourneyCreateScreen.jsx';
+import TourneyMatchCreateScreen from '../screens/TourneyMatchCreateScreen.jsx';
 import TourneyDashboardScreen from '../screens/TourneyDashboardScreen.jsx';
 import TourneyDetailScreen from '../screens/TourneyDetailScreen.jsx';
 import TourneyLeaderboardScreen from '../screens/TourneyLeaderboardScreen.jsx';
@@ -66,6 +67,7 @@ const linking = {
       TourneyDashboard: 'tourney/dashboard',
       TourneyLeaderboard: 'tourney/leaderboard',
       TourneyCreate: 'tourney/new',
+      TourneyMatchCreate: 'tourney/match',
       TourneyDetail: 'tournaments/:tournamentId',
       InstallInfo: 'install'
     }
@@ -306,6 +308,7 @@ const AppNavigator = () => {
             <Stack.Screen name="Tourney" component={TourneyScreen} />
             <Stack.Screen name="TourneyLeaderboard" component={TourneyLeaderboardScreen} />
             <Stack.Screen name="TourneyCreate" component={TourneyCreateScreen} />
+            <Stack.Screen name="TourneyMatchCreate" component={TourneyMatchCreateScreen} />
             <Stack.Screen name="TourneyDetail" component={TourneyDetailScreen} />
             <Stack.Screen name="InstallInfo" component={InstallInfoScreen} options={{ title: 'Install' }} />
             {isAdmin ? (

@@ -105,6 +105,11 @@ const BackendApiService = {
     body: jsonBody(tournamentData)
   }, 'Failed to create tournament'),
 
+  createTourneyMatch: (matchData) => request('/api/tourney/matches', {
+    method: 'POST',
+    body: jsonBody(matchData)
+  }, 'Failed to create match'),
+
   updateTourneyTournament: (tournamentId, tournamentData) => request(`/api/tourney/tournaments/${encodeURIComponent(tournamentId)}`, {
     method: 'PUT',
     body: jsonBody(tournamentData)

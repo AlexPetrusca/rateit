@@ -54,6 +54,7 @@ Maintenance rule: keep this page current when features are started, completed, d
 
 - The profile trophy now opens a Tourney metrics dashboard with tournaments played, total points, games won, partner win-streaks, tournaments won, average placement, and a tournament-level Elo graph, with a link through to the tournament list.
 - Partner-swap Elo now regenerates from tournament history after tournament edits, with everyone starting at 1000 and score margin used as a capped secondary delta multiplier.
+- The Tourney Create button now opens a Historical/Live/Match popup: Live is auto-dated today (no date field), Historical keeps its date picker, and Match is a three-step flow (teams → Standard/Rally scores with auto-appending game rows → details) that logs a rated doubles match. Matches feed the shared Elo timeline (interleaved by date then creation order) via a hidden `mode=MATCH` tournament but stay out of the tournaments list and tournaments-played stats.
 - Added a single-node remote deployment preset that disables the local-only mocker backend, ingress controller, metrics sidecars, and heavier observability workloads so the app can fit on a small remote node.
 - Local backend startup with Java 25 in WSL.
 - The create-account setup now expands inline on the login page after OTP verification instead of sending verified users to a separate handoff screen.
