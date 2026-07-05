@@ -46,7 +46,10 @@ const ProfileEditorScreen = ({ navigation }) => {
     try {
       const { uploadUrl, key } = await BackendApiService.getUploadUrl(selectedImage.name, selectedImage.type);
       await BackendApiService.uploadFileToS3(uploadUrl, selectedImage);
-      const nextUser = await BackendApiService.updateCurrentUser({ profilePicUrl: key });
+      // PUT /me validates the whole user, so include the current username (the
+      // editor only changes the photo). Backend excludes self from the uniqueness
+      // check, so resending the same username is a no-op.
+      const nextUser = await BackendApiService.updateCurrentUser({ username: user?.username, profilePicUrl: key });
       updateUser(nextUser);
       notify({ message: 'Profile photo updated.', type: 'info' });
       navigation.goBack();
