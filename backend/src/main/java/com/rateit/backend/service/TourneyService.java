@@ -677,6 +677,22 @@ public class TourneyService {
             }
         }
 
+        // Byes: committed rounds a rostered player sat out (total rounds minus the
+        // distinct rounds they appeared in), mirroring the pairing's bye tracking.
+        Set<Integer> allRounds = new HashSet<>();
+        Map<Long, Set<Integer>> roundsByPlayer = new LinkedHashMap<>();
+        for (TourneyMatch match : matches) {
+            allRounds.add(match.getRoundNumber());
+            for (TourneyPlayer player : List.of(
+                match.getTeamA().getPlayerOne(), match.getTeamA().getPlayerTwo(),
+                match.getTeamB().getPlayerOne(), match.getTeamB().getPlayerTwo())) {
+                roundsByPlayer.computeIfAbsent(player.getId(), key -> new HashSet<>()).add(match.getRoundNumber());
+            }
+        }
+        int totalRounds = allRounds.size();
+        standings.forEach((playerId, standing) ->
+            standing.byes = Math.max(0, totalRounds - roundsByPlayer.getOrDefault(playerId, Set.of()).size()));
+
         Map<Long, java.math.BigDecimal> eloDeltas = tourneyEloService.getEloDeltasForTournament(tournament.getId());
         standings.forEach((playerId, standing) -> standing.eloDelta = eloDeltas.get(playerId));
 
@@ -737,6 +753,7 @@ public class TourneyService {
         private int losses;
         private int pointsFor;
         private int pointsAgainst;
+        private int byes;
         private java.math.BigDecimal eloDelta;
 
         MutableStanding(Long id, String name) {
@@ -770,7 +787,7 @@ public class TourneyService {
         }
 
         TourneyPlayerStandingDto toPlayerDto() {
-            return new TourneyPlayerStandingDto(id, name, profilePicUrl, played, wins, losses, pointsFor, pointsAgainst, pointDifferential(), eloDelta);
+            return new TourneyPlayerStandingDto(id, name, profilePicUrl, played, wins, losses, pointsFor, pointsAgainst, pointDifferential(), eloDelta, byes);
         }
     }
 }

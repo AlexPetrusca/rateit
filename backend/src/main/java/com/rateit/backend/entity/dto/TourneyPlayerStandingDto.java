@@ -12,6 +12,7 @@ public record TourneyPlayerStandingDto(
     int pointsFor,
     int pointsAgainst,
     int pointDifferential,
-    BigDecimal eloDelta
+    BigDecimal eloDelta,
+    int byes
 ) {
 }
