@@ -21,7 +21,10 @@ const RatingComposer = ({
   multilineLabel = 'Review',
   cardStyle,
   richText = false,
-  showStars = false
+  showStars = false,
+  submitDisabled = false,
+  onDelete = null,
+  deleteLabel = 'Delete'
 }) => {
   const [preview, setPreview] = useState(null);
   return (
@@ -57,7 +60,10 @@ const RatingComposer = ({
           multiline
         />
       )}
-      <AppButton label={submitLabel} onPress={onSubmit} loading={loading} />
+      <AppButton label={submitLabel} onPress={onSubmit} loading={loading} disabled={submitDisabled} />
+      {onDelete ? (
+        <AppButton label={deleteLabel} onPress={onDelete} variant="danger" />
+      ) : null}
     </Card>
   );
 };

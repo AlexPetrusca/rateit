@@ -3,6 +3,7 @@ package com.rateit.backend.service;
 import com.rateit.backend.entity.MediaAsset;
 import com.rateit.backend.entity.RateableItem;
 import com.rateit.backend.entity.Rating;
+import com.rateit.backend.entity.RatingComment;
 import com.rateit.backend.entity.RatingScale;
 import com.rateit.backend.entity.RatingLike;
 import com.rateit.backend.entity.User;
@@ -12,6 +13,7 @@ import com.rateit.backend.entity.rest.CreateRerateRequest;
 import com.rateit.backend.entity.types.RateableItemType;
 import com.rateit.backend.entity.types.RatingScaleType;
 import com.rateit.backend.entity.types.Visibility;
+import com.rateit.backend.exception.AuthorizationException;
 import com.rateit.backend.exception.BadRequestException;
 import com.rateit.backend.repository.MediaAssetRepository;
 import com.rateit.backend.repository.ExternalReviewRepository;
@@ -332,6 +334,41 @@ class FeedActionServiceTest {
         verify(feedEventRepository).deleteByRatingOrRateableItem(rating, item);
         verify(externalReviewRepository).deleteByRatingOrRateableItem(rating, item);
         verify(ratingLikeRepository).deleteByRating(rating);
+    }
+
+    @Test
+    void deleteComment_removesOwnComment() {
+        User author = user(1L, "5551234567", "bob_bananas");
+        RatingScale scale = ratingScale(2L, "5 stars", new BigDecimal("1"), new BigDecimal("5"), new BigDecimal("0.5"));
+        RateableItem item = rateableItem(11L, author, RateableItemType.TEXT_POST, "Topic", null);
+        Rating rating = rating(21L, author, item, scale, new BigDecimal("3"), "review");
+        RatingComment comment = RatingComment.builder().rating(rating).authorUser(author).text("hi").score(new BigDecimal("3")).build();
+        ReflectionTestUtils.setField(comment, "id", 41L);
+
+        when(ratingCommentRepository.findById(41L)).thenReturn(Optional.of(comment));
+        when(userService.findByPhoneNumber(author.getPhoneNumber())).thenReturn(author);
+        when(ratingCommentRepository.findByParentCommentOrderByCreatedAtAsc(comment)).thenReturn(List.of());
+
+        feedActionService.deleteComment(41L, author.getPhoneNumber());
+
+        verify(ratingCommentRepository).delete(comment);
+    }
+
+    @Test
+    void deleteComment_rejectsNonAuthor() {
+        User author = user(1L, "5551234567", "bob_bananas");
+        User other = user(2L, "5559998888", "eve_edits");
+        RatingScale scale = ratingScale(2L, "5 stars", new BigDecimal("1"), new BigDecimal("5"), new BigDecimal("0.5"));
+        RateableItem item = rateableItem(11L, author, RateableItemType.TEXT_POST, "Topic", null);
+        Rating rating = rating(21L, author, item, scale, new BigDecimal("3"), "review");
+        RatingComment comment = RatingComment.builder().rating(rating).authorUser(author).text("hi").score(new BigDecimal("3")).build();
+        ReflectionTestUtils.setField(comment, "id", 41L);
+
+        when(ratingCommentRepository.findById(41L)).thenReturn(Optional.of(comment));
+        when(userService.findByPhoneNumber(other.getPhoneNumber())).thenReturn(other);
+
+        assertThrows(AuthorizationException.class, () -> feedActionService.deleteComment(41L, other.getPhoneNumber()));
+        verify(ratingCommentRepository, never()).delete(any());
     }
 
     private User user(Long id, String phoneNumber, String username) {

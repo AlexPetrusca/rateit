@@ -353,6 +353,29 @@ public class FeedActionService {
         return toDto(ratingCommentRepository.save(comment), currentUser);
     }
 
+    // Authors delete their own comments; this removes the comment and its whole
+    // reply subtree (comments are hard-deleted, matching the admin delete). Admins
+    // still moderate others' comments from the admin panel.
+    @Transactional
+    public void deleteComment(Long commentId, String currentUserPhoneNumber) {
+        RatingComment comment = findComment(commentId);
+        User currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
+
+        if (!comment.getAuthorUser().getId().equals(currentUser.getId())) {
+            throw AuthorizationException.forbidden("You can only delete your own comments");
+        }
+
+        deleteCommentSubtree(comment);
+        ratingCommentRepository.flush();
+    }
+
+    private void deleteCommentSubtree(RatingComment comment) {
+        for (RatingComment reply : ratingCommentRepository.findByParentCommentOrderByCreatedAtAsc(comment)) {
+            deleteCommentSubtree(reply);
+        }
+        ratingCommentRepository.delete(comment);
+    }
+
     @Transactional
     public FeedItemDto rerate(Long sourceRatingId, CreateRerateRequest request, String currentUserPhoneNumber) {
         Rating sourceRating = findRating(sourceRatingId);

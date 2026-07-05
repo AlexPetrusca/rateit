@@ -237,6 +237,10 @@ const BackendApiService = {
     body: jsonBody({ text, score })
   }, 'Failed to update comment'),
 
+  deleteRatingComment: (commentId) => request(`/api/feed/comments/${encodeURIComponent(commentId)}`, {
+    method: 'DELETE'
+  }, 'Failed to delete comment'),
+
   rerate: (ratingId, score, reviewText) => request(`/api/feed/ratings/${encodeURIComponent(ratingId)}/rerate`, {
     method: 'POST',
     body: jsonBody({ score, reviewText })

@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
 import CommentComposer from './CommentComposer.jsx';
 import CommentThread from './CommentThread.jsx';
 import PostActions from './PostActions.jsx';
@@ -7,6 +7,20 @@ import PostCard from './PostCard.jsx';
 import RatingComposer from './RatingComposer.jsx';
 import BackendApiService from '../services/BackendApiService.js';
 import { colors, spacing } from '../theme.js';
+
+// Confirm before a destructive delete: native gets an Alert, web a window.confirm.
+const confirmDelete = (onConfirm) => {
+  if (Platform.OS === 'web') {
+    if (typeof window === 'undefined' || window.confirm('Delete this comment? This can’t be undone.')) {
+      onConfirm();
+    }
+    return;
+  }
+  Alert.alert('Delete comment?', 'This can’t be undone.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Delete', style: 'destructive', onPress: onConfirm }
+  ]);
+};
 
 const RatingFeedItem = ({
   item,
@@ -75,6 +89,17 @@ const RatingFeedItem = ({
       text: comment.text || '',
       score: String(comment.score || 2.5)
     };
+    const isEmpty = !(draft.text || '').trim();
+
+    const deleteComment = async () => {
+      try {
+        await BackendApiService.deleteRatingComment(comment.id);
+        await interactions.loadComments(item.ratingId, true);
+        setActiveEditKey(null);
+      } catch (error) {
+        interactions.notify?.({ message: error.message || 'Failed to delete comment', type: 'error' });
+      }
+    };
 
     return (
       <RatingComposer
@@ -90,9 +115,13 @@ const RatingFeedItem = ({
           [editKey]: { ...draft, text }
         }))}
         submitLabel="Save"
+        submitDisabled={isEmpty}
         multilineLabel="Comment"
         richText
         onSubmit={async () => {
+          if (isEmpty) {
+            return;
+          }
           try {
             await BackendApiService.updateRatingComment(comment.id, draft.text, Number(draft.score));
             await interactions.loadComments(item.ratingId, true);
@@ -101,6 +130,7 @@ const RatingFeedItem = ({
             interactions.notify?.({ message: error.message || 'Failed to edit comment', type: 'error' });
           }
         }}
+        onDelete={() => confirmDelete(deleteComment)}
       />
     );
   };

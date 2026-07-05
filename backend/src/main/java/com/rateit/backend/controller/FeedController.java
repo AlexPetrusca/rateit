@@ -142,6 +142,12 @@ public class FeedController {
         return ResponseEntity.ok(feedActionService.updateComment(commentId, request, token.getToken().getSubject()));
     }
 
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId, JwtAuthenticationToken token) {
+        feedActionService.deleteComment(commentId, token.getToken().getSubject());
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/drafts")
     public ResponseEntity<List<DraftDto>> listDrafts(JwtAuthenticationToken token) {
         return ResponseEntity.ok(feedActionService.listDrafts(token.getToken().getSubject()));
