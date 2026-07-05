@@ -106,6 +106,26 @@ public class TourneyEloService {
         return deltas;
     }
 
+    // Per-game Elo change from team A's perspective (team B's is the negation),
+    // keyed by match id — used to show an Elo delta next to each game in the log.
+    @Transactional
+    public Map<Long, BigDecimal> getMatchTeamADeltas(Long tournamentId) {
+        Map<Long, BigDecimal> byMatch = new LinkedHashMap<>();
+        for (TourneyEloEvent event : eloEventRepository.findByTournamentIdAndRatingSystemOrderByEventOrderAscIdAsc(tournamentId, RATING_SYSTEM)) {
+            TourneyMatch match = event.getMatch();
+            if (match == null) {
+                continue;
+            }
+            // Team A's players each received +deltaA; grab it from a team-A event.
+            Long playerId = event.getPlayer().getId();
+            if (playerId.equals(match.getTeamA().getPlayerOne().getId())
+                || playerId.equals(match.getTeamA().getPlayerTwo().getId())) {
+                byMatch.put(match.getId(), event.getRatingDelta());
+            }
+        }
+        return byMatch;
+    }
+
     @Transactional
     public List<TourneyEloPointDto> getMyEloHistory(String phoneNumber) {
         if (eloEventRepository.countByRatingSystem(RATING_SYSTEM) == 0) {
@@ -155,7 +175,7 @@ public class TourneyEloService {
         for (TourneyTournament tournament : tournamentRepository.findAllByOrderByTournamentDateAscCreatedAtAscIdAsc()) {
             // Matches move Elo (via regenerateAll above) but are not tournaments, so
             // they don't count toward tournaments-played, placement, or wins here.
-            if (tournament.getMode() == TourneyTournamentMode.MATCH) {
+            if (tournament.isMatch()) {
                 continue;
             }
             List<TourneyTournamentPlayer> tournamentPlayers = tournamentPlayerRepository.findByTournamentOrderBySeedNumberAscCreatedAtAsc(tournament);

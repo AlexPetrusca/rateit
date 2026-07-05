@@ -18,6 +18,7 @@ public record SaveTourneyTournamentRequest(
     TourneyTournamentMode mode,
     @Min(1) Integer courtCount,
     @Min(1) Integer pointsToWin,
-    @Size(max = 4000) String notes
+    @Size(max = 4000) String notes,
+    Boolean isMatch
 ) {
 }

@@ -7,6 +7,7 @@ import Card from '../components/Card.jsx';
 import Screen from '../components/Screen.jsx';
 import TourneyHistoricalCreator from '../components/TourneyHistoricalCreator.jsx';
 import TourneyScoreboard from '../components/TourneyScoreboard.jsx';
+import TourneyMatchLog from '../components/TourneyMatchLog.jsx';
 import UserAvatar from '../components/UserAvatar.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
@@ -855,19 +856,21 @@ const TourneyDetailScreen = ({ route, navigation }) => {
     <Screen>
       <View style={styles.headerRow}>
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>Tourney · {detail.status === 'COMPLETE' ? 'Complete' : 'Live'}</Text>
+          <Text style={styles.eyebrow}>{detail.isMatch ? 'Match' : 'Tourney'} · {detail.status === 'COMPLETE' ? 'Complete' : 'Live'}</Text>
           <Text style={styles.title}>{detail.name}</Text>
-          <Text style={styles.sub}>{detail.playerCount} players · to {detail.pointsToWin}{detail.mode !== 'HISTORICAL' && detail.courtCount ? ` · ${detail.courtCount} net${detail.courtCount > 1 ? 's' : ''}` : ''}</Text>
+          <Text style={styles.sub}>{detail.playerCount} players · to {detail.pointsToWin}{!detail.isMatch && detail.mode !== 'HISTORICAL' && detail.courtCount ? ` · ${detail.courtCount} net${detail.courtCount > 1 ? 's' : ''}` : ''}</Text>
         </View>
         {isAdmin && detail.status === 'COMPLETE' ? (
           <TourneyMenu onEdit={() => setEditing(true)} onDelete={deleteTournament} />
         ) : null}
       </View>
-      {hideScoreboard ? null : <TourneyScoreboard standings={detail.playerStandings} />}
+      {detail.isMatch
+        ? <TourneyMatchLog matches={detail.matches} />
+        : (hideScoreboard ? null : <TourneyScoreboard standings={detail.playerStandings} />)}
       {!isAdmin ? (
-        <TourneyResults detail={detail} />
+        detail.isMatch ? null : <TourneyResults detail={detail} />
       ) : detail.status === 'COMPLETE' ? (
-        <TourneyResults detail={detail} />
+        detail.isMatch ? null : <TourneyResults detail={detail} />
       ) : detail.mode === 'HISTORICAL' ? (
         <TourneyHistoricalCreator detail={detail} onDone={load} />
       ) : (

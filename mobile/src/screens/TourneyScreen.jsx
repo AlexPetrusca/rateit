@@ -36,10 +36,14 @@ const TourneyScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuKind, setMenuKind] = useState(null); // 'MATCH' | 'TOURNAMENT' once picked
 
-  const startCreate = (target, params) => {
-    setMenuOpen(false);
-    navigation.navigate(target, params);
+  const openMenu = () => { setMenuKind(null); setMenuOpen(true); };
+  const closeMenu = () => { setMenuOpen(false); setMenuKind(null); };
+  const pickFlow = (flow) => {
+    const kind = menuKind;
+    closeMenu();
+    navigation.navigate('TourneyCreate', { kind, flow });
   };
 
   const loadTournaments = useCallback(async () => {
@@ -72,7 +76,7 @@ const TourneyScreen = ({ navigation }) => {
           {isAdmin ? (
             <AppButton
               label="Create"
-              onPress={() => setMenuOpen(true)}
+              onPress={openMenu}
               style={styles.createButton}
               textStyle={styles.createButtonText}
             />
@@ -104,26 +108,42 @@ const TourneyScreen = ({ navigation }) => {
         )}
       />
 
-      <Modal animationType="fade" transparent visible={menuOpen} onRequestClose={() => setMenuOpen(false)}>
-        <Pressable style={styles.sheetBackdrop} onPress={() => setMenuOpen(false)}>
+      <Modal animationType="fade" transparent visible={menuOpen} onRequestClose={closeMenu}>
+        <Pressable style={styles.sheetBackdrop} onPress={closeMenu}>
           <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation()}>
-            <Text style={styles.sheetTitle}>Add to Tourney</Text>
-            <CreateOption
-              title="Historical"
-              subtitle="Back-fill a finished tournament with a chosen date."
-              onPress={() => startCreate('TourneyCreate', { flow: 'HISTORICAL' })}
-            />
-            <CreateOption
-              title="Live"
-              subtitle="Run a tournament round-by-round, starting today."
-              onPress={() => startCreate('TourneyCreate', { flow: 'LIVE' })}
-            />
-            <CreateOption
-              title="Match"
-              subtitle="Log a single rated match — two teams, one or more games."
-              onPress={() => startCreate('TourneyMatchCreate')}
-            />
-            <Pressable style={styles.sheetCancel} onPress={() => setMenuOpen(false)}>
+            {menuKind === null ? (
+              <>
+                <Text style={styles.sheetTitle}>Create</Text>
+                <CreateOption
+                  title="Match"
+                  subtitle="Casual rated games on one net — no scoreboard, just a log."
+                  onPress={() => setMenuKind('MATCH')}
+                />
+                <CreateOption
+                  title="Tourney"
+                  subtitle="A full tournament with rounds, standings, and a scoreboard."
+                  onPress={() => setMenuKind('TOURNAMENT')}
+                />
+              </>
+            ) : (
+              <>
+                <Pressable style={styles.sheetBack} onPress={() => setMenuKind(null)}>
+                  <Text style={styles.sheetBackText}>‹ Back</Text>
+                </Pressable>
+                <Text style={styles.sheetTitle}>{menuKind === 'MATCH' ? 'New match' : 'New tournament'}</Text>
+                <CreateOption
+                  title="Live"
+                  subtitle="Start now and score round-by-round."
+                  onPress={() => pickFlow('LIVE')}
+                />
+                <CreateOption
+                  title="Historical"
+                  subtitle="Back-fill a finished event with a chosen date."
+                  onPress={() => pickFlow('HISTORICAL')}
+                />
+              </>
+            )}
+            <Pressable style={styles.sheetCancel} onPress={closeMenu}>
               <Text style={styles.sheetCancelText}>Cancel</Text>
             </Pressable>
           </Pressable>
@@ -260,6 +280,16 @@ const styles = StyleSheet.create({
     ...text.muted,
     fontSize: 13,
     lineHeight: 17
+  },
+  sheetBack: {
+    alignSelf: 'flex-start',
+    minHeight: 32,
+    justifyContent: 'center'
+  },
+  sheetBackText: {
+    color: colors.textMuted,
+    fontSize: 15,
+    fontWeight: '700'
   },
   sheetCancel: {
     minHeight: 44,

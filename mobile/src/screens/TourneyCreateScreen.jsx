@@ -31,6 +31,8 @@ const TourneyCreateScreen = ({ navigation, route }) => {
   const { notify } = useNotifications();
   const mode = route.params?.flow === 'HISTORICAL' ? 'HISTORICAL' : 'LIVE';
   const isHistorical = mode === 'HISTORICAL';
+  const isMatch = route.params?.kind === 'MATCH';
+  const kindLabel = isMatch ? 'match' : 'tournament';
   const { people, loading: loadingUsers, ensureTourneyPlayer } = useTourneyPeople();
   const [sport, setSport] = useState('spikeball');
   const [sportOpen, setSportOpen] = useState(false);
@@ -83,15 +85,17 @@ const TourneyCreateScreen = ({ navigation, route }) => {
     setSaving(true);
     setError('');
     try {
-      const name = `${sportLabel} ${toNameDate(tournamentDate)}`;
+      const name = `${sportLabel} ${isMatch ? 'match ' : ''}${toNameDate(tournamentDate)}`;
       const normalizedCourts = Math.max(1, Number.parseInt(courtCount, 10) || 1);
       const tournament = await BackendApiService.createTourneyTournament({
         name,
         tournamentDate,
         mode,
-        courtCount: mode === 'LIVE' ? normalizedCourts : null,
+        // A match is always one net; a tournament only sets nets when live.
+        courtCount: isMatch ? 1 : (mode === 'LIVE' ? normalizedCourts : null),
         status: 'DRAFT',
-        pointsToWin: normalizedPoints
+        pointsToWin: normalizedPoints,
+        isMatch
       });
 
       for (const [index, player] of selectedPlayers.entries()) {
@@ -104,7 +108,7 @@ const TourneyCreateScreen = ({ navigation, route }) => {
       }
 
       emitTourneyChanged();
-      notify({ message: 'Tournament created.', type: 'info' });
+      notify({ message: `${isMatch ? 'Match' : 'Tournament'} created.`, type: 'info' });
       navigation.replace('TourneyDetail', { tournamentId: tournament.id });
     } catch (err) {
       const message = err.message || 'Failed to create tournament';
@@ -119,7 +123,7 @@ const TourneyCreateScreen = ({ navigation, route }) => {
     <Screen>
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Tourney</Text>
-        <Text style={styles.title}>{isHistorical ? 'Historical tournament' : 'Live tournament'}</Text>
+        <Text style={styles.title}>{`${isHistorical ? 'Historical' : 'Live'} ${kindLabel}`}</Text>
       </View>
       <StatusMessage message={error} type="error" />
 
@@ -158,18 +162,21 @@ const TourneyCreateScreen = ({ navigation, route }) => {
           ) : null}
         </View>
 
-        {/* Live tournaments are always dated today; only historical back-fills pick a date. */}
+        {/* Live is always dated today; only historical back-fills pick a date. */}
         {isHistorical ? (
-          <AppTextInput label="Tournament date" value={tournamentDate} onChangeText={setTournamentDate} placeholder="YYYY-MM-DD" autoCapitalize="none" />
+          <AppTextInput label="Date" value={tournamentDate} onChangeText={setTournamentDate} placeholder="YYYY-MM-DD" autoCapitalize="none" />
         ) : null}
 
         <Text style={styles.hint}>
           {isHistorical
-            ? 'Back-fill a finished event: enter all matchups and scores yourself.'
-            : 'Run round-by-round; pairings are auto-generated each round (drag to adjust).'}
+            ? `Back-fill a finished ${kindLabel}: enter the matchups and scores yourself.`
+            : isMatch
+              ? 'Start now on one net. Everyone begins benched — drag who is playing onto the net each game.'
+              : 'Run round-by-round; pairings are auto-generated each round (drag to adjust).'}
         </Text>
 
-        {mode === 'LIVE' ? (
+        {/* Matches are always one net, so only tournaments choose a net count. */}
+        {mode === 'LIVE' && !isMatch ? (
           <AppTextInput
             label="Nets (concurrent games)"
             value={courtCount}
@@ -254,7 +261,7 @@ const TourneyCreateScreen = ({ navigation, route }) => {
         </View>
       </Card>
 
-      <AppButton label="Create tournament" onPress={createTournament} loading={saving} />
+      <AppButton label={`Create ${kindLabel}`} onPress={createTournament} loading={saving} />
     </Screen>
   );
 };

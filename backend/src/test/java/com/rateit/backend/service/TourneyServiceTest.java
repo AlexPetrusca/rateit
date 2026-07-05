@@ -1,7 +1,12 @@
 package com.rateit.backend.service;
 
+import com.rateit.backend.entity.TourneyTournament;
 import com.rateit.backend.entity.User;
+import com.rateit.backend.entity.dto.TourneyTournamentDto;
 import com.rateit.backend.entity.rest.CreateTourneyMatchRequest;
+import com.rateit.backend.entity.types.TourneyTournamentFormat;
+import com.rateit.backend.entity.types.TourneyTournamentMode;
+import com.rateit.backend.entity.types.TourneyTournamentStatus;
 import com.rateit.backend.exception.AuthorizationException;
 import com.rateit.backend.repository.TourneyMatchRepository;
 import com.rateit.backend.repository.TourneyPlayerRepository;
@@ -19,6 +24,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -83,6 +90,35 @@ class TourneyServiceTest {
             List.of(a1, a2),
             List.of(b1, b2),
             List.of(new CreateTourneyMatchRequest.GameScore(scoreA, scoreB)));
+    }
+
+    @Test
+    void listTournamentsExcludesMatches() {
+        when(userService.findByPhoneNumber("+15550000000")).thenReturn(user("+15550000000", "ROLE_ADMIN"));
+        TourneyTournament tournament = tournament(1L, "Summer Series", false);
+        TourneyTournament match = tournament(2L, "Match 07-05-2026", true);
+        when(tournamentRepository.findAllByOrderByTournamentDateDescCreatedAtDesc()).thenReturn(List.of(tournament, match));
+        when(tournamentPlayerRepository.countByTournament(tournament)).thenReturn(4L);
+        when(teamRepository.countByTournament(tournament)).thenReturn(2L);
+        when(matchRepository.findByTournamentOrderByRoundNumberAscIdAsc(tournament)).thenReturn(List.of());
+
+        List<TourneyTournamentDto> result = tourneyService.listTournaments("+15550000000");
+
+        assertEquals(1, result.size());
+        assertEquals(1L, result.get(0).id());
+        assertFalse(result.get(0).isMatch());
+    }
+
+    private TourneyTournament tournament(long id, String name, boolean isMatch) {
+        TourneyTournament tournament = TourneyTournament.builder()
+            .name(name)
+            .status(TourneyTournamentStatus.COMPLETE)
+            .format(TourneyTournamentFormat.PARTNER_SWAP)
+            .mode(TourneyTournamentMode.LIVE)
+            .isMatch(isMatch)
+            .build();
+        ReflectionTestUtils.setField(tournament, "id", id);
+        return tournament;
     }
 
     private User user(String phoneNumber, String role) {

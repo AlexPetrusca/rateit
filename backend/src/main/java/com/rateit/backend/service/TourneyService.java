@@ -146,9 +146,9 @@ public class TourneyService {
         userService.findByPhoneNumber(phoneNumber); // auth check; tournaments are viewable by everyone
         return tournamentRepository.findAllByOrderByTournamentDateDescCreatedAtDesc()
             .stream()
-            // Rated one-off matches (mode=MATCH) still feed Elo, but they are not
-            // tournaments — keep them out of the list and every stat derived from it.
-            .filter(tournament -> tournament.getMode() != TourneyTournamentMode.MATCH)
+            // Matches still feed Elo, but they are not tournaments — keep them out
+            // of the list and every stat derived from it.
+            .filter(tournament -> !tournament.isMatch())
             .map(tournament -> TourneyTournamentDto.summary(
                 tournament,
                 (int) tournamentPlayerRepository.countByTournament(tournament),
@@ -173,6 +173,7 @@ public class TourneyService {
             .courtCount(request.courtCount() == null ? 1 : request.courtCount())
             .pointsToWin(request.pointsToWin() == null ? 21 : request.pointsToWin())
             .notes(trimToNull(request.notes()))
+            .isMatch(Boolean.TRUE.equals(request.isMatch()))
             .build();
 
         TourneyTournament saved = tournamentRepository.save(tournament);
@@ -221,6 +222,7 @@ public class TourneyService {
             .status(TourneyTournamentStatus.COMPLETE)
             .format(TourneyTournamentFormat.FIXED_TEAMS)
             .mode(TourneyTournamentMode.MATCH)
+            .isMatch(true)
             .courtCount(1)
             .notes(notes)
             .build());
@@ -622,7 +624,13 @@ public class TourneyService {
         List<TourneyMatch> matches = matchRepository.findByTournamentOrderByRoundNumberAscIdAsc(tournament);
         List<TourneyTournamentPlayerDto> playerDtos = tournamentPlayers.stream().map(TourneyTournamentPlayerDto::fromTournamentPlayer).toList();
         List<TourneyTeamDto> teamDtos = teams.stream().map(TourneyTeamDto::fromTeam).toList();
-        List<TourneyMatchDto> matchDtos = matches.stream().map(TourneyMatchDto::fromMatch).toList();
+        List<TourneyStandingDto> teamStandings = buildTeamStandings(teams, matches);
+        // buildPlayerStandings ensures Elo events exist; compute per-match deltas after.
+        List<TourneyPlayerStandingDto> playerStandings = buildPlayerStandings(tournament, tournamentPlayers, matches);
+        Map<Long, java.math.BigDecimal> matchDeltas = tourneyEloService.getMatchTeamADeltas(tournament.getId());
+        List<TourneyMatchDto> matchDtos = matches.stream()
+            .map(match -> TourneyMatchDto.fromMatch(match, matchDeltas.get(match.getId())))
+            .toList();
         return TourneyTournamentDto.detail(
             tournament,
             tournamentPlayers.size(),
@@ -631,8 +639,8 @@ public class TourneyService {
             playerDtos,
             teamDtos,
             matchDtos,
-            buildTeamStandings(teams, matches),
-            buildPlayerStandings(tournament, tournamentPlayers, matches)
+            teamStandings,
+            playerStandings
         );
     }
 

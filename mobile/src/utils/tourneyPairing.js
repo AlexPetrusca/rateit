@@ -37,6 +37,11 @@ export const proposeNextRound = (detail) => {
 
   const nextRoundNumber = (allRounds.length ? Math.max(...allRounds) : 0) + 1;
 
+  // Matches don't auto-pair: bench everyone and let the admin drag onto the net.
+  if (detail?.isMatch) {
+    return { roundNumber: nextRoundNumber, games: [], byes: players };
+  }
+
   const ranked = [...players].sort((p, q) => (
     (winsById.get(q.id) || 0) - (winsById.get(p.id) || 0)
     || (diffById.get(q.id) || 0) - (diffById.get(p.id) || 0)

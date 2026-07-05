@@ -53,6 +53,13 @@ public class TourneyTournament extends BaseEntity {
     @Column(name = "mode")
     private TourneyTournamentMode mode;
 
+    // A "match" runs like a 1-net live tournament but is excluded from tournament /
+    // win-total stats (it still feeds Elo). Kept separate from mode (LIVE/HISTORICAL).
+    // columnDefinition sets a DB default so ddl-auto can add this NOT NULL column
+    // to the existing (non-empty) table without failing.
+    @Column(name = "is_match", nullable = false, columnDefinition = "boolean not null default false")
+    private boolean isMatch;
+
     // Number of nets / concurrent games per round (live tournaments).
     @Column(name = "court_count")
     private Integer courtCount;
