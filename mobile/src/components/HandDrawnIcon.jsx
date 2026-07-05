@@ -40,7 +40,13 @@ const HandDrawnIcon = ({ name, color, size = 24 }) => {
   // Pass tintColor as a prop, not in style: react-native-web ignores (and
   // deprecates) style.tintColor, so on web the tint was dropped and active
   // icons like the liked heart rendered in their baked grey instead of red.
-  return <Image source={icons[name]} resizeMode="contain" tintColor={color} style={{ width: size, height: size }} />;
+  //
+  // The key remounts the Image whenever the icon or color changes. RNW tints via
+  // an SVG <filter> whose id is stable per Image instance; iOS WebKit caches that
+  // filter and won't re-render when only the flood color changes, so a toggled
+  // heart kept its previous tint (grey when just liked, red when just unliked).
+  // Remounting allocates a fresh filter id, sidestepping the stale-filter cache.
+  return <Image key={`${name}:${color}`} source={icons[name]} resizeMode="contain" tintColor={color} style={{ width: size, height: size }} />;
 };
 
 export default HandDrawnIcon;
