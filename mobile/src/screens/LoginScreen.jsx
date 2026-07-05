@@ -495,14 +495,14 @@ const LoginScreen = () => {
                     autoComplete="tel"
                     textContentType="telephoneNumber"
                     keyboardType="phone-pad"
-                    value={formatPhoneNumber(phoneDigits)}
+                    value={phoneDigits}
                     onChangeText={(value) => {
                       hasEditedPhone.current = true;
                       setPhoneDigits(parsePhoneDigits(value));
                       setError('');
                     }}
                     onSubmitEditing={sendOtp}
-                    placeholder="(___) ___-____"
+                    placeholder=""
                     placeholderTextColor="#9ca3af"
                     selectionColor={colors.accent}
                     style={styles.phoneInput}
