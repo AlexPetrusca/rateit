@@ -146,8 +146,8 @@ const TourneyLeaderboardScreen = () => {
   return (
     <Screen contentStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.eyebrow}>Spikeball</Text>
-        <Text style={styles.title}>Leaderboard</Text>
+        <Text style={styles.eyebrow}>Tourney</Text>
+        <Text style={styles.title}>Spikeball</Text>
       </View>
 
       <Card style={styles.card}>
