@@ -8,6 +8,7 @@ import Screen from '../components/Screen.jsx';
 import TourneyHistoricalCreator from '../components/TourneyHistoricalCreator.jsx';
 import TourneyScoreboard from '../components/TourneyScoreboard.jsx';
 import TourneyMatchLog from '../components/TourneyMatchLog.jsx';
+import TourneyRoundBuilder from '../components/TourneyRoundBuilder.jsx';
 import UserAvatar from '../components/UserAvatar.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
@@ -258,6 +259,41 @@ const LiveRunner = ({ detail, onChange }) => {
           );
         })}
         <AppButton label="Finish round" onPress={finishRound} loading={busy} />
+      </Card>
+    );
+  }
+
+  // Matches build each game by dragging players onto two open sides (like the
+  // historical creator), rather than the auto-paired tap-to-swap tournament nets.
+  if (isMatch) {
+    const participants = (detail.players || []).map((tp) => ({
+      id: tp.player.id,
+      name: tp.player.displayName,
+      hasAccount: tp.player.criticUserId != null,
+      profilePicUrl: tp.player.profilePicUrl
+    }));
+    const roundNumber = (latestRound || 0) + 1;
+    return (
+      <Card style={styles.section}>
+        <Text style={styles.sectionTitle}>Log a game</Text>
+        <Text style={styles.hint}>Drag players onto Team A or Team B, then Save the round — you&apos;ll enter the score next.</Text>
+        <TourneyRoundBuilder
+          participants={participants}
+          roundNumber={roundNumber}
+          saving={busy}
+          onCommit={async (games) => {
+            if (!games.length) return;
+            setBusy(true);
+            try {
+              await BackendApiService.commitTourneyRound(detail.id, { roundNumber, games });
+              await onChange();
+            } catch (err) {
+              notify({ message: err.message || 'Failed to save game', type: 'error' });
+            } finally {
+              setBusy(false);
+            }
+          }}
+        />
       </Card>
     );
   }
