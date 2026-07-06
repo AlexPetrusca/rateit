@@ -70,7 +70,7 @@ const TourneyScreen = ({ navigation }) => {
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <View style={styles.titleCopy}>
-            <Text style={styles.eyebrow}>Tourney</Text>
+            <Text style={styles.eyebrow}>Spikeball</Text>
             <Text style={styles.title}>Past tournaments</Text>
           </View>
           {isAdmin ? (

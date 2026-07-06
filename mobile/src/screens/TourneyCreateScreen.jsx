@@ -85,7 +85,9 @@ const TourneyCreateScreen = ({ navigation, route }) => {
     setSaving(true);
     setError('');
     try {
-      const name = `${sportLabel} ${isMatch ? 'match ' : ''}${toNameDate(tournamentDate)}`;
+      // Names aren't unique — every tournament is just "Tournament" and every match
+      // "Matches" (the date/players differentiate rows in the list).
+      const name = isMatch ? 'Matches' : 'Tournament';
       const normalizedCourts = Math.max(1, Number.parseInt(courtCount, 10) || 1);
       const tournament = await BackendApiService.createTourneyTournament({
         name,

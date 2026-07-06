@@ -265,7 +265,7 @@ const TourneyDashboardScreen = ({ navigation }) => {
     <Screen>
       <View style={styles.headerRow}>
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>Tourney</Text>
+          <Text style={styles.eyebrow}>Spikeball</Text>
           <Text style={styles.title}>Dashboard</Text>
         </View>
         <AppButton
