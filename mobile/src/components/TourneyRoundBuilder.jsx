@@ -43,7 +43,7 @@ const pointOf = (e) => {
   return { x: n.clientX ?? n.pageX ?? 0, y: n.clientY ?? n.pageY ?? 0 };
 };
 
-const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) => {
+const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit, pointsToWin = 15 }) => {
   const [nets, setNets] = useState([emptyNet()]);
   const [selected, setSelected] = useState(0);
   const [dragName, setDragName] = useState(null);
@@ -140,6 +140,20 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
     setNets((cur) => cur.map((n, i) => (i === selectedRef.current ? { ...n, [side]: digits } : n)));
   };
 
+  // On blur, a losing score (below the target) implies the other team won: fill
+  // them to the target, or to loser+2 once the loser is one below it (win by two —
+  // e.g. loser 13 -> 15, loser 14 -> 16). Only when the other side is still empty.
+  const settleScore = (side) => setNets((cur) => cur.map((n, i) => {
+    if (i !== selectedRef.current) return n;
+    const val = n[side];
+    if (val === '' || val == null || Number(val) >= pointsToWin) return n;
+    const other = side === 'a' ? 'b' : 'a';
+    if (n[other] !== '' && n[other] != null) return n;
+    const loser = Number(val);
+    const winner = loser < pointsToWin - 1 ? pointsToWin : loser + 2;
+    return { ...n, [other]: String(winner) };
+  }));
+
   const addNet = () => { setNets((n) => [...n, emptyNet()]); setSelected(nets.length); };
   const removeNet = () => {
     if (nets.length <= 1) { setNets([emptyNet()]); setSelected(0); return; }
@@ -179,6 +193,7 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
         <AppTextInput
           value={net[side] ?? ''}
           onChangeText={(v) => changeScore(side, v)}
+          onBlur={() => settleScore(side)}
           keyboardType="number-pad"
           placeholder="score"
           style={styles.scoreInputWide}

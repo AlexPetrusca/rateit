@@ -280,6 +280,7 @@ const LiveRunner = ({ detail, onChange }) => {
         <TourneyRoundBuilder
           participants={participants}
           roundNumber={roundNumber}
+          pointsToWin={pointsToWin}
           saving={busy}
           onCommit={async (games) => {
             if (!games.length) return;
