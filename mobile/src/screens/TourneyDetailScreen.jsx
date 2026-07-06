@@ -276,7 +276,7 @@ const LiveRunner = ({ detail, onChange }) => {
     return (
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>Log a game</Text>
-        <Text style={styles.hint}>Drag players onto Team A or Team B, then Save the round — you&apos;ll enter the score next.</Text>
+        <Text style={styles.hint}>Drag players onto a side, enter each team&apos;s score (higher wins), then Save.</Text>
         <TourneyRoundBuilder
           participants={participants}
           roundNumber={roundNumber}

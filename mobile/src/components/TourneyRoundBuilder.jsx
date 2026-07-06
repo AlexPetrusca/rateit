@@ -1,6 +1,7 @@
 import { memo, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import AppButton from './AppButton.jsx';
+import AppTextInput from './AppTextInput.jsx';
 import UserAvatar from './UserAvatar.jsx';
 import { colors, radius, spacing, text } from '../theme.js';
 
@@ -28,7 +29,15 @@ const DraggableChip = memo(({ player, zone, onPickup, onRemove }) => (
   </View>
 ));
 
-const emptyNet = () => ({ teamA: [], teamB: [] });
+const emptyNet = () => ({ teamA: [], teamB: [], a: '', b: '' });
+
+// Winner = the higher of two filled scores (win by two — can exceed the target).
+const winnerOf = (n) => {
+  const a = n?.a === '' || n?.a == null ? null : Number(n.a);
+  const b = n?.b === '' || n?.b == null ? null : Number(n.b);
+  if (a == null || b == null || a === b) return null;
+  return a > b ? 'a' : 'b';
+};
 const pointOf = (e) => {
   const n = e?.nativeEvent || e;
   return { x: n.clientX ?? n.pageX ?? 0, y: n.clientY ?? n.pageY ?? 0 };
@@ -67,7 +76,7 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
     if (!target || target === fromZone) return;
     const sel = selectedRef.current;
     setNets((cur) => {
-      const copy = cur.map((n) => ({ teamA: [...n.teamA], teamB: [...n.teamB] }));
+      const copy = cur.map((n) => ({ ...n, teamA: [...n.teamA], teamB: [...n.teamB] }));
       if (fromZone === 'teamA') copy[sel].teamA = copy[sel].teamA.filter((p) => p.id !== player.id);
       if (fromZone === 'teamB') copy[sel].teamB = copy[sel].teamB.filter((p) => p.id !== player.id);
       if (target === 'teamA') {
@@ -119,12 +128,17 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
   const removeChip = useRef((player, fromZone) => {
     const sel = selectedRef.current;
     setNets((cur) => {
-      const copy = cur.map((n) => ({ teamA: [...n.teamA], teamB: [...n.teamB] }));
+      const copy = cur.map((n) => ({ ...n, teamA: [...n.teamA], teamB: [...n.teamB] }));
       if (fromZone === 'teamA') copy[sel].teamA = copy[sel].teamA.filter((p) => p.id !== player.id);
       if (fromZone === 'teamB') copy[sel].teamB = copy[sel].teamB.filter((p) => p.id !== player.id);
       return copy;
     });
   }).current;
+
+  const changeScore = (side, value) => {
+    const digits = value.replace(/[^0-9]/g, '');
+    setNets((cur) => cur.map((n, i) => (i === selectedRef.current ? { ...n, [side]: digits } : n)));
+  };
 
   const addNet = () => { setNets((n) => [...n, emptyNet()]); setSelected(nets.length); };
   const removeNet = () => {
@@ -133,11 +147,14 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
     setSelected((s) => Math.max(0, s - 1));
   };
 
-  const readyGames = nets.filter((n) => n.teamA.length === 2 && n.teamB.length === 2);
+  // A game is ready once both sides have 2 players and a valid (non-tie) score.
+  const readyGames = nets.filter((n) => n.teamA.length === 2 && n.teamB.length === 2 && winnerOf(n) != null);
   const commit = () => {
     onCommit(readyGames.map((n) => ({
       teamAPlayerIds: n.teamA.map((p) => p.id),
-      teamBPlayerIds: n.teamB.map((p) => p.id)
+      teamBPlayerIds: n.teamB.map((p) => p.id),
+      teamAScore: Number.parseInt(n.a, 10),
+      teamBScore: Number.parseInt(n.b, 10)
     })));
     setNets([emptyNet()]);
     setSelected(0);
@@ -145,17 +162,31 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
 
   const net = nets[selected] || emptyNet();
   const dragging = dragName != null;
+  const w = winnerOf(net);
 
-  const zone = (key, label, list) => (
-    <View nativeID={`tzone-${key}`} style={[styles.zone, dragging && styles.zoneActive]}>
-      <Text style={styles.zoneLabel}>{label}</Text>
-      <View style={styles.zoneList}>
-        {list.length === 0 ? <Text style={styles.zoneEmpty}>Drag here</Text> : list.map((p) => (
-          <DraggableChip key={p.id} player={p} zone={key} onPickup={onPickup} onRemove={removeChip} />
-        ))}
+  const zone = (key, side, label, list) => {
+    const isWin = w === side;
+    return (
+      <View style={styles.column}>
+        <View nativeID={`tzone-${key}`} style={[styles.zone, isWin && styles.zoneWin, dragging && styles.zoneActive]}>
+          <Text style={styles.zoneLabel}>{label}</Text>
+          <View style={styles.zoneList}>
+            {list.length === 0 ? <Text style={styles.zoneEmpty}>Drag here</Text> : list.map((p) => (
+              <DraggableChip key={p.id} player={p} zone={key} onPickup={onPickup} onRemove={removeChip} />
+            ))}
+          </View>
+        </View>
+        <AppTextInput
+          value={net[side] ?? ''}
+          onChangeText={(v) => changeScore(side, v)}
+          keyboardType="number-pad"
+          placeholder="score"
+          style={styles.scoreInputWide}
+          inputStyle={[styles.scoreInputBox, isWin && styles.scoreInputWin]}
+        />
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View ref={boardRef} style={styles.board}>
@@ -169,9 +200,9 @@ const TourneyRoundBuilder = ({ participants, roundNumber, saving, onCommit }) =>
       </View>
 
       <View style={styles.columns}>
-        {zone('teamA', 'Team A', net.teamA)}
+        {zone('teamA', 'a', 'Team A', net.teamA)}
         <Text style={styles.vs}>vs</Text>
-        {zone('teamB', 'Team B', net.teamB)}
+        {zone('teamB', 'b', 'Team B', net.teamB)}
       </View>
 
       <View nativeID="tzone-pool" style={styles.pool}>
@@ -208,8 +239,13 @@ const styles = StyleSheet.create({
   tabAddText: { color: colors.textMuted, fontSize: 20, fontWeight: '800', lineHeight: 22 },
   columns: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.sm },
   vs: { ...text.muted, alignSelf: 'center', fontWeight: '700' },
+  column: { flex: 1, gap: spacing.xs },
   zone: { flex: 1, minHeight: 120, padding: spacing.sm, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, backgroundColor: colors.surfaceSoft, gap: spacing.xs },
+  zoneWin: { borderColor: colors.accent },
   zoneActive: { borderColor: colors.accent, borderStyle: 'dashed' },
+  scoreInputWide: { width: 84, alignSelf: 'center' },
+  scoreInputBox: { textAlign: 'center', paddingHorizontal: 4, minHeight: 44 },
+  scoreInputWin: { color: colors.accent, borderColor: colors.accent, fontWeight: '800' },
   zoneLabel: { ...text.muted, fontSize: 11, textTransform: 'uppercase', fontWeight: '800' },
   zoneList: { gap: spacing.xs, minHeight: 44 },
   zoneEmpty: { ...text.muted, fontSize: 12, fontStyle: 'italic' },
