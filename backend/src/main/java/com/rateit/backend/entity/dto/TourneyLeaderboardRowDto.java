@@ -9,6 +9,6 @@ public record TourneyLeaderboardRowDto(
     String profilePicUrl,
     BigDecimal elo,
     Double averagePlacement,
-    int wins
+    int matchesPlayed
 ) {
 }

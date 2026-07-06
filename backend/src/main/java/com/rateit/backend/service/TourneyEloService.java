@@ -195,8 +195,12 @@ public class TourneyEloService {
         }
 
         Map<Long, BigDecimal> ratingsByPlayerId = new LinkedHashMap<>();
+        Map<Long, Integer> matchesByPlayerId = new LinkedHashMap<>();
         playerRatingRepository.findAllByRatingSystemOrderByRatingDescIdAsc(RATING_SYSTEM)
-            .forEach(rating -> ratingsByPlayerId.put(rating.getPlayer().getId(), rating.getRating()));
+            .forEach(rating -> {
+                ratingsByPlayerId.put(rating.getPlayer().getId(), rating.getRating());
+                matchesByPlayerId.put(rating.getPlayer().getId(), rating.getMatchesPlayed() == null ? 0 : rating.getMatchesPlayed());
+            });
 
         List<MutableLeaderboardRow> sortedRows = rowsByPlayerId.values().stream()
             .sorted(Comparator
@@ -220,7 +224,7 @@ public class TourneyEloService {
                 row.profilePicUrl,
                 elo,
                 averagePlacement,
-                row.wins
+                matchesByPlayerId.getOrDefault(row.playerId, 0)
             ));
         }
 

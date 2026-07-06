@@ -12,7 +12,7 @@ const SORT_DIRECTIONS = {
   rank: 'asc',
   playerName: 'asc',
   elo: 'desc',
-  wins: 'desc'
+  matchesPlayed: 'desc'
 };
 
 const getColumnDefs = (compact) => (
@@ -21,13 +21,13 @@ const getColumnDefs = (compact) => (
         { key: 'rank', label: '', width: 34, align: 'center', sortable: false },
         { key: 'playerName', label: 'Player', flex: 1, minWidth: 104, align: 'left', sortable: true },
         { key: 'elo', label: 'ELO', width: 46, align: 'right', sortable: true },
-        { key: 'wins', label: 'Wins', width: 44, align: 'right', sortable: true }
+        { key: 'matchesPlayed', label: 'Matches', width: 58, align: 'right', sortable: true }
       ]
     : [
         { key: 'rank', label: '', width: 64, align: 'center', sortable: false },
         { key: 'playerName', label: 'Player', width: 190, flex: 1, align: 'left', sortable: true },
         { key: 'elo', label: 'ELO', width: 84, align: 'right', sortable: true },
-        { key: 'wins', label: 'Wins', width: 92, align: 'right', sortable: true }
+        { key: 'matchesPlayed', label: 'Matches', width: 92, align: 'right', sortable: true }
       ]
 );
 
@@ -96,7 +96,7 @@ const LeaderboardRow = ({ row, columnDefs, compact, displayRank }) => (
       <Text style={[styles.numericText, compact && styles.numericTextCompact]}>{Math.round(Number(row.elo ?? 1000))}</Text>
     </View>
     <View style={[styles.cell, styles.numericCell, compact && styles.cellCompact, { width: columnDefs[3].width }]}>
-      <Text style={[styles.numericText, compact && styles.numericTextCompact]}>{row.wins}</Text>
+      <Text style={[styles.numericText, compact && styles.numericTextCompact]}>{row.matchesPlayed}</Text>
     </View>
   </View>
 );
