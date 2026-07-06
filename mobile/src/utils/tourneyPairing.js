@@ -37,8 +37,17 @@ export const proposeNextRound = (detail) => {
 
   const nextRoundNumber = (allRounds.length ? Math.max(...allRounds) : 0) + 1;
 
-  // Matches don't auto-pair: bench everyone and let the admin drag onto the net.
+  // Matches don't auto-pair, but auto-add one net (first four players; rest benched)
+  // so each round starts ready to score — the admin drags to adjust who's playing.
   if (detail?.isMatch) {
+    if (players.length >= 4) {
+      const [a1, a2, b1, b2, ...rest] = players;
+      return {
+        roundNumber: nextRoundNumber,
+        games: [{ uid: `g${nextRoundNumber}_0`, net: 1, teamA: [a1, a2], teamB: [b1, b2] }],
+        byes: rest
+      };
+    }
     return { roundNumber: nextRoundNumber, games: [], byes: players };
   }
 

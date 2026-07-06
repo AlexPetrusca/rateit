@@ -17,9 +17,11 @@ public interface TourneyTournamentRepository extends JpaRepository<TourneyTourna
 
     // In-progress live tournaments the given Critic user is a roster member of
     // (via a tourney player linked to their account). Powers the LIVE banner.
+    // Matches are excluded — the banner is only for tournaments.
     @Query("""
         select t from TourneyTournament t
         where t.mode = com.rateit.backend.entity.types.TourneyTournamentMode.LIVE
+          and t.isMatch = false
           and t.status <> com.rateit.backend.entity.types.TourneyTournamentStatus.COMPLETE
           and exists (
             select 1 from TourneyTournamentPlayer tp

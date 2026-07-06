@@ -51,24 +51,36 @@ const LiveRunner = ({ detail, onChange }) => {
   const latestMatches = useMemo(() => matches.filter((m) => m.roundNumber === latestRound), [matches, latestRound]);
   const scoringActive = latestRound > 0 && latestMatches.some((m) => !m.completed);
   const pointsToWin = detail.pointsToWin || 15;
+  const isMatch = detail.isMatch;
 
-  // A team "wins" once it reaches the winning score; only one side can.
+  // Matches are win-by-two and can go past the target, so the higher score wins.
+  // Tournaments cap at the winning score (only one side can reach it).
   const winnerSide = (s) => {
-    const aWin = Number(s?.a) >= pointsToWin;
-    const bWin = Number(s?.b) >= pointsToWin;
+    const a = s?.a === '' || s?.a == null ? null : Number(s.a);
+    const b = s?.b === '' || s?.b == null ? null : Number(s.b);
+    if (isMatch) {
+      if (a == null || b == null || a === b) return null;
+      return a > b ? 'a' : 'b';
+    }
+    const aWin = a != null && a >= pointsToWin;
+    const bWin = b != null && b >= pointsToWin;
     if (aWin && !bWin) return 'a';
     if (bWin && !aWin) return 'b';
     return null;
   };
 
   // Picking a winner (tap or typing the winning score) locks their score to the
-  // winning score and clears the other side if it was also at/above it.
-  const setWinner = (matchId, side) => setScores((cur) => {
-    const s = { ...(cur[matchId] || { a: '', b: '' }) };
-    if (side === 'a') { s.a = String(pointsToWin); if (Number(s.b) >= pointsToWin) s.b = ''; }
-    else { s.b = String(pointsToWin); if (Number(s.a) >= pointsToWin) s.a = ''; }
-    return { ...cur, [matchId]: s };
-  });
+  // winning score and clears the other side if it was also at/above it. Matches
+  // are scored freely (win by two), so tapping a team does nothing there.
+  const setWinner = (matchId, side) => {
+    if (isMatch) return;
+    setScores((cur) => {
+      const s = { ...(cur[matchId] || { a: '', b: '' }) };
+      if (side === 'a') { s.a = String(pointsToWin); if (Number(s.b) >= pointsToWin) s.b = ''; }
+      else { s.b = String(pointsToWin); if (Number(s.a) >= pointsToWin) s.a = ''; }
+      return { ...cur, [matchId]: s };
+    });
+  };
 
   const changeScore = (matchId, side, value) => {
     const digits = value.replace(/[^0-9]/g, '');
@@ -80,6 +92,7 @@ const LiveRunner = ({ detail, onChange }) => {
   // blur (rather than every keystroke) avoids jumping the gun while someone is
   // still typing e.g. "1" then "5" for 15.
   const settleScore = (matchId, side) => setScores((cur) => {
+    if (isMatch) return cur; // win-by-two: enter both scores, no auto-fill to the target
     const s = cur[matchId] || { a: '', b: '' };
     const val = s[side];
     if (val === '' || val == null || Number(val) >= pointsToWin) return cur;
@@ -157,7 +170,7 @@ const LiveRunner = ({ detail, onChange }) => {
       const loser = w === 'a' ? s.b : s.a;
       return loser === '' || loser == null;
     });
-    if (invalid) { notify({ message: `Each game needs a winner (${pointsToWin}) and the other team's score.`, type: 'warning' }); return; }
+    if (invalid) { notify({ message: isMatch ? 'Each game needs two different scores.' : `Each game needs a winner (${pointsToWin}) and the other team's score.`, type: 'warning' }); return; }
     setBusy(true);
     try {
       const payload = {
@@ -190,7 +203,7 @@ const LiveRunner = ({ detail, onChange }) => {
       const loser = w === 'a' ? s.b : s.a;
       return loser === '' || loser == null; // the losing team still needs a score
     });
-    if (invalid) { notify({ message: `Each game needs a winner (${pointsToWin}) and the other team's score.`, type: 'warning' }); return; }
+    if (invalid) { notify({ message: isMatch ? 'Each game needs two different scores.' : `Each game needs a winner (${pointsToWin}) and the other team's score.`, type: 'warning' }); return; }
     setBusy(true);
     try {
       for (const m of latestMatches) {
@@ -212,7 +225,7 @@ const LiveRunner = ({ detail, onChange }) => {
     return (
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>Round {latestRound} · enter scores</Text>
-        <Text style={styles.hint}>Tap the winning team (or type {pointsToWin}); enter the other team&apos;s score.</Text>
+        <Text style={styles.hint}>{isMatch ? 'Enter both scores — the higher score wins (win by two).' : `Tap the winning team (or type ${pointsToWin}); enter the other team's score.`}</Text>
         {latestMatches.map((m) => {
           const s = scores[m.id] || { a: '', b: '' };
           const w = winnerSide(s);
@@ -223,8 +236,8 @@ const LiveRunner = ({ detail, onChange }) => {
           );
           const scoreBox = (side) => (
             <AppTextInput
-              value={w === side ? String(pointsToWin) : (s[side] ?? '')}
-              editable={w !== side}
+              value={!isMatch && w === side ? String(pointsToWin) : (s[side] ?? '')}
+              editable={isMatch || w !== side}
               onChangeText={(v) => changeScore(m.id, side, v)}
               keyboardType="number-pad"
               style={styles.scoreInput}
@@ -271,7 +284,7 @@ const LiveRunner = ({ detail, onChange }) => {
   return (
     <Card style={styles.section}>
       <Text style={styles.sectionTitle}>Round {round?.roundNumber || 1}</Text>
-      <Text style={styles.hint}>Tap a player then another to swap. Type each game&apos;s scores — the team that reaches {pointsToWin} highlights red as the winner.</Text>
+      <Text style={styles.hint}>Tap a player then another to swap. Type each game&apos;s scores — {isMatch ? 'the higher score wins (win by two)' : `the team that reaches ${pointsToWin}`} highlights red as the winner.</Text>
       {(round?.games || []).map((g, i) => {
         const w = winnerSide(scores[g.uid]);
         return (
