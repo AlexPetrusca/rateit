@@ -17,6 +17,7 @@ const TourneyScoreboard = ({ standings = [], title = 'Scoreboard' }) => (
       <Text style={styles.title}>{title}</Text>
       <View style={styles.statCols}>
         <Text style={styles.statHead}>W-L</Text>
+        <Text style={styles.statHead}>PTS</Text>
         <Text style={styles.statHead}>BYE</Text>
         <Text style={styles.statHead}>ELO</Text>
       </View>
@@ -32,6 +33,7 @@ const TourneyScoreboard = ({ standings = [], title = 'Scoreboard' }) => (
           <Text style={styles.name} numberOfLines={1}>{s.playerName}</Text>
           <View style={styles.statCols}>
             <Text style={styles.stat}>{s.wins}-{s.losses}</Text>
+            <Text style={styles.stat}>{s.pointsFor ?? 0}</Text>
             <Text style={styles.stat}>{s.byes ?? 0}</Text>
             <Text style={[styles.stat, eloDelta > 0 && styles.pos, eloDelta < 0 && styles.neg]}>
               {formatEloDelta(s.eloDelta)}
@@ -47,12 +49,12 @@ const styles = StyleSheet.create({
   card: { gap: spacing.xs },
   headerRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   title: text.h3,
-  statCols: { flexDirection: 'row', gap: spacing.md, justifyContent: 'flex-end' },
-  statHead: { ...text.muted, fontSize: 12, width: 40, textAlign: 'right' },
+  statCols: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'flex-end' },
+  statHead: { ...text.muted, fontSize: 12, width: 38, textAlign: 'right' },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   rank: { ...text.muted, width: 20, textAlign: 'center', fontVariant: ['tabular-nums'] },
   name: { flex: 1, minWidth: 0, color: colors.text, fontWeight: '700', fontSize: 15 },
-  stat: { color: colors.text, fontWeight: '700', width: 40, textAlign: 'right', fontVariant: ['tabular-nums'] },
+  stat: { color: colors.text, fontWeight: '700', width: 38, textAlign: 'right', fontVariant: ['tabular-nums'] },
   pos: { color: colors.accent },
   neg: { color: colors.textMuted },
   muted: { ...text.muted, paddingVertical: spacing.sm }
