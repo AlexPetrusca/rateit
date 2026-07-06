@@ -230,8 +230,10 @@ const TourneyDashboardScreen = ({ navigation }) => {
         BackendApiService.getTourneyTournaments(),
         BackendApiService.getMyTourneyEloHistory()
       ]);
+      // Matches show in the tournaments list but must not count toward the
+      // tournament-based metrics here (they still move the Elo graph below).
       const nextDetails = await Promise.all(
-        (tournaments || []).map((tournament) => BackendApiService.getTourneyTournament(tournament.id))
+        (tournaments || []).filter((tournament) => !tournament.isMatch).map((tournament) => BackendApiService.getTourneyTournament(tournament.id))
       );
       setDetails(nextDetails);
       setEloHistory(nextEloHistory || []);

@@ -25,8 +25,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -93,20 +93,21 @@ class TourneyServiceTest {
     }
 
     @Test
-    void listTournamentsExcludesMatches() {
+    void listTournamentsIncludesMatches() {
         when(userService.findByPhoneNumber("+15550000000")).thenReturn(user("+15550000000", "ROLE_ADMIN"));
-        TourneyTournament tournament = tournament(1L, "Summer Series", false);
-        TourneyTournament match = tournament(2L, "Match 07-05-2026", true);
+        TourneyTournament tournament = tournament(1L, "Tournament", false);
+        TourneyTournament match = tournament(2L, "Matches", true);
         when(tournamentRepository.findAllByOrderByTournamentDateDescCreatedAtDesc()).thenReturn(List.of(tournament, match));
-        when(tournamentPlayerRepository.countByTournament(tournament)).thenReturn(4L);
-        when(teamRepository.countByTournament(tournament)).thenReturn(2L);
-        when(matchRepository.findByTournamentOrderByRoundNumberAscIdAsc(tournament)).thenReturn(List.of());
+        for (TourneyTournament t : List.of(tournament, match)) {
+            when(tournamentPlayerRepository.countByTournament(t)).thenReturn(4L);
+            when(teamRepository.countByTournament(t)).thenReturn(2L);
+            when(matchRepository.findByTournamentOrderByRoundNumberAscIdAsc(t)).thenReturn(List.of());
+        }
 
         List<TourneyTournamentDto> result = tourneyService.listTournaments("+15550000000");
 
-        assertEquals(1, result.size());
-        assertEquals(1L, result.get(0).id());
-        assertFalse(result.get(0).isMatch());
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(TourneyTournamentDto::isMatch));
     }
 
     private TourneyTournament tournament(long id, String name, boolean isMatch) {

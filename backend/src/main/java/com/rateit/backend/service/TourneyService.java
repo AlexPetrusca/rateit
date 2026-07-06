@@ -144,11 +144,10 @@ public class TourneyService {
     @Transactional(readOnly = true)
     public List<TourneyTournamentDto> listTournaments(String phoneNumber) {
         userService.findByPhoneNumber(phoneNumber); // auth check; tournaments are viewable by everyone
+        // Includes matches (the app distinguishes them by isMatch); the dashboard
+        // still filters matches out of its tournament-count metrics client-side.
         return tournamentRepository.findAllByOrderByTournamentDateDescCreatedAtDesc()
             .stream()
-            // Matches still feed Elo, but they are not tournaments — keep them out
-            // of the list and every stat derived from it.
-            .filter(tournament -> !tournament.isMatch())
             .map(tournament -> TourneyTournamentDto.summary(
                 tournament,
                 (int) tournamentPlayerRepository.countByTournament(tournament),
