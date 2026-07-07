@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import CommentComposer from '../components/CommentComposer.jsx';
 import CommentThread from '../components/CommentThread.jsx';
+import PostActions from '../components/PostActions.jsx';
 import RatingComposer from '../components/RatingComposer.jsx';
 import RatingFeedItem from '../components/RatingFeedItem.jsx';
 import HandDrawnIcon from '../components/HandDrawnIcon.jsx';
@@ -15,6 +17,7 @@ import { useRatingInteractions } from '../hooks/useRatingInteractions.js';
 import { useResolvedImageUrl } from '../hooks/useResolvedImageUrl.js';
 import { usePeekHold } from '../hooks/usePeekHold.js';
 import BackendApiService from '../services/BackendApiService.js';
+import { getRatingShareUrl } from '../config.js';
 import { colors, spacing, text } from '../theme.js';
 import { mergeUniqueBy } from '../utils/lists.js';
 
@@ -49,6 +52,7 @@ const TopicScreen = ({ navigation, route }) => {
   const [saving, setSaving] = useState(false);
   const [openReview, setOpenReview] = useState(null);
   const [highlightCommentId, setHighlightCommentId] = useState(null);
+  const [modalComposerOpen, setModalComposerOpen] = useState(false);
 
   const updateItem = useCallback((ratingId, updater) => {
     setItems((current) => current.map((item) => (item.ratingId === ratingId ? updater(item) : item)));
@@ -104,6 +108,11 @@ const TopicScreen = ({ navigation, route }) => {
     }
   }, [openReview]); // eslint-disable-line react-hooks/exhaustive-deps
   const modalComments = openReview ? (interactions.commentsByRating[openReview.ratingId] || []) : [];
+  // Use the live copy from the list so the modal's like button reflects toggles
+  // (toggleLike updates `items`, not the openReview snapshot taken at open time).
+  const activeReview = openReview
+    ? (items.find((it) => it.ratingId === openReview.ratingId) || openReview)
+    : null;
 
   const topicTitle = topic?.title || topic?.body || items[0]?.rateableItem?.title || items[0]?.rateableItem?.body || 'Topic';
   const mediaObjectKey = topic?.mediaObjectKey || items[0]?.rateableItem?.mediaObjectKey;
@@ -151,7 +160,7 @@ const TopicScreen = ({ navigation, route }) => {
     }
   };
 
-  const closeReview = () => { setOpenReview(null); setHighlightCommentId(null); };
+  const closeReview = () => { setOpenReview(null); setHighlightCommentId(null); setModalComposerOpen(false); };
   const closeTopic = () => navigation.canGoBack()
     ? navigation.goBack()
     : navigation.navigate('MainTabs', { screen: 'Home' });
@@ -292,31 +301,62 @@ const TopicScreen = ({ navigation, route }) => {
         <Pressable style={styles.modalBackdrop} onPress={closeReview}>
           <Pressable style={styles.modalContent} onPress={(event) => event.stopPropagation()}>
             <ScrollView ref={modalScrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScroll}>
-              <PostCard post={openReview} style={styles.modalCard} />
-              {modalComments.length > 0 ? (
-                <View style={styles.modalComments}>
-                  <CommentThread
-                    comments={modalComments}
-                    currentUserId={user?.userId ?? user?.id}
-                    highlightCommentId={highlightCommentId}
-                    scrollRef={modalScrollRef}
-                    autoExpandDepth={Infinity}
-                    autoExpandFlatLimit={Infinity}
-                    onAuthorPress={(userId) => { closeReview(); navigation.navigate('Profile', { userId }); }}
-                    onLikePress={async (comment) => {
-                      try {
-                        if (comment.likedByCurrentUser) {
-                          await BackendApiService.unlikeComment(comment.id);
-                        } else {
-                          await BackendApiService.likeComment(comment.id);
-                        }
-                        await interactions.loadComments(openReview.ratingId, true);
-                      } catch (error) {
-                        notify({ message: error.message || 'Failed to like comment', type: 'error' });
-                      }
-                    }}
+              {activeReview ? (
+                <>
+                  <PostCard
+                    post={activeReview}
+                    style={styles.modalCard}
+                    actions={(
+                      <PostActions
+                        liked={activeReview.likedByCurrentUser}
+                        likeCount={activeReview.likeCount}
+                        commentCount={activeReview.commentCount}
+                        onLike={() => interactions.toggleLike(activeReview)}
+                        onComment={() => setModalComposerOpen((open) => !open)}
+                        shareUrl={getRatingShareUrl(activeReview.rateableItem?.id, activeReview.ratingId)}
+                        commentLabel={modalComposerOpen ? 'Cancel' : 'Comment'}
+                      />
+                    )}
                   />
-                </View>
+                  {modalComposerOpen ? (
+                    <View style={styles.modalComposer}>
+                      <CommentComposer
+                        score={Number(interactions.getDraft(activeReview.ratingId).score || 2.5)}
+                        onScoreChange={(score) => interactions.updateDraft(activeReview.ratingId, null, { score: String(score) })}
+                        text={interactions.getDraft(activeReview.ratingId).text}
+                        onTextChange={(nextText) => interactions.updateDraft(activeReview.ratingId, null, { text: nextText })}
+                        onSubmit={() => interactions.submitComment(activeReview)
+                          .then(() => setModalComposerOpen(false))
+                          .catch((error) => notify({ message: error.message, type: 'error' }))}
+                      />
+                    </View>
+                  ) : null}
+                  {modalComments.length > 0 ? (
+                    <View style={styles.modalComments}>
+                      <CommentThread
+                        comments={modalComments}
+                        currentUserId={user?.userId ?? user?.id}
+                        highlightCommentId={highlightCommentId}
+                        scrollRef={modalScrollRef}
+                        autoExpandDepth={Infinity}
+                        autoExpandFlatLimit={Infinity}
+                        onAuthorPress={(userId) => { closeReview(); navigation.navigate('Profile', { userId }); }}
+                        onLikePress={async (comment) => {
+                          try {
+                            if (comment.likedByCurrentUser) {
+                              await BackendApiService.unlikeComment(comment.id);
+                            } else {
+                              await BackendApiService.likeComment(comment.id);
+                            }
+                            await interactions.loadComments(activeReview.ratingId, true);
+                          } catch (error) {
+                            notify({ message: error.message || 'Failed to like comment', type: 'error' });
+                          }
+                        }}
+                      />
+                    </View>
+                  ) : null}
+                </>
               ) : null}
             </ScrollView>
             <Pressable
@@ -475,6 +515,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     backgroundColor: 'rgba(22, 22, 25, 0.98)',
     borderRadius: 22
+  },
+  modalComposer: {
+    marginTop: spacing.sm
   },
   modalClose: {
     position: 'absolute',
