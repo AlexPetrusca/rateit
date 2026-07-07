@@ -52,7 +52,7 @@ public class FeedService {
         int limit = normalizeLimit(requestedLimit);
         var currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
         List<Rating> ratings = ratingRepository.findRecentByVisibility(Visibility.PUBLIC, PageRequest.of(0, limit));
-        return toFeedItems(ratings, currentUser);
+        return toFeedItems(withOpRepresentatives(ratings), currentUser);
     }
 
     @Transactional(readOnly = true)
@@ -61,7 +61,7 @@ public class FeedService {
         int page = requestedPage == null || requestedPage < 0 ? 0 : requestedPage;
         var currentUser = userService.findByPhoneNumber(currentUserPhoneNumber);
         List<Rating> ratings = ratingRepository.findRecentByVisibility(Visibility.PUBLIC, PageRequest.of(page, limit));
-        return toFeedItems(ratings, currentUser);
+        return toFeedItems(withOpRepresentatives(ratings), currentUser);
     }
 
     @Transactional(readOnly = true)
@@ -112,7 +112,7 @@ public class FeedService {
         List<Rating> ratings = ratingRepository.findRecentByFollowedUsersAndVisibility(
             currentUser, Visibility.PUBLIC, PageRequest.of(page, limit)
         );
-        return toFeedItems(ratings, currentUser);
+        return toFeedItems(withFollowedOpRepresentatives(ratings, currentUser), currentUser);
     }
 
     @Transactional(readOnly = true)
@@ -192,6 +192,33 @@ public class FeedService {
             )
             .stream()
             .map(PromptDto::from);
+    }
+
+    // Replace each topic's representative (the newest rating, which sets feed
+    // order) with the topic's OP rating, so the card shows the OP while the feed
+    // stays ordered by latest activity. Order of the input list is preserved.
+    private List<Rating> withOpRepresentatives(List<Rating> representatives) {
+        if (representatives.isEmpty()) {
+            return representatives;
+        }
+        List<Long> itemIds = representatives.stream().map(r -> r.getRateableItem().getId()).distinct().toList();
+        Map<Long, Rating> opByItemId = ratingRepository.findEarliestByRateableItemIdsAndVisibility(itemIds, Visibility.PUBLIC)
+            .stream().collect(Collectors.toMap(r -> r.getRateableItem().getId(), r -> r, (a, b) -> a));
+        return representatives.stream()
+            .map(r -> opByItemId.getOrDefault(r.getRateableItem().getId(), r))
+            .toList();
+    }
+
+    private List<Rating> withFollowedOpRepresentatives(List<Rating> representatives, User currentUser) {
+        if (representatives.isEmpty()) {
+            return representatives;
+        }
+        List<Long> itemIds = representatives.stream().map(r -> r.getRateableItem().getId()).distinct().toList();
+        Map<Long, Rating> opByItemId = ratingRepository.findEarliestByRateableItemIdsForFollowedUsers(itemIds, currentUser, Visibility.PUBLIC)
+            .stream().collect(Collectors.toMap(r -> r.getRateableItem().getId(), r -> r, (a, b) -> a));
+        return representatives.stream()
+            .map(r -> opByItemId.getOrDefault(r.getRateableItem().getId(), r))
+            .toList();
     }
 
     private List<FeedItemDto> toFeedItems(List<Rating> ratings, User currentUser) {

@@ -98,6 +98,60 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         """)
     List<Rating> findRecentByVisibility(@Param("visibility") Visibility visibility, Pageable pageable);
 
+    // The OP's rating for each given topic — the earliest public, non-deleted
+    // rating. The feed represents a topic by its OP but orders topics by their
+    // latest activity, so a new rating bumps the OP's card back to the top.
+    @Query("""
+        select r
+        from Rating r
+        join fetch r.authorUser
+        join fetch r.rateableItem item
+        join fetch r.ratingScale
+        left join fetch item.mediaAsset
+        where item.id in :itemIds
+          and r.visibility = :visibility
+          and r.deletedAt is null
+          and r.id = (
+              select min(r2.id)
+              from Rating r2
+              where r2.rateableItem = item
+                and r2.visibility = :visibility
+                and r2.deletedAt is null
+          )
+        """)
+    List<Rating> findEarliestByRateableItemIdsAndVisibility(
+        @Param("itemIds") List<Long> itemIds,
+        @Param("visibility") Visibility visibility
+    );
+
+    // The earliest followed-user rating for each given topic — the following
+    // feed's analog of the OP (the first person you follow to rate the topic).
+    @Query("""
+        select r
+        from Rating r
+        join fetch r.authorUser
+        join fetch r.rateableItem item
+        join fetch r.ratingScale
+        left join fetch item.mediaAsset
+        where item.id in :itemIds
+          and r.authorUser in (select f.followedUser from Follow f where f.followerUser = :user)
+          and r.visibility = :visibility
+          and r.deletedAt is null
+          and r.id = (
+              select min(r2.id)
+              from Rating r2
+              where r2.rateableItem = item
+                and r2.authorUser in (select f2.followedUser from Follow f2 where f2.followerUser = :user)
+                and r2.visibility = :visibility
+                and r2.deletedAt is null
+          )
+        """)
+    List<Rating> findEarliestByRateableItemIdsForFollowedUsers(
+        @Param("itemIds") List<Long> itemIds,
+        @Param("user") User user,
+        @Param("visibility") Visibility visibility
+    );
+
     @Query("""
         select r
         from Rating r

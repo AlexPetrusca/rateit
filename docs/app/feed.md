@@ -4,7 +4,7 @@ This document describes the current feed contract and the shared UI pattern used
 
 ## What the feed shows
 
-The authenticated home feed shows a reverse-chronological list of public ratings. Each item includes:
+The authenticated home feed (and Following feed) show **one card per topic**, represented by the topic's **OP (original) rating** — the earliest public rating on it (for Following, the earliest rating by someone you follow). Cards are ordered by the topic's **latest rating activity**, so when anyone adds a new rating to a topic, that topic's OP card bumps back to the top. When a topic has more than one rating, the other ratings are shown **inline underneath the OP card** (each a full rating card with its own like/comment actions). Each card includes:
 
 - author avatar and name
 - timestamp

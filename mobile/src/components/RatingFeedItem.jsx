@@ -139,10 +139,13 @@ const RatingFeedItem = ({
   // expanding replies all still work — only the top-level "new comment"
   // composer is hidden) plus the topic's other ratings, each with its own
   // working comment composer.
+  // Auto-expand the topic's other ratings whenever it has more than one, so the
+  // OP's card always shows the full topic. Comments still open on tap.
+  const showOtherRatings = topicFanOut && Number(item.rateableItem?.ratingCount ?? 0) > 1;
   const expandedContent = topicFanOut
-    ? (isCommentsOpen ? (
+    ? ((isCommentsOpen || showOtherRatings) ? (
       <View style={{ gap: 8 }}>
-        {comments.length > 0 ? (
+        {isCommentsOpen && comments.length > 0 ? (
           <CommentThread
             comments={comments}
             currentUserId={currentUserId}
@@ -173,9 +176,11 @@ const RatingFeedItem = ({
             commentNumberOfLines={commentNumberOfLines}
           />
         ) : null}
-        <View style={styles.otherRatings}>
-          {renderTopicRatings(item, String(interactions.activeComposer || '').startsWith(`${item.ratingId}:`))}
-        </View>
+        {showOtherRatings ? (
+          <View style={styles.otherRatings}>
+            {renderTopicRatings(item, String(interactions.activeComposer || '').startsWith(`${item.ratingId}:`))}
+          </View>
+        ) : null}
       </View>
     ) : null)
     : (isCommentsOpen && (comments.length > 0 || isRootComposerOpen) ? (
