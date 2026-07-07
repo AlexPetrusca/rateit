@@ -30,6 +30,17 @@ const formatAverageRating = (value) => {
     : '0';
 };
 
+// iOS home-screen (standalone) WebKit paints a full-viewport `backdrop-filter`
+// layer solid black — most visibly at blur(0px), which is the initial pre-scroll
+// state — so the topic page renders black there while a normal Safari tab is
+// fine. Detect standalone and fall back to a plain translucent dim instead.
+const IS_STANDALONE = Platform.OS === 'web'
+  && typeof window !== 'undefined'
+  && Boolean(
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+    || window.navigator?.standalone === true
+  );
+
 const TopicScreen = ({ navigation, route }) => {
   const { user } = useAuth();
   const { notify } = useNotifications();
@@ -212,10 +223,12 @@ const TopicScreen = ({ navigation, route }) => {
       {Platform.OS === 'web' ? (
         <View
           pointerEvents="none"
-          style={[styles.blurLayer, {
-            backdropFilter: `blur(${blurIntensity * 0.2}px)`,
-            WebkitBackdropFilter: `blur(${blurIntensity * 0.2}px)`
-          }, peeking && styles.hidden]}
+          style={[styles.blurLayer, IS_STANDALONE
+            ? { backgroundColor: `rgba(9, 13, 22, ${Math.min(0.6, blurIntensity * 0.012)})` }
+            : {
+                backdropFilter: `blur(${blurIntensity * 0.2}px)`,
+                WebkitBackdropFilter: `blur(${blurIntensity * 0.2}px)`
+              }, peeking && styles.hidden]}
         />
       ) : (
         <BlurView pointerEvents="none" intensity={blurIntensity} tint="dark" style={[styles.blurLayer, peeking && styles.hidden]} />
