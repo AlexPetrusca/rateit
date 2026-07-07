@@ -1,0 +1,107 @@
+# Nightly Postgres logical backup -> DigitalOcean Spaces.
+#
+# Standalone (NOT part of the Helm chart) so applying it never restarts the
+# backend. Apply with:  kubectl apply -f ops/db-backup-cronjob.yaml
+#
+# Prerequisites (one-time):
+#   1. Create a private DO Space (region + name) with CDN disabled.
+#   2. Create the Spaces credential secret:
+#        kubectl create secret generic critic-spaces-secret -n critic \
+#          --from-literal=access-key='<SPACES_KEY>' \
+#          --from-literal=secret-key='<SPACES_SECRET>'
+#   3. Region/bucket are set below to sfo3 / critic-backups.
+#
+# Manual test (runs immediately):
+#   kubectl create job -n critic --from=cronjob/critic-db-backup db-backup-now
+#
+# Restore (see restore notes at the bottom of this file).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: critic-db-backup
+  namespace: critic
+spec:
+  schedule: "0 9 * * *"          # daily 09:00 UTC — adjust to a low-traffic hour
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600  # if the node was down at trigger time, still run within the hour
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 900
+      template:
+        spec:
+          restartPolicy: Never
+          volumes:
+            - name: work
+              emptyDir: {}
+          # pg_dump runs first (init), writing a compressed custom-format dump to
+          # the shared volume; the main container then uploads it to Spaces.
+          initContainers:
+            - name: dump
+              image: bitnami/postgresql:latest   # same image as the server -> matching pg_dump
+              command: ["/bin/sh", "-c"]
+              args:
+                - set -euo pipefail;
+                  pg_dump -Fc -f /work/critic.dump;
+                  ls -lh /work/critic.dump
+              env:
+                - name: PGHOST
+                  value: critic-postgresql
+                - name: PGPORT
+                  value: "5432"
+                - name: PGUSER
+                  value: postgres
+                - name: PGDATABASE
+                  value: postgres
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: critic-postgres-secret
+                      key: POSTGRES_ADMIN_PASSWORD
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+              resources:
+                requests: { cpu: "50m", memory: "64Mi" }
+                limits:   { cpu: "250m", memory: "256Mi" }
+          containers:
+            - name: upload
+              image: amazon/aws-cli:latest
+              command: ["/bin/sh", "-c"]
+              args:
+                - set -euo pipefail;
+                  KEY="backups/critic-$(date -u +%Y%m%dT%H%M%SZ).dump";
+                  aws s3 cp /work/critic.dump "s3://critic-backups/$KEY"
+                    --endpoint-url "https://sfo3.digitaloceanspaces.com";
+                  echo "uploaded s3://critic-backups/$KEY"
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef: { name: critic-spaces-secret, key: access-key }
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef: { name: critic-spaces-secret, key: secret-key }
+                - name: AWS_DEFAULT_REGION
+                  value: sfo3
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+              resources:
+                requests: { cpu: "50m", memory: "64Mi" }
+                limits:   { cpu: "250m", memory: "256Mi" }
+---
+# Retention (run once, not per-backup): expire dumps under backups/ after 30 days.
+# Set it with a one-time job/console rule, e.g. from a machine with the Spaces keys:
+#   aws s3api put-bucket-lifecycle-configuration --bucket critic-backups \
+#     --endpoint-url https://sfo3.digitaloceanspaces.com \
+#     --lifecycle-configuration '{"Rules":[{"ID":"expire-backups","Status":"Enabled",
+#       "Filter":{"Prefix":"backups/"},"Expiration":{"Days":30}}]}'
+#
+# Restore a dump (pull from Spaces, then pg_restore into a fresh db):
+#   aws s3 cp s3://critic-backups/backups/critic-<ts>.dump ./restore.dump \
+#     --endpoint-url https://sfo3.digitaloceanspaces.com
+#   kubectl cp ./restore.dump critic/critic-postgresql-0:/tmp/restore.dump -c postgresql
+#   kubectl exec -n critic critic-postgresql-0 -c postgresql -- \
+#     env PGPASSWORD=<admin-pw> pg_restore -U postgres -d postgres --clean --if-exists /tmp/restore.dump
