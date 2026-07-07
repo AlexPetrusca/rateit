@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import RatingComposer from './RatingComposer.jsx';
 import RichText from './RichText.jsx';
 import StarRating from './StarRating.jsx';
@@ -58,6 +58,8 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) =
   const closePrompt = () => {
     if (saving) return;
     setPromptOpen(false);
+    setPendingScore(0);
+    setReviewText('');
   };
 
   const submit = async () => {
@@ -84,13 +86,34 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) =
 
       <View style={styles.rateRow}>
         <StarRating
-          value={0}
+          value={pendingScore}
           interactive
           size="lg"
           onChange={openPrompt}
           label="Rate this topic"
+          style={styles.rateStars}
         />
       </View>
+
+      {promptOpen ? (
+        <View style={styles.composer}>
+          <RatingComposer
+            title="Your rating"
+            richText
+            textValue={reviewText}
+            onTextChange={setReviewText}
+            placeholder="Add your take (optional)"
+            submitLabel="Post rating"
+            loading={saving}
+            submitDisabled={!pendingScore}
+            onSubmit={submit}
+            cardStyle={styles.composerCard}
+          />
+          <Pressable onPress={closePrompt} disabled={saving} style={styles.cancel} hitSlop={8}>
+            <Text style={styles.cancelText}>Cancel</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       <View style={styles.ratings}>
         {topRatings.map((r) => (
@@ -113,28 +136,6 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) =
           </Pressable>
         ))}
       </View>
-
-      <Modal visible={promptOpen} transparent animationType="fade" onRequestClose={closePrompt}>
-        <Pressable style={styles.backdrop} onPress={closePrompt}>
-          <Pressable style={styles.sheet} onPress={() => {}}>
-            <RichText style={styles.sheetTitle} numberOfLines={2}>{topicLabel}</RichText>
-            <RatingComposer
-              title="Your rating"
-              showStars
-              richText
-              score={pendingScore}
-              onScoreChange={setPendingScore}
-              textValue={reviewText}
-              onTextChange={setReviewText}
-              placeholder="Add your take (optional)"
-              submitLabel="Post rating"
-              loading={saving}
-              submitDisabled={!pendingScore}
-              onSubmit={submit}
-            />
-          </Pressable>
-        </Pressable>
-      </Modal>
     </View>
   );
 };
@@ -161,6 +162,23 @@ const styles = StyleSheet.create({
   rateRow: {
     alignItems: 'center',
     paddingVertical: spacing.xs
+  },
+  rateStars: {
+    alignSelf: 'center'
+  },
+  composer: {
+    gap: spacing.xs
+  },
+  composerCard: {
+    padding: 0
+  },
+  cancel: {
+    alignSelf: 'center',
+    paddingVertical: spacing.xs
+  },
+  cancelText: {
+    color: colors.textMuted,
+    fontWeight: '700'
   },
   ratings: {
     gap: spacing.md
@@ -199,21 +217,6 @@ const styles = StyleSheet.create({
   },
   review: {
     ...text.body
-  },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: spacing.lg
-  },
-  sheet: {
-    gap: spacing.sm
-  },
-  sheetTitle: {
-    ...text.h3,
-    color: colors.textInverse ?? '#fff',
-    textAlign: 'center',
-    marginBottom: spacing.xs
   }
 });
 

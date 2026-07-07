@@ -40,7 +40,8 @@ const StarRating = ({
   onPreviewChange,
   size = 'md',
   label,
-  disabled = false
+  disabled = false,
+  style
 }) => {
   const starSize = size === 'lg' ? 36 : size === 'sm' ? 20 : 26;
   const roundedValue = Number(value) || 0;
@@ -120,7 +121,7 @@ const StarRating = ({
             clearPreview();
           }
         } : undefined}
-        style={styles.interactive}
+        style={[styles.interactive, style]}
       >
         <View pointerEvents="none" style={styles.display}>
           {[1, 2, 3, 4, 5].map((index) => (
