@@ -41,9 +41,10 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) =
     return () => { cancelled = true; };
   }, [rateableItemId, ratingCount]);
 
-  // OP first, then the four most recent other ratings.
+  // OP first, then the four most recent other ratings shown oldest-to-newest
+  // (so the most recent rating sits at the bottom of the row).
   const topRatings = useMemo(() => {
-    const rest = (others || []).filter((r) => r.ratingId !== item.ratingId).sort(byNewest).slice(0, 4);
+    const rest = (others || []).filter((r) => r.ratingId !== item.ratingId).sort(byNewest).slice(0, 4).reverse();
     return [item, ...rest];
   }, [item, others]);
 
