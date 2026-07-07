@@ -166,7 +166,6 @@ export const useRatingInteractions = ({ notify, updateItem }) => {
     commentsByRating,
     commentDrafts,
     expandedRatings,
-    setExpandedRatings,
     expandedReplyKeys,
     rerateDrafts,
     setRerateDrafts,

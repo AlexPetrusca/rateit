@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import CommentThread from '../components/CommentThread.jsx';
 import RatingComposer from '../components/RatingComposer.jsx';
 import RatingFeedItem from '../components/RatingFeedItem.jsx';
 import HandDrawnIcon from '../components/HandDrawnIcon.jsx';
+import PostCard from '../components/PostCard.jsx';
 import RichText from '../components/RichText.jsx';
 import StarRating from '../components/StarRating.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -13,7 +15,6 @@ import { useRatingInteractions } from '../hooks/useRatingInteractions.js';
 import { useResolvedImageUrl } from '../hooks/useResolvedImageUrl.js';
 import { usePeekHold } from '../hooks/usePeekHold.js';
 import BackendApiService from '../services/BackendApiService.js';
-import { getRatingShareUrl } from '../config.js';
 import { colors, spacing, text } from '../theme.js';
 import { mergeUniqueBy } from '../utils/lists.js';
 
@@ -29,17 +30,6 @@ const formatAverageRating = (value) => {
     ? score.toLocaleString(undefined, { maximumFractionDigits: 2 })
     : '0';
 };
-
-// iOS home-screen (standalone) WebKit paints a full-viewport `backdrop-filter`
-// layer solid black — most visibly at blur(0px), which is the initial pre-scroll
-// state — so the topic page renders black there while a normal Safari tab is
-// fine. Detect standalone and fall back to a plain translucent dim instead.
-const IS_STANDALONE = Platform.OS === 'web'
-  && typeof window !== 'undefined'
-  && Boolean(
-    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
-    || window.navigator?.standalone === true
-  );
 
 const TopicScreen = ({ navigation, route }) => {
   const { user } = useAuth();
@@ -100,7 +90,8 @@ const TopicScreen = ({ navigation, route }) => {
     }
     const review = items.find((item) => String(item.ratingId) === String(openReviewId));
     if (review) {
-      openReviewInModal(review, route.params?.highlightCommentId ?? null);
+      setOpenReview(review);
+      setHighlightCommentId(route.params?.highlightCommentId ?? null);
       navigation.setParams({ openReviewId: undefined, highlightCommentId: undefined });
     }
   }, [items, route.params?.openReviewId, route.params?.highlightCommentId, navigation]);
@@ -112,6 +103,7 @@ const TopicScreen = ({ navigation, route }) => {
       interactions.loadComments(openReview.ratingId, true).catch(() => {});
     }
   }, [openReview]); // eslint-disable-line react-hooks/exhaustive-deps
+  const modalComments = openReview ? (interactions.commentsByRating[openReview.ratingId] || []) : [];
 
   const topicTitle = topic?.title || topic?.body || items[0]?.rateableItem?.title || items[0]?.rateableItem?.body || 'Topic';
   const mediaObjectKey = topic?.mediaObjectKey || items[0]?.rateableItem?.mediaObjectKey;
@@ -157,16 +149,6 @@ const TopicScreen = ({ navigation, route }) => {
     } finally {
       setSaving(false);
     }
-  };
-
-  // Open a rating in the modal with its comments already expanded inline, so the
-  // modal shows the full card (like/share/comment actions) plus the thread.
-  const openReviewInModal = (review, highlight = null) => {
-    setOpenReview(review);
-    setHighlightCommentId(highlight);
-    interactions.setExpandedRatings((current) => (
-      current.includes(review.ratingId) ? current : [...current, review.ratingId]
-    ));
   };
 
   const closeReview = () => { setOpenReview(null); setHighlightCommentId(null); };
@@ -223,12 +205,10 @@ const TopicScreen = ({ navigation, route }) => {
       {Platform.OS === 'web' ? (
         <View
           pointerEvents="none"
-          style={[styles.blurLayer, IS_STANDALONE
-            ? { backgroundColor: `rgba(9, 13, 22, ${Math.min(0.6, blurIntensity * 0.012)})` }
-            : {
-                backdropFilter: `blur(${blurIntensity * 0.2}px)`,
-                WebkitBackdropFilter: `blur(${blurIntensity * 0.2}px)`
-              }, peeking && styles.hidden]}
+          style={[styles.blurLayer, {
+            backdropFilter: `blur(${blurIntensity * 0.2}px)`,
+            WebkitBackdropFilter: `blur(${blurIntensity * 0.2}px)`
+          }, peeking && styles.hidden]}
         />
       ) : (
         <BlurView pointerEvents="none" intensity={blurIntensity} tint="dark" style={[styles.blurLayer, peeking && styles.hidden]} />
@@ -256,7 +236,7 @@ const TopicScreen = ({ navigation, route }) => {
               refresh={loadTopic}
               onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
               onTopicPress={() => null}
-              onCardPress={() => openReviewInModal(item)}
+              onCardPress={() => { setOpenReview(item); setHighlightCommentId(null); }}
               onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
               showMedia={false}
               showTopicText={false}
@@ -312,20 +292,32 @@ const TopicScreen = ({ navigation, route }) => {
         <Pressable style={styles.modalBackdrop} onPress={closeReview}>
           <Pressable style={styles.modalContent} onPress={(event) => event.stopPropagation()}>
             <ScrollView ref={modalScrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScroll}>
-              <RatingFeedItem
-                item={openReview}
-                currentUserId={user?.userId ?? user?.id}
-                interactions={interactions}
-                refresh={loadTopic}
-                shareUrl={getRatingShareUrl(openReview.rateableItem?.id, openReview.ratingId)}
-                onAuthorPress={(userId) => { closeReview(); navigation.navigate('Profile', { userId }); }}
-                onTopicPress={() => null}
-                onEditPress={(ratingId) => { closeReview(); navigation.navigate('PostEditor', { ratingId }); }}
-                showReply
-                showMedia={false}
-                showTopicText={false}
-                cardStyle={styles.modalCard}
-              />
+              <PostCard post={openReview} style={styles.modalCard} />
+              {modalComments.length > 0 ? (
+                <View style={styles.modalComments}>
+                  <CommentThread
+                    comments={modalComments}
+                    currentUserId={user?.userId ?? user?.id}
+                    highlightCommentId={highlightCommentId}
+                    scrollRef={modalScrollRef}
+                    autoExpandDepth={Infinity}
+                    autoExpandFlatLimit={Infinity}
+                    onAuthorPress={(userId) => { closeReview(); navigation.navigate('Profile', { userId }); }}
+                    onLikePress={async (comment) => {
+                      try {
+                        if (comment.likedByCurrentUser) {
+                          await BackendApiService.unlikeComment(comment.id);
+                        } else {
+                          await BackendApiService.likeComment(comment.id);
+                        }
+                        await interactions.loadComments(openReview.ratingId, true);
+                      } catch (error) {
+                        notify({ message: error.message || 'Failed to like comment', type: 'error' });
+                      }
+                    }}
+                  />
+                </View>
+              ) : null}
             </ScrollView>
             <Pressable
               accessibilityRole="button"
