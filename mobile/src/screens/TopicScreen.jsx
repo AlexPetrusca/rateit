@@ -161,6 +161,23 @@ const TopicScreen = ({ navigation, route }) => {
   };
 
   const closeReview = () => { setOpenReview(null); setHighlightCommentId(null); setModalComposerOpen(false); };
+
+  // Composer for replying to a specific comment inside the modal thread.
+  const renderModalReplyComposer = (parentCommentId) => {
+    if (!activeReview) return null;
+    const draft = interactions.getDraft(activeReview.ratingId, parentCommentId);
+    return (
+      <CommentComposer
+        nested
+        score={Number(draft.score || 2.5)}
+        onScoreChange={(score) => interactions.updateDraft(activeReview.ratingId, parentCommentId, { score: String(score) })}
+        text={draft.text}
+        onTextChange={(nextText) => interactions.updateDraft(activeReview.ratingId, parentCommentId, { text: nextText })}
+        onSubmit={() => interactions.submitComment(activeReview, parentCommentId)
+          .catch((error) => notify({ message: error.message, type: 'error' }))}
+      />
+    );
+  };
   const closeTopic = () => navigation.canGoBack()
     ? navigation.goBack()
     : navigation.navigate('MainTabs', { screen: 'Home' });
@@ -338,6 +355,15 @@ const TopicScreen = ({ navigation, route }) => {
                             scrollRef={modalScrollRef}
                             autoExpandDepth={Infinity}
                             autoExpandFlatLimit={Infinity}
+                            activeReplyKey={interactions.activeComposer}
+                            getReplyKey={(comment) => interactions.getReplyKey(activeReview.ratingId, comment.id)}
+                            renderReplyComposer={(comment) => renderModalReplyComposer(comment.id)}
+                            expandedReplyKeys={interactions.expandedReplyKeys}
+                            onToggleReplies={interactions.toggleReplies}
+                            onReplyPress={(comment) => {
+                              const replyKey = interactions.getReplyKey(activeReview.ratingId, comment.id);
+                              interactions.setActiveComposer(interactions.activeComposer === replyKey ? null : replyKey);
+                            }}
                             onAuthorPress={(userId) => { closeReview(); navigation.navigate('Profile', { userId }); }}
                             onLikePress={async (comment) => {
                               try {
@@ -514,11 +540,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(22, 22, 25, 0.98)'
   },
   modalExpanded: {
-    gap: spacing.md,
-    marginTop: spacing.xs,
-    paddingTop: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255, 255, 255, 0.12)'
+    gap: spacing.md
   },
   modalClose: {
     position: 'absolute',
