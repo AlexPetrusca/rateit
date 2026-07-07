@@ -82,6 +82,7 @@ const CommentThread = ({
         ? { depthRemaining: autoState.depthRemaining - 1, budget: { remaining: autoState.budget.remaining - 1 } }
         : null;
       const canEdit = Boolean(onEditPress) && currentUserId != null && comment.author?.userId === currentUserId;
+      const isEditing = activeEditKey === editKey && Boolean(renderEditComposer);
       const isHighlight = highlightCommentId != null && String(comment.id) === String(highlightCommentId);
 
       return (
@@ -96,23 +97,29 @@ const CommentThread = ({
             <UserAvatar username={comment.author?.username} profilePicUrl={comment.author?.profilePicUrl} size="sm" />
             <View style={styles.body}>
               <Text style={styles.author}>{comment.author?.username || 'Someone'}</Text>
-              {onCommentPress ? (
-                <Pressable onPress={() => onCommentPress(comment)}>
-                  <RichText style={styles.text} numberOfLines={commentNumberOfLines}>{comment.text}</RichText>
-                </Pressable>
-              ) : (
-                <RichText style={styles.text} numberOfLines={commentNumberOfLines}>{comment.text}</RichText>
+              {/* Hide the comment body/actions while its edit composer is open,
+                  so the text isn't shown twice. */}
+              {isEditing ? null : (
+                <>
+                  {onCommentPress ? (
+                    <Pressable onPress={() => onCommentPress(comment)}>
+                      <RichText style={styles.text} numberOfLines={commentNumberOfLines}>{comment.text}</RichText>
+                    </Pressable>
+                  ) : (
+                    <RichText style={styles.text} numberOfLines={commentNumberOfLines}>{comment.text}</RichText>
+                  )}
+                  <PostActions
+                    liked={Boolean(comment.likedByCurrentUser)}
+                    likeCount={comment.likeCount || 0}
+                    commentCount={replyCount}
+                    onLike={onLikePress ? () => onLikePress(comment) : undefined}
+                    onComment={onReplyPress ? () => onReplyPress(comment) : undefined}
+                    onEdit={canEdit ? () => onEditPress(comment) : undefined}
+                    commentLabel="Reply"
+                    showCommentCount={replyCount > 0}
+                  />
+                </>
               )}
-              <PostActions
-                liked={Boolean(comment.likedByCurrentUser)}
-                likeCount={comment.likeCount || 0}
-                commentCount={replyCount}
-                onLike={onLikePress ? () => onLikePress(comment) : undefined}
-                onComment={onReplyPress ? () => onReplyPress(comment) : undefined}
-                onEdit={canEdit ? () => onEditPress(comment) : undefined}
-                commentLabel="Reply"
-                showCommentCount={replyCount > 0}
-              />
             </View>
           </View>
           {activeReplyKey === replyKey && renderReplyComposer ? renderReplyComposer(comment) : null}
