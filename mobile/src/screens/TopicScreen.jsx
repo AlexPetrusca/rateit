@@ -504,7 +504,11 @@ const styles = StyleSheet.create({
   },
   modalScroll: {
     flexGrow: 1,
-    justifyContent: 'center'
+    // Top-align rather than center: a rating with comments makes the content
+    // taller than the modal, and flex-centering an overflowing scroll container
+    // on web clips the ends so the comments underneath can't be scrolled to.
+    justifyContent: 'flex-start',
+    paddingVertical: spacing.sm
   },
   modalCard: {
     backgroundColor: 'rgba(22, 22, 25, 0.98)'
