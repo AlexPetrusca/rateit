@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import FeedList from '../components/FeedList.jsx';
-import RatingFeedItem from '../components/RatingFeedItem.jsx';
 import Screen from '../components/Screen.jsx';
-import TopicRatingsInline from '../components/TopicRatingsInline.jsx';
+import TopicFeedCard from '../components/TopicFeedCard.jsx';
 import { getRatingShareUrl } from '../config.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
@@ -90,38 +89,12 @@ const HomeScreen = ({ navigation, route }) => {
         endMessage={hasMore ? '' : 'You reached the end of the feed.'}
         emptyTitle="No ratings yet."
         renderItem={({ item }) => (
-          <RatingFeedItem
+          <TopicFeedCard
             item={item}
-            currentUserId={user?.userId ?? user?.id}
-            interactions={interactions}
-            reviewNumberOfLines={6}
-            commentNumberOfLines={6}
-            openCardOnlyWhenTruncated
-            showReply={false}
-            refresh={refresh}
-            renderTopicRatings={(it, suppressComposer) => (
-              <TopicRatingsInline
-                rateableItemId={it.rateableItem?.id}
-                excludeRatingId={it.ratingId}
-                currentUserId={user?.userId ?? user?.id}
-                notify={notify}
-                navigation={navigation}
-                suppressComposer={suppressComposer}
-              />
-            )}
             onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
             onTopicPress={(rateableItemId) => navigation.navigate('Topic', { rateableItemId })}
-            onCardPress={(post) => navigation.navigate('Topic', {
-              rateableItemId: post.rateableItem?.id,
-              openReviewId: post.ratingId
-            })}
-            onCommentOpen={(post, comment) => navigation.navigate('Topic', {
-              rateableItemId: post.rateableItem?.id,
-              openReviewId: post.ratingId,
-              highlightCommentId: comment?.id
-            })}
-            onEditPress={(ratingId) => navigation.navigate('PostEditor', { ratingId })}
             shareUrl={getRatingShareUrl(item.rateableItem?.id, item.ratingId)}
+            notify={notify}
           />
         )}
       />
