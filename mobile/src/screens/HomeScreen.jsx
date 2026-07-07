@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import FeedList from '../components/FeedList.jsx';
 import Screen from '../components/Screen.jsx';
 import TopicFeedCard from '../components/TopicFeedCard.jsx';
-import { getRatingShareUrl } from '../config.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
 import { useRatingInteractions } from '../hooks/useRatingInteractions.js';
@@ -93,7 +92,7 @@ const HomeScreen = ({ navigation, route }) => {
             item={item}
             onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
             onTopicPress={(rateableItemId) => navigation.navigate('Topic', { rateableItemId })}
-            shareUrl={getRatingShareUrl(item.rateableItem?.id, item.ratingId)}
+            onRated={refresh}
             notify={notify}
           />
         )}

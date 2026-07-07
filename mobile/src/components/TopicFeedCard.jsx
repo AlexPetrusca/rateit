@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
-import HandDrawnIcon from './HandDrawnIcon.jsx';
+import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import RatingComposer from './RatingComposer.jsx';
 import RichText from './RichText.jsx';
 import StarRating from './StarRating.jsx';
 import UserAvatar from './UserAvatar.jsx';
@@ -8,21 +8,27 @@ import { useResolvedImageUrl } from '../hooks/useResolvedImageUrl.js';
 import BackendApiService from '../services/BackendApiService.js';
 import { colors, spacing, text } from '../theme.js';
 
-// A topic-first feed card: the topic's title, image, and average rating with a
-// single share action, then the "top 5" ratings (the OP's original rating first,
-// then the four most recent) as compact, display-only rows. Tapping anywhere
-// opens the full topic page, where liking/commenting/re-rating live.
+// A topic-first feed card: the topic's title and image, then a centered row of
+// empty stars you can drag to fill — releasing opens a prompt to post your own
+// rating. Below that, the "top 5" ratings (the OP's original rating first, then
+// the four most recent) as compact, display-only rows. Tapping a row opens the
+// full topic page, where liking/commenting/re-rating live.
 const byNewest = (a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
 
-const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, shareUrl, notify }) => {
+const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) => {
   const rateableItemId = item.rateableItem?.id;
   const mediaUrl = useResolvedImageUrl(item.rateableItem?.mediaObjectKey);
   const topicLabel = item.rateableItem?.title || item.rateableItem?.body || 'Topic';
   const ratingCount = Number(item.rateableItem?.ratingCount ?? 1);
   const [others, setOthers] = useState(null);
 
+  const [promptOpen, setPromptOpen] = useState(false);
+  const [pendingScore, setPendingScore] = useState(0);
+  const [reviewText, setReviewText] = useState('');
+  const [saving, setSaving] = useState(false);
+
   // Only single-topic-with-multiple-ratings cards need the full list (for the
-  // average and the other rows); single-rating topics render from the OP alone.
+  // other rows); single-rating topics render from the OP alone.
   useEffect(() => {
     if (ratingCount <= 1 || rateableItemId == null) {
       setOthers([]);
@@ -35,36 +41,37 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, shareUrl, notify }) 
     return () => { cancelled = true; };
   }, [rateableItemId, ratingCount]);
 
-  const allRatings = useMemo(() => {
-    const rest = (others || []).filter((r) => r.ratingId !== item.ratingId);
-    return [item, ...rest];
-  }, [item, others]);
-
   // OP first, then the four most recent other ratings.
   const topRatings = useMemo(() => {
     const rest = (others || []).filter((r) => r.ratingId !== item.ratingId).sort(byNewest).slice(0, 4);
     return [item, ...rest];
   }, [item, others]);
 
-  const average = useMemo(() => {
-    const scores = allRatings.map((r) => Number(r.score)).filter((n) => Number.isFinite(n));
-    if (scores.length === 0) return Number(item.score) || 0;
-    return scores.reduce((sum, n) => sum + n, 0) / scores.length;
-  }, [allRatings, item.score]);
-
   const openTopic = () => onTopicPress?.(rateableItemId);
 
-  const share = async () => {
-    if (!shareUrl) return;
+  const openPrompt = (score) => {
+    setPendingScore(score);
+    setReviewText('');
+    setPromptOpen(true);
+  };
+
+  const closePrompt = () => {
+    if (saving) return;
+    setPromptOpen(false);
+  };
+
+  const submit = async () => {
+    if (!pendingScore || rateableItemId == null || saving) return;
+    setSaving(true);
     try {
-      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
-        await navigator.clipboard.writeText(shareUrl);
-        notify?.({ message: 'Added to clipboard', type: 'info' });
-        return;
-      }
-      await Share.share({ message: shareUrl, url: shareUrl });
+      await BackendApiService.rateTopic(rateableItemId, pendingScore, reviewText.trim());
+      setPromptOpen(false);
+      notify?.({ message: 'Rating posted', type: 'success' });
+      onRated?.();
     } catch (error) {
-      notify?.({ message: error.message || 'Failed to share', type: 'error' });
+      notify?.({ message: error.message || 'Failed to post rating', type: 'error' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -73,17 +80,16 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, shareUrl, notify }) 
       <Pressable onPress={openTopic}>
         {mediaUrl ? <Image source={{ uri: mediaUrl }} style={styles.media} resizeMode="cover" /> : null}
         <RichText style={styles.title} numberOfLines={2}>{topicLabel}</RichText>
-        <View style={styles.avgRow}>
-          <StarRating value={average} size="sm" label={`Average rating: ${average.toFixed(1)} out of 5`} />
-          <Text style={styles.avg}>{average.toFixed(1)}</Text>
-          <Text style={styles.count}>· {ratingCount} {ratingCount === 1 ? 'rating' : 'ratings'}</Text>
-        </View>
       </Pressable>
 
-      <View style={styles.actions}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Share" hitSlop={8} onPress={share} style={styles.actionBtn}>
-          <HandDrawnIcon name="share" color={colors.textMuted} size={20} />
-        </Pressable>
+      <View style={styles.rateRow}>
+        <StarRating
+          value={0}
+          interactive
+          size="lg"
+          onChange={openPrompt}
+          label="Rate this topic"
+        />
       </View>
 
       <View style={styles.ratings}>
@@ -107,6 +113,28 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, shareUrl, notify }) 
           </Pressable>
         ))}
       </View>
+
+      <Modal visible={promptOpen} transparent animationType="fade" onRequestClose={closePrompt}>
+        <Pressable style={styles.backdrop} onPress={closePrompt}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            <RichText style={styles.sheetTitle} numberOfLines={2}>{topicLabel}</RichText>
+            <RatingComposer
+              title="Your rating"
+              showStars
+              richText
+              score={pendingScore}
+              onScoreChange={setPendingScore}
+              textValue={reviewText}
+              onTextChange={setReviewText}
+              placeholder="Add your take (optional)"
+              submitLabel="Post rating"
+              loading={saving}
+              submitDisabled={!pendingScore}
+              onSubmit={submit}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -130,29 +158,9 @@ const styles = StyleSheet.create({
   title: {
     ...text.h3
   },
-  avgRow: {
-    flexDirection: 'row',
+  rateRow: {
     alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.xs
-  },
-  avg: {
-    color: colors.text,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums']
-  },
-  count: {
-    ...text.muted
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  actionBtn: {
-    minHeight: 40,
-    minWidth: 44,
-    alignItems: 'center',
-    justifyContent: 'center'
+    paddingVertical: spacing.xs
   },
   ratings: {
     gap: spacing.md
@@ -191,6 +199,21 @@ const styles = StyleSheet.create({
   },
   review: {
     ...text.body
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: spacing.lg
+  },
+  sheet: {
+    gap: spacing.sm
+  },
+  sheetTitle: {
+    ...text.h3,
+    color: colors.textInverse ?? '#fff',
+    textAlign: 'center',
+    marginBottom: spacing.xs
   }
 });
 
