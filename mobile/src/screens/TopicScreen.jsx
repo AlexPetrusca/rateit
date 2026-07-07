@@ -317,45 +317,45 @@ const TopicScreen = ({ navigation, route }) => {
                         commentLabel={modalComposerOpen ? 'Cancel' : 'Comment'}
                       />
                     )}
+                    expandedContent={(modalComposerOpen || modalComments.length > 0) ? (
+                      <View style={styles.modalExpanded}>
+                        {modalComposerOpen ? (
+                          <CommentComposer
+                            score={Number(interactions.getDraft(activeReview.ratingId).score || 2.5)}
+                            onScoreChange={(score) => interactions.updateDraft(activeReview.ratingId, null, { score: String(score) })}
+                            text={interactions.getDraft(activeReview.ratingId).text}
+                            onTextChange={(nextText) => interactions.updateDraft(activeReview.ratingId, null, { text: nextText })}
+                            onSubmit={() => interactions.submitComment(activeReview)
+                              .then(() => setModalComposerOpen(false))
+                              .catch((error) => notify({ message: error.message, type: 'error' }))}
+                          />
+                        ) : null}
+                        {modalComments.length > 0 ? (
+                          <CommentThread
+                            comments={modalComments}
+                            currentUserId={user?.userId ?? user?.id}
+                            highlightCommentId={highlightCommentId}
+                            scrollRef={modalScrollRef}
+                            autoExpandDepth={Infinity}
+                            autoExpandFlatLimit={Infinity}
+                            onAuthorPress={(userId) => { closeReview(); navigation.navigate('Profile', { userId }); }}
+                            onLikePress={async (comment) => {
+                              try {
+                                if (comment.likedByCurrentUser) {
+                                  await BackendApiService.unlikeComment(comment.id);
+                                } else {
+                                  await BackendApiService.likeComment(comment.id);
+                                }
+                                await interactions.loadComments(activeReview.ratingId, true);
+                              } catch (error) {
+                                notify({ message: error.message || 'Failed to like comment', type: 'error' });
+                              }
+                            }}
+                          />
+                        ) : null}
+                      </View>
+                    ) : null}
                   />
-                  {modalComposerOpen ? (
-                    <View style={styles.modalComposer}>
-                      <CommentComposer
-                        score={Number(interactions.getDraft(activeReview.ratingId).score || 2.5)}
-                        onScoreChange={(score) => interactions.updateDraft(activeReview.ratingId, null, { score: String(score) })}
-                        text={interactions.getDraft(activeReview.ratingId).text}
-                        onTextChange={(nextText) => interactions.updateDraft(activeReview.ratingId, null, { text: nextText })}
-                        onSubmit={() => interactions.submitComment(activeReview)
-                          .then(() => setModalComposerOpen(false))
-                          .catch((error) => notify({ message: error.message, type: 'error' }))}
-                      />
-                    </View>
-                  ) : null}
-                  {modalComments.length > 0 ? (
-                    <View style={styles.modalComments}>
-                      <CommentThread
-                        comments={modalComments}
-                        currentUserId={user?.userId ?? user?.id}
-                        highlightCommentId={highlightCommentId}
-                        scrollRef={modalScrollRef}
-                        autoExpandDepth={Infinity}
-                        autoExpandFlatLimit={Infinity}
-                        onAuthorPress={(userId) => { closeReview(); navigation.navigate('Profile', { userId }); }}
-                        onLikePress={async (comment) => {
-                          try {
-                            if (comment.likedByCurrentUser) {
-                              await BackendApiService.unlikeComment(comment.id);
-                            } else {
-                              await BackendApiService.likeComment(comment.id);
-                            }
-                            await interactions.loadComments(activeReview.ratingId, true);
-                          } catch (error) {
-                            notify({ message: error.message || 'Failed to like comment', type: 'error' });
-                          }
-                        }}
-                      />
-                    </View>
-                  ) : null}
                 </>
               ) : null}
             </ScrollView>
@@ -513,15 +513,12 @@ const styles = StyleSheet.create({
   modalCard: {
     backgroundColor: 'rgba(22, 22, 25, 0.98)'
   },
-  modalComments: {
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    backgroundColor: 'rgba(22, 22, 25, 0.98)',
-    borderRadius: 22
-  },
-  modalComposer: {
-    marginTop: spacing.sm
+  modalExpanded: {
+    gap: spacing.md,
+    marginTop: spacing.xs,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255, 255, 255, 0.12)'
   },
   modalClose: {
     position: 'absolute',
