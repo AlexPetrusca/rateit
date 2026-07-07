@@ -97,6 +97,7 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, shareUrl, notify }) 
               >
                 <UserAvatar username={r.author?.username} profilePicUrl={r.author?.profilePicUrl} size="sm" />
                 <Text style={styles.username} numberOfLines={1}>{r.author?.username || 'Someone'}</Text>
+                {r.ratingId === item.ratingId ? <Text style={styles.opBadge}>OP</Text> : null}
               </Pressable>
               <StarRating value={Number(r.score) || 0} size="sm" />
             </View>
@@ -175,11 +176,18 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   username: {
-    flex: 1,
+    flexShrink: 1,
     minWidth: 0,
     color: colors.text,
     fontWeight: '700',
     fontSize: 14
+  },
+  opBadge: {
+    color: colors.textSubtle,
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5
   },
   review: {
     ...text.body
