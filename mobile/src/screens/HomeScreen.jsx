@@ -91,7 +91,7 @@ const HomeScreen = ({ navigation, route }) => {
           <TopicFeedCard
             item={item}
             onAuthorPress={(userId) => navigation.navigate('Profile', { userId })}
-            onTopicPress={(rateableItemId) => navigation.navigate('Topic', { rateableItemId })}
+            onTopicPress={(rateableItemId, openReviewId) => navigation.navigate('Topic', { rateableItemId, openReviewId })}
             onRated={refresh}
             notify={notify}
           />

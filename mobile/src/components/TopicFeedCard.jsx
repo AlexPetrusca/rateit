@@ -117,7 +117,7 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) =
 
       <View style={styles.ratings}>
         {topRatings.map((r) => (
-          <Pressable key={r.ratingId} onPress={openTopic} style={styles.ratingRow}>
+          <Pressable key={r.ratingId} onPress={() => onTopicPress?.(rateableItemId, r.ratingId)} style={styles.ratingRow}>
             <View style={styles.ratingHead}>
               <Pressable
                 disabled={!r.author?.userId || !onAuthorPress}
