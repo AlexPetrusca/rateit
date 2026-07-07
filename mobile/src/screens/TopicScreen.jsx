@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CommentComposer from '../components/CommentComposer.jsx';
@@ -27,6 +27,19 @@ const METADATA_GAP = 10;
 const PHOTO_HERO_LAYER = 'radial-gradient(circle at top left, rgba(255, 255, 255, 0.18), transparent 28%), radial-gradient(circle at bottom right, rgba(255, 48, 58, 0.16), transparent 34%), linear-gradient(180deg, rgba(9, 13, 22, 0.08) 0%, rgba(9, 13, 22, 0.26) 42%, rgba(9, 13, 22, 0.86) 100%)';
 const FALLBACK_HERO_LAYER = 'radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 28%), radial-gradient(circle at bottom right, rgba(255, 48, 58, 0.40), transparent 34%), radial-gradient(circle at center, rgba(255, 48, 58, 0.12), transparent 42%), linear-gradient(180deg, rgba(9, 13, 22, 0.18) 0%, rgba(0, 0, 0, 0.36) 42%, rgba(0, 0, 0, 0.92) 100%)';
 
+const confirmDelete = (onConfirm) => {
+  if (Platform.OS === 'web') {
+    if (typeof window === 'undefined' || window.confirm('Delete this comment? This can’t be undone.')) {
+      onConfirm();
+    }
+    return;
+  }
+  Alert.alert('Delete comment?', 'This can’t be undone.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Delete', style: 'destructive', onPress: onConfirm }
+  ]);
+};
+
 const formatAverageRating = (value) => {
   const score = Number(value);
   return Number.isFinite(score)
@@ -53,6 +66,8 @@ const TopicScreen = ({ navigation, route }) => {
   const [openReview, setOpenReview] = useState(null);
   const [highlightCommentId, setHighlightCommentId] = useState(null);
   const [modalComposerOpen, setModalComposerOpen] = useState(false);
+  const [modalEditKey, setModalEditKey] = useState(null);
+  const [modalEditDrafts, setModalEditDrafts] = useState({});
 
   const updateItem = useCallback((ratingId, updater) => {
     setItems((current) => current.map((item) => (item.ratingId === ratingId ? updater(item) : item)));
@@ -160,7 +175,11 @@ const TopicScreen = ({ navigation, route }) => {
     }
   };
 
-  const closeReview = () => { setOpenReview(null); setHighlightCommentId(null); setModalComposerOpen(false); };
+  const closeReview = () => { setOpenReview(null); setHighlightCommentId(null); setModalComposerOpen(false); setModalEditKey(null); };
+  const canEditReview = Boolean(activeReview)
+    && activeReview.author?.userId != null
+    && (user?.userId ?? user?.id) === activeReview.author.userId
+    && !activeReview.deleted && !activeReview.deletedAt;
 
   // Composer for replying to a specific comment inside the modal thread.
   const renderModalReplyComposer = (parentCommentId) => {
@@ -175,6 +194,47 @@ const TopicScreen = ({ navigation, route }) => {
         onTextChange={(nextText) => interactions.updateDraft(activeReview.ratingId, parentCommentId, { text: nextText })}
         onSubmit={() => interactions.submitComment(activeReview, parentCommentId)
           .catch((error) => notify({ message: error.message, type: 'error' }))}
+      />
+    );
+  };
+
+  // Inline edit composer for the current user's own comment (with delete).
+  const renderModalEditComposer = (comment) => {
+    if (!activeReview) return null;
+    const editKey = `edit:${comment.id}`;
+    const draft = modalEditDrafts[editKey] || { text: comment.text || '', score: String(comment.score || 2.5) };
+    const isEmpty = !(draft.text || '').trim();
+    const deleteComment = async () => {
+      try {
+        await BackendApiService.deleteRatingComment(comment.id);
+        await interactions.loadComments(activeReview.ratingId, true);
+        setModalEditKey(null);
+      } catch (error) {
+        notify({ message: error.message || 'Failed to delete comment', type: 'error' });
+      }
+    };
+    return (
+      <RatingComposer
+        title="Edit comment"
+        score={Number(draft.score)}
+        onScoreChange={(score) => setModalEditDrafts((current) => ({ ...current, [editKey]: { ...draft, score: String(score) } }))}
+        textValue={draft.text}
+        onTextChange={(text) => setModalEditDrafts((current) => ({ ...current, [editKey]: { ...draft, text } }))}
+        submitLabel="Save"
+        submitDisabled={isEmpty}
+        multilineLabel="Comment"
+        richText
+        onSubmit={async () => {
+          if (isEmpty) return;
+          try {
+            await BackendApiService.updateRatingComment(comment.id, draft.text, Number(draft.score));
+            await interactions.loadComments(activeReview.ratingId, true);
+            setModalEditKey(null);
+          } catch (error) {
+            notify({ message: error.message || 'Failed to edit comment', type: 'error' });
+          }
+        }}
+        onDelete={() => confirmDelete(deleteComment)}
       />
     );
   };
@@ -317,7 +377,11 @@ const TopicScreen = ({ navigation, route }) => {
       >
         <Pressable style={styles.modalBackdrop} onPress={closeReview}>
           <Pressable style={styles.modalContent} onPress={(event) => event.stopPropagation()}>
-            <ScrollView ref={modalScrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScroll}>
+            <ScrollView
+              ref={modalScrollRef}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={[styles.modalScroll, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}
+            >
               {activeReview ? (
                 <>
                   <PostCard
@@ -330,6 +394,7 @@ const TopicScreen = ({ navigation, route }) => {
                         commentCount={activeReview.commentCount}
                         onLike={() => interactions.toggleLike(activeReview)}
                         onComment={() => setModalComposerOpen((open) => !open)}
+                        onEdit={canEditReview ? () => { closeReview(); navigation.navigate('PostEditor', { ratingId: activeReview.ratingId }); } : undefined}
                         shareUrl={getRatingShareUrl(activeReview.rateableItem?.id, activeReview.ratingId)}
                         commentLabel={modalComposerOpen ? 'Cancel' : 'Comment'}
                       />
@@ -363,6 +428,16 @@ const TopicScreen = ({ navigation, route }) => {
                             onReplyPress={(comment) => {
                               const replyKey = interactions.getReplyKey(activeReview.ratingId, comment.id);
                               interactions.setActiveComposer(interactions.activeComposer === replyKey ? null : replyKey);
+                              setModalEditKey(null);
+                            }}
+                            activeEditKey={modalEditKey}
+                            getEditKey={(comment) => `edit:${comment.id}`}
+                            renderEditComposer={renderModalEditComposer}
+                            onEditPress={(comment) => {
+                              const editKey = `edit:${comment.id}`;
+                              setModalEditDrafts((current) => ({ ...current, [editKey]: current[editKey] || { text: comment.text || '', score: String(comment.score || 2.5) } }));
+                              setModalEditKey((current) => (current === editKey ? null : editKey));
+                              interactions.setActiveComposer(null);
                             }}
                             onAuthorPress={(userId) => { closeReview(); navigation.navigate('Profile', { userId }); }}
                             onLikePress={async (comment) => {
@@ -390,7 +465,7 @@ const TopicScreen = ({ navigation, route }) => {
               accessibilityLabel="Close review"
               hitSlop={12}
               onPress={closeReview}
-              style={styles.modalClose}
+              style={[styles.modalClose, { top: insets.top + spacing.sm }]}
             >
               <Text style={styles.modalCloseText}>×</Text>
             </Pressable>
@@ -519,13 +594,15 @@ const styles = StyleSheet.create({
   modalBackdrop: {
     flex: 1,
     justifyContent: 'center',
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
     backgroundColor: 'rgba(0, 0, 0, 0.82)'
   },
   modalContent: {
     width: '100%',
     maxWidth: 520,
-    maxHeight: '86%',
+    // Fill the screen height so the scroll region reaches the very top and
+    // bottom instead of floating in a clipped window.
+    flex: 1,
     alignSelf: 'center'
   },
   modalScroll: {
@@ -533,8 +610,7 @@ const styles = StyleSheet.create({
     // Top-align rather than center: a rating with comments makes the content
     // taller than the modal, and flex-centering an overflowing scroll container
     // on web clips the ends so the comments underneath can't be scrolled to.
-    justifyContent: 'flex-start',
-    paddingVertical: spacing.sm
+    justifyContent: 'flex-start'
   },
   modalCard: {
     backgroundColor: 'rgba(22, 22, 25, 0.98)'
