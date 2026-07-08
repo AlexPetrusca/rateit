@@ -89,7 +89,9 @@ ingress-nginx:
       compute-full-forwarded-for: "true"
 
 minio:
-  enabled: true
+  # Decommissioned: object storage (images + frontend) moved to DO Spaces
+  # (critic-media). Kept in the chart only so local/dev can re-enable it.
+  enabled: false
   mode: standalone
   existingSecret: "critic-minio-secret"
   persistence:
