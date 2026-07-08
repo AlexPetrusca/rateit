@@ -31,7 +31,20 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.backend.service.targetPort }}
+          # Bound the JVM so it can't balloon and OOM the whole node (the repeated
+          # freezes). The hard memory limit means an over-budget backend is
+          # OOM-killed and restarted in isolation instead of taking nginx/Postgres
+          # down with it. MaxRAMPercentage sizes the heap to the container limit
+          # (not the node's total RAM), so the JVM stays within budget.
+          resources:
+            requests:
+              cpu: "150m"
+              memory: "512Mi"
+            limits:
+              memory: "1Gi"
           env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=75.0"
             - name: SPRING_PROFILES_ACTIVE
               value: "{{ .Values.backend.springProfiles }}"
             - name: SPRING_CONFIG_IMPORT
