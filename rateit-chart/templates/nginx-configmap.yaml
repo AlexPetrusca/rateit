@@ -88,31 +88,27 @@ data:
         server {
             listen 80 default_server;
             server_name app.critic-app.com _;
-            # Static assets (SPA bundle + image uploads) are served from DO Spaces
-            # (critic-media), not MinIO. Variable proxy_pass needs a resolver.
-            resolver 1.1.1.1 8.8.8.8 valid=300s ipv6=off;
-            set $spaces_host critic-media.sfo3.digitaloceanspaces.com;
 
             location / {
                 # If the request is for the root "/", rewrite it to "/index.html"
                 rewrite ^/$ /index.html break;
 
-                # Proxy the SPA bundle from Spaces (critic-media/frontend)
-                proxy_pass https://$spaces_host/frontend$uri$is_args$args;
-                proxy_ssl_server_name on;
-                proxy_set_header Host $spaces_host;
+                # Proxy to MinIO, appending the (potentially rewritten) $uri
+                proxy_pass http://minio/frontend$uri;
+
+                proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
 
-                # SPA routing: Spaces returns 403 (missing object) or 404 for
-                # unknown paths; serve index.html so the client router handles it.
+                # Handle SPA routing
+                #  - If MinIO returns 404 (file not found), serve index.html instead
+                #  - This allows the frontend router to handle the path.
                 proxy_intercept_errors on;
-                error_page 403 404 = /index.html;
+                error_page 404 = /index.html;
             }
 
             location /images/ {
-                proxy_pass https://$spaces_host$uri$is_args$args;
-                proxy_ssl_server_name on;
-                proxy_set_header Host $spaces_host;
+                proxy_pass http://minio/images/;
+                proxy_set_header Host $http_host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $origin_proto;
