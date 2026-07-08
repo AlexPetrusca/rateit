@@ -43,7 +43,7 @@ spec:
               image: bitnami/postgresql:latest   # same image as the server -> matching pg_dump
               command: ["/bin/sh", "-c"]
               args:
-                - set -euo pipefail;
+                - set -eu;
                   pg_dump -Fc -f /work/critic.dump;
                   ls -lh /work/critic.dump
               env:
@@ -69,13 +69,26 @@ spec:
           containers:
             - name: upload
               image: amazon/aws-cli:latest
-              command: ["/bin/sh", "-c"]
+              command: ["/bin/bash", "-c"]
+              # Upload the dump, then prune dumps older than 30 days. Retention is
+              # done here (not via a bucket lifecycle rule) because the Spaces key
+              # only has object-level permissions, not bucket-config.
               args:
-                - set -euo pipefail;
-                  KEY="backups/critic-$(date -u +%Y%m%dT%H%M%SZ).dump";
-                  aws s3 cp /work/critic.dump "s3://critic-backups/$KEY"
-                    --endpoint-url "https://sfo3.digitaloceanspaces.com";
+                - |
+                  set -euo pipefail
+                  EP="https://sfo3.digitaloceanspaces.com"
+                  KEY="backups/critic-$(date -u +%Y%m%dT%H%M%SZ).dump"
+                  aws s3 cp /work/critic.dump "s3://critic-backups/$KEY" --endpoint-url "$EP"
                   echo "uploaded s3://critic-backups/$KEY"
+                  # Filenames embed a sortable UTC timestamp, so a lexical compare
+                  # against the cutoff filename identifies dumps older than 30 days.
+                  CUTOFF="critic-$(date -u -d '30 days ago' +%Y%m%dT%H%M%SZ).dump"
+                  aws s3 ls s3://critic-backups/backups/ --endpoint-url "$EP" | awk '{print $4}' | while read -r f; do
+                    if [ -n "$f" ] && [[ "$f" < "$CUTOFF" ]]; then
+                      echo "pruning $f"
+                      aws s3 rm "s3://critic-backups/backups/$f" --endpoint-url "$EP"
+                    fi
+                  done
               env:
                 - name: AWS_ACCESS_KEY_ID
                   valueFrom:
@@ -92,12 +105,9 @@ spec:
                 requests: { cpu: "50m", memory: "64Mi" }
                 limits:   { cpu: "250m", memory: "256Mi" }
 ---
-# Retention (run once, not per-backup): expire dumps under backups/ after 30 days.
-# Set it with a one-time job/console rule, e.g. from a machine with the Spaces keys:
-#   aws s3api put-bucket-lifecycle-configuration --bucket critic-backups \
-#     --endpoint-url https://sfo3.digitaloceanspaces.com \
-#     --lifecycle-configuration '{"Rules":[{"ID":"expire-backups","Status":"Enabled",
-#       "Filter":{"Prefix":"backups/"},"Expiration":{"Days":30}}]}'
+# Retention: handled in the upload container above (prunes dumps older than 30
+# days each run). A bucket lifecycle rule would be tidier but the scoped Spaces
+# key lacks bucket-config permission (PutBucketLifecycleConfiguration -> 403).
 #
 # Restore a dump (pull from Spaces, then pg_restore into a fresh db):
 #   aws s3 cp s3://critic-backups/backups/critic-<ts>.dump ./restore.dump \
