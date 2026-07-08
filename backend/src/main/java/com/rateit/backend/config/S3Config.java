@@ -26,13 +26,17 @@ public class S3Config {
     @Value("${spring.cloud.aws.region.static}")
     private String region;
 
+    // MinIO needs path-style; DO Spaces uses virtual-hosted (bucket in the host).
+    @Value("${spring.cloud.aws.s3.path-style-access-enabled:true}")
+    private boolean pathStyleAccessEnabled;
+
     @Bean
     public S3Presigner s3Presigner() {
         return S3Presigner.builder()
             .endpointOverride(URI.create(s3Endpoint))
             .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)))
             .region(Region.of(region))
-            .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build()) // for minio
+            .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccessEnabled).build())
             .build();
     }
 }

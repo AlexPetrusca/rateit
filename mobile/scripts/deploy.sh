@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
-# Build the mobile web (Expo) app and upload to s3/minio.
-# Deploys to the "frontend" bucket so it serves as the live web app.
+# Build the mobile web (Expo) app and upload it to DO Spaces (critic-media),
+# under the frontend/ prefix. nginx serves "/" from there; images live under
+# images/ in the same Space. Public read is via per-object ACL (Spaces has no
+# bucket-policy support).
 set -euo pipefail
 
 # Run from the mobile project root regardless of where this is invoked from
@@ -9,31 +11,24 @@ set -euo pipefail
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.."
 
 # Configuration
-BUCKET_NAME="frontend"
+BUCKET_NAME="${MEDIA_BUCKET:-critic-media}"
+PREFIX="frontend"
+DEST="s3://${BUCKET_NAME}/${PREFIX}"
 DIST_PATH="dist"
-LOCAL_MINIO_PORT="${LOCAL_MINIO_PORT:-9100}"
-ENDPOINT="http://localhost:${LOCAL_MINIO_PORT}"
+ENDPOINT="${SPACES_ENDPOINT:-https://sfo3.digitaloceanspaces.com}"
 NAMESPACE="critic"
-MINIO_SERVICE="critic-minio"
-MINIO_SECRET="${MINIO_SECRET:-critic-minio-secret}"
-TEMP_TUNNEL=false
+MEDIA_SECRET="${MEDIA_SECRET:-critic-media-secret}"
+export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-sfo3}"
 
-cleanup() {
-  if [ "$TEMP_TUNNEL" = true ] && [ -n "${PORT_FORWARD_PID:-}" ]; then
-    echo "Stopping port-forward..."
-    kill "$PORT_FORWARD_PID" 2>/dev/null || true
-  fi
-}
-trap cleanup EXIT
-
+# Spaces credentials (from the k8s secret unless already in the environment).
 if [ -z "${AWS_ACCESS_KEY_ID:-}" ]; then
   export AWS_ACCESS_KEY_ID
-  AWS_ACCESS_KEY_ID="$(kubectl get secret -n "$NAMESPACE" "$MINIO_SECRET" -o 'go-template={{ index .data "rootUser" | base64decode }}')"
+  AWS_ACCESS_KEY_ID="$(kubectl get secret -n "$NAMESPACE" "$MEDIA_SECRET" -o 'go-template={{ index .data "access-key" | base64decode }}')"
 fi
 
 if [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
   export AWS_SECRET_ACCESS_KEY
-  AWS_SECRET_ACCESS_KEY="$(kubectl get secret -n "$NAMESPACE" "$MINIO_SECRET" -o 'go-template={{ index .data "rootPassword" | base64decode }}')"
+  AWS_SECRET_ACCESS_KEY="$(kubectl get secret -n "$NAMESPACE" "$MEDIA_SECRET" -o 'go-template={{ index .data "secret-key" | base64decode }}')"
 fi
 
 # 0. Package mobile web build (Expo export -> ./dist)
@@ -67,53 +62,15 @@ else:
     print('iOS PWA meta tags already present')
 PY
 
-if ! curl -fsS "$ENDPOINT/minio/health/live" >/dev/null 2>&1; then
-  TEMP_TUNNEL=true
-  echo "Starting port-forward..."
-  kubectl port-forward -n "$NAMESPACE" "svc/$MINIO_SERVICE" "${LOCAL_MINIO_PORT}:9000" >/dev/null &
-  PORT_FORWARD_PID=$!
-
-  for _ in {1..20}; do
-    if curl -fsS "$ENDPOINT/minio/health/live" >/dev/null 2>&1; then
-      break
-    fi
-    sleep 1
-  done
-
-  if ! curl -fsS "$ENDPOINT/minio/health/live" >/dev/null 2>&1; then
-    echo "Error: MinIO endpoint is not reachable at $ENDPOINT"
-    exit 1
-  fi
-fi
-
-if ! aws --endpoint-url "$ENDPOINT" s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-  echo "Creating bucket..."
-  aws --endpoint-url "$ENDPOINT" s3 mb "s3://$BUCKET_NAME" 2>/dev/null || true
-
-  POLICY='{
-      "Version": "2012-10-17",
-      "Statement": [{
-          "Effect": "Allow",
-          "Principal": {"AWS": ["*"]},
-          "Action": ["s3:GetObject"],
-          "Resource": ["arn:aws:s3:::'$BUCKET_NAME'/*"]
-      }]
-  }'
-
-  echo "Applying public policy..."
-  aws --endpoint-url "$ENDPOINT" s3api put-bucket-policy \
-      --bucket "$BUCKET_NAME" \
-      --policy "$POLICY"
-fi
-
-# Replace bucket contents so stale frontend files don't linger (--delete).
-# Assets are content-hashed, so the bulk sync can let them be cached.
-echo "Uploading files to bucket..."
-aws --endpoint-url "$ENDPOINT" s3 sync "$DIST_PATH" "s3://$BUCKET_NAME" --acl public-read --delete
+# Replace the frontend/ contents so stale files don't linger (--delete scoped to
+# the prefix, so it never touches images/). Objects are public-read; assets are
+# content-hashed so they can be cached.
+echo "Uploading files to ${DEST} ..."
+aws --endpoint-url "$ENDPOINT" s3 sync "$DIST_PATH" "$DEST" --acl public-read --delete
 
 # index.html points at the hashed bundle, so it must never be cached, or devices
 # (especially iOS home-screen apps) keep serving a stale index referencing an old
 # bundle. Re-upload it with no-cache after the sync.
 echo "Setting no-cache on index.html..."
-aws --endpoint-url "$ENDPOINT" s3 cp "$DIST_PATH/index.html" "s3://$BUCKET_NAME/index.html" \
+aws --endpoint-url "$ENDPOINT" s3 cp "$DIST_PATH/index.html" "$DEST/index.html" \
   --acl public-read --content-type "text/html" --cache-control "no-cache, must-revalidate"

@@ -4,8 +4,8 @@ import com.rateit.backend.entity.rest.S3UploadRequest;
 import com.rateit.backend.entity.rest.S3UploadResponse;
 import com.rateit.backend.entity.rest.S3DownloadUrlResponse;
 import com.rateit.backend.service.S3Service;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,82 +20,61 @@ public class S3Controller {
 
     private final S3Service s3Service;
 
-    @PostMapping("/images")
-    public ResponseEntity<S3UploadResponse> getPresignedUploadUrl(@RequestBody S3UploadRequest req, HttpServletRequest servletRequest) {
-        String bucketName = "images";
-        String key = "uploads/" + System.currentTimeMillis() + "_" + req.filename();
+    // Object storage bucket + key prefix for image uploads. Defaults keep local
+    // dev on MinIO (bucket "images", no prefix); prod overrides to DO Spaces
+    // (bucket "critic-media", prefix "images/") via env. The stored/returned
+    // objectKey stays prefix-free (e.g. "uploads/x") so display URLs (/images/x)
+    // are unchanged; the prefix is applied only to the physical S3 key.
+    @Value("${storage.image-bucket:images}")
+    private String imageBucket;
 
-        // Generate presigned URL valid for 10 minutes
+    @Value("${storage.image-key-prefix:}")
+    private String imageKeyPrefix;
+
+    @PostMapping("/images")
+    public ResponseEntity<S3UploadResponse> getPresignedUploadUrl(@RequestBody S3UploadRequest req) {
+        String objectKey = "uploads/" + System.currentTimeMillis() + "_" + req.filename();
+
+        // Presign against the configured storage endpoint (Spaces in prod) so the
+        // browser PUTs straight to it (CORS-enabled). Valid 10 minutes.
         String uploadUrl = s3Service.createPresignedUploadUrl(
-            bucketName,
-            key,
-            Duration.ofMinutes(10),
-            getForwardedOrigin(servletRequest)
+            imageBucket,
+            imageKeyPrefix + objectKey,
+            Duration.ofMinutes(10)
         );
 
-        return ResponseEntity.ok(new S3UploadResponse(uploadUrl, key));
+        return ResponseEntity.ok(new S3UploadResponse(uploadUrl, objectKey));
     }
 
     @GetMapping("/images/url/{*key}")
-    public ResponseEntity<S3DownloadUrlResponse> getPresignedDownloadUrlJson(@PathVariable String key, HttpServletRequest servletRequest) {
-        String bucketName = "images";
-
+    public ResponseEntity<S3DownloadUrlResponse> getPresignedDownloadUrlJson(@PathVariable String key) {
         if (key.startsWith("/")) {
             key = key.substring(1);
         }
 
         String downloadUrl = s3Service.createPresignedGetUrl(
-            bucketName,
-            key,
-            Duration.ofMinutes(10),
-            getForwardedOrigin(servletRequest)
+            imageBucket,
+            imageKeyPrefix + key,
+            Duration.ofMinutes(10)
         );
 
         return ResponseEntity.ok(new S3DownloadUrlResponse(downloadUrl, key));
     }
 
     @GetMapping("/images/{*key}")
-    public ResponseEntity<Void> getPresignedDownloadUrl(@PathVariable String key, HttpServletRequest servletRequest) {
-        String bucketName = "images";
-
-        // Strip leading slash
+    public ResponseEntity<Void> getPresignedDownloadUrl(@PathVariable String key) {
         if (key.startsWith("/")) {
             key = key.substring(1);
         }
 
-        // Generate presigned URL valid for 10 minutes
         String downloadUrl = s3Service.createPresignedGetUrl(
-            bucketName,
-            key,
-            Duration.ofMinutes(10),
-            getForwardedOrigin(servletRequest)
+            imageBucket,
+            imageKeyPrefix + key,
+            Duration.ofMinutes(10)
         );
 
         return ResponseEntity.status(HttpStatus.TEMPORARY_REDIRECT)
             .location(URI.create(downloadUrl))
             .build();
-    }
-
-    private String getForwardedOrigin(HttpServletRequest request) {
-        String host = firstHeader(request, "X-Forwarded-Host");
-
-        if (host == null) {
-            return null;
-        }
-
-        String proto = firstHeader(request, "X-Forwarded-Proto");
-        if (proto == null) {
-            proto = request.getScheme();
-        }
-
-        return proto + "://" + host;
-    }
-
-    private String firstHeader(HttpServletRequest request, String name) {
-        String value = request.getHeader(name);
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.split(",")[0].trim();
     }
 }

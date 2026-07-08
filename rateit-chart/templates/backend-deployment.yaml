@@ -67,6 +67,18 @@ spec:
               value: "critic-mocker"
             - name: MOCKER_PORT
               value: "{{ .Values.mocker.service.port }}"
+            # Object storage -> DO Spaces (critic-media). Creds arrive as files
+            # (STORAGE_ACCESS_KEY/STORAGE_SECRET_KEY) via the projected secret below.
+            - name: STORAGE_ENDPOINT
+              value: "https://sfo3.digitaloceanspaces.com"
+            - name: STORAGE_REGION
+              value: "sfo3"
+            - name: STORAGE_PATH_STYLE
+              value: "false"
+            - name: STORAGE_IMAGE_BUCKET
+              value: "critic-media"
+            - name: STORAGE_IMAGE_KEY_PREFIX
+              value: "images/"
           volumeMounts:
             - name: secrets-volume
               mountPath: "/etc/secrets"
@@ -88,4 +100,11 @@ spec:
                       path: MINIO_ADMIN_USERNAME
                     - key: rootPassword
                       path: MINIO_ADMIN_PASSWORD
+              - secret:
+                  name: critic-media-secret
+                  items:
+                    - key: access-key
+                      path: STORAGE_ACCESS_KEY
+                    - key: secret-key
+                      path: STORAGE_SECRET_KEY
 {{- end }}

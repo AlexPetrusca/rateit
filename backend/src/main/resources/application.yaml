@@ -21,14 +21,16 @@ spring:
       password: ${REDIS_ADMIN_PASSWORD}
   cloud:
     aws:
+      # Object storage. Defaults target the in-cluster MinIO (local dev); prod
+      # overrides STORAGE_* to point at DO Spaces (see backend deployment env).
       credentials:
-        access-key: ${MINIO_ADMIN_USERNAME}
-        secret-key: ${MINIO_ADMIN_PASSWORD}
+        access-key: ${STORAGE_ACCESS_KEY:${MINIO_ADMIN_USERNAME}}
+        secret-key: ${STORAGE_SECRET_KEY:${MINIO_ADMIN_PASSWORD}}
       s3:
-        endpoint: http://${MINIO_HOST:localhost}:${MINIO_PORT:9000}
-        path-style-access-enabled: true
+        endpoint: ${STORAGE_ENDPOINT:http://${MINIO_HOST:localhost}:${MINIO_PORT:9000}}
+        path-style-access-enabled: ${STORAGE_PATH_STYLE:true}
       region:
-        static: us-east-1
+        static: ${STORAGE_REGION:us-east-1}
 
 integration:
   twilio:

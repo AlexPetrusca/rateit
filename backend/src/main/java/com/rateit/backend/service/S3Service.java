@@ -8,6 +8,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
@@ -42,9 +43,13 @@ public class S3Service {
     }
 
     public String createPresignedUploadUrl(String bucket, String key, Duration duration, String endpoint) {
+        // public-read so the object is served anonymously (DO Spaces has no bucket
+        // policy support; per-object ACL is how we make uploads publicly viewable).
+        // The client must send the matching `x-amz-acl: public-read` header.
         PutObjectRequest objectRequest = PutObjectRequest.builder()
             .bucket(bucket)
             .key(key)
+            .acl(ObjectCannedACL.PUBLIC_READ)
             .build();
 
         S3Presigner presigner = endpoint == null ? s3Presigner : buildPresigner(endpoint);

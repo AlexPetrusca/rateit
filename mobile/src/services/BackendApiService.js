@@ -278,7 +278,12 @@ const BackendApiService = {
     const response = await fetch(uploadUrl, {
       method: 'PUT',
       body: uploadBody,
-      headers: { 'Content-Type': file?.type || 'application/octet-stream' }
+      // Must match the ACL the backend signed into the presigned URL, or the PUT
+      // is rejected. Makes the object publicly readable (Spaces has no bucket policy).
+      headers: {
+        'Content-Type': file?.type || 'application/octet-stream',
+        'x-amz-acl': 'public-read'
+      }
     });
     if (!response.ok) {
       throw new Error('Failed to upload file to S3');
