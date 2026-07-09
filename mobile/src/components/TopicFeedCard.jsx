@@ -8,11 +8,11 @@ import { useResolvedImageUrl } from '../hooks/useResolvedImageUrl.js';
 import BackendApiService from '../services/BackendApiService.js';
 import { colors, spacing, text } from '../theme.js';
 
-// A topic-first feed card: the topic's title and image, then a centered row of
-// empty stars you can drag to fill — releasing opens a prompt to post your own
-// rating. Below that, the "top 5" ratings (the OP's original rating first, then
-// the four most recent) as compact, display-only rows. Tapping a row opens the
-// full topic page, where liking/commenting/re-rating live.
+// A topic-first feed card: the OP's avatar/name in the header, then the topic's
+// title and image, then a centered row of empty stars you can drag to fill —
+// releasing opens a prompt to post your own rating. Below that, the five most
+// recent ratings (newest first) as compact, display-only rows. Tapping a row
+// opens the full topic page, where liking/commenting/re-rating live.
 const byNewest = (a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
 
 const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) => {
@@ -41,11 +41,11 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) =
     return () => { cancelled = true; };
   }, [rateableItemId, ratingCount]);
 
-  // OP first, then the four most recent other ratings shown oldest-to-newest
-  // (so the most recent rating sits at the bottom of the row).
+  // The five most recent ratings, newest first. The OP is represented by the
+  // card header above, so it is no longer pinned to the top of the list.
   const topRatings = useMemo(() => {
-    const rest = (others || []).filter((r) => r.ratingId !== item.ratingId).sort(byNewest).slice(0, 4).reverse();
-    return [item, ...rest];
+    const rest = (others || []).filter((r) => r.ratingId !== item.ratingId);
+    return [item, ...rest].sort(byNewest).slice(0, 5);
   }, [item, others]);
 
   const openTopic = () => onTopicPress?.(rateableItemId);
@@ -80,6 +80,16 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) =
 
   return (
     <View style={styles.card}>
+      <Pressable
+        disabled={!item.author?.userId || !onAuthorPress}
+        onPress={() => onAuthorPress?.(item.author.userId)}
+        style={styles.opHeader}
+      >
+        <UserAvatar username={item.author?.username} profilePicUrl={item.author?.profilePicUrl} size="sm" />
+        <Text style={styles.opName} numberOfLines={1}>{item.author?.username || 'Someone'}</Text>
+        <Text style={styles.opBadge}>OP</Text>
+      </Pressable>
+
       <Pressable onPress={openTopic}>
         {mediaUrl ? <Image source={{ uri: mediaUrl }} style={styles.media} resizeMode="cover" /> : null}
         <RichText style={styles.title} numberOfLines={2}>{topicLabel}</RichText>
@@ -149,6 +159,19 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: colors.surface,
     gap: spacing.md
+  },
+  opHeader: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm
+  },
+  opName: {
+    flexShrink: 1,
+    minWidth: 0,
+    color: colors.text,
+    fontWeight: '700',
+    fontSize: 14
   },
   media: {
     width: '100%',
