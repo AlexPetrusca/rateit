@@ -111,7 +111,7 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) =
     }
   };
 
-  const renderRating = (r, style) => (
+  const renderRating = (r, style, reviewLines = 2) => (
     <Pressable key={r.ratingId} onPress={() => onTopicPress?.(rateableItemId, r.ratingId)} style={style}>
       <View style={styles.ratingHead}>
         <Pressable
@@ -126,7 +126,7 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) =
         <StarRating value={Number(r.score) || 0} size="sm" />
       </View>
       {r.reviewText ? (
-        <RichText numberOfLines={2} ellipsizeMode="tail" style={styles.review}>{r.reviewText}</RichText>
+        <RichText numberOfLines={reviewLines} ellipsizeMode="tail" style={styles.review}>{r.reviewText}</RichText>
       ) : null}
     </Pressable>
   );
@@ -150,7 +150,7 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) =
 
       {featured ? (
         <View style={styles.featuredBlock}>
-          {renderRating(featured, styles.featuredRow)}
+          {renderRating(featured, styles.featuredRow, 5)}
           <PostActions
             liked={fLiked}
             likeCount={fLikeCount}
