@@ -154,7 +154,7 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) =
           <PostActions
             liked={fLiked}
             likeCount={fLikeCount}
-            commentCount={featured.commentCount}
+            commentCount={ratingCount}
             onLike={toggleLike}
             onComment={() => setExpanded((open) => !open)}
             commentLabel={expanded ? 'Hide' : 'Comments'}
