@@ -12,7 +12,7 @@ import { useNotifications } from '../contexts/NotificationContext.jsx';
 import { useResolvedImageUrl } from '../hooks/useResolvedImageUrl.js';
 import BackendApiService from '../services/BackendApiService.js';
 import { colors, spacing, text } from '../theme.js';
-import { prepareImageForUpload } from '../utils/imageUpload.js';
+import { AVATAR_MAX_DIMENSION, prepareImageForUpload } from '../utils/imageUpload.js';
 
 const ProfileEditorScreen = ({ navigation }) => {
   const { user, updateUser } = useAuth();
@@ -32,7 +32,14 @@ const ProfileEditorScreen = ({ navigation }) => {
     });
     if (!result.canceled) {
       const asset = result.assets[0];
-      setSelectedImage(await prepareImageForUpload(asset));
+      try {
+        setSelectedImage(await prepareImageForUpload(asset, {
+          maxDimension: AVATAR_MAX_DIMENSION,
+          name: 'profile-picture.jpg'
+        }));
+      } catch (err) {
+        setError(err.message);
+      }
     }
   };
 

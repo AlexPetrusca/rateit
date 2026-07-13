@@ -9,10 +9,15 @@ import { useNotifications } from '../contexts/NotificationContext.jsx';
 
 export const normalizeName = (value) => value.trim().replace(/\s+/g, ' ');
 
+// A missing name is not worth white-screening the whole app over: the people memo
+// below runs during render, so an unguarded toLowerCase on a null takes the tree
+// down. The backend already defends the same field when it sorts users.
+const lowerName = (value) => (value || '').toLowerCase();
+
 export const playerKey = (player) => (
   player.playerId ? `player:${player.playerId}`
     : player.criticUserId ? `critic:${player.criticUserId}`
-      : `raw:${player.displayName.toLowerCase()}`
+      : `raw:${lowerName(player.displayName)}`
 );
 
 export const samePlayer = (left, right) => {
@@ -22,7 +27,7 @@ export const samePlayer = (left, right) => {
   if (left.criticUserId && right.criticUserId) {
     return left.criticUserId === right.criticUserId;
   }
-  return left.displayName.toLowerCase() === right.displayName.toLowerCase();
+  return lowerName(left.displayName) === lowerName(right.displayName);
 };
 
 export function useTourneyPeople() {
@@ -61,9 +66,9 @@ export function useTourneyPeople() {
       playedBefore: u.playedBefore,
       candidate: { displayName: u.username, criticUserId: u.userId, criticUsername: u.username }
     }));
-    const criticNames = new Set(criticUsers.map((u) => u.username.toLowerCase()));
+    const criticNames = new Set(criticUsers.map((u) => lowerName(u.username)));
     const guestPeople = existingPlayers
-      .filter((p) => p.criticUserId == null && !criticNames.has(p.displayName.toLowerCase()))
+      .filter((p) => p.criticUserId == null && !criticNames.has(lowerName(p.displayName)))
       .map((p) => ({
         key: `player:${p.id}`,
         displayName: p.displayName,
@@ -74,7 +79,7 @@ export function useTourneyPeople() {
       }));
     return [...criticPeople, ...guestPeople].sort((a, b) => (
       (b.playedBefore === a.playedBefore ? 0 : b.playedBefore ? 1 : -1)
-      || a.displayName.toLowerCase().localeCompare(b.displayName.toLowerCase())
+      || lowerName(a.displayName).localeCompare(lowerName(b.displayName))
     ));
   }, [criticUsers, existingPlayers]);
 
@@ -85,7 +90,7 @@ export function useTourneyPeople() {
     const existing = existingPlayers.find((candidate) => (
       player.criticUserId
         ? candidate.criticUserId === player.criticUserId
-        : candidate.displayName.toLowerCase() === player.displayName.toLowerCase()
+        : lowerName(candidate.displayName) === lowerName(player.displayName)
     ));
     if (existing) {
       return existing.id;

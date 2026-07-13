@@ -1,40 +1,62 @@
+import { Platform } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { AVATAR_MAX_DIMENSION, JPEG_QUALITY, MAX_DIMENSION, computeTargetSize } from './imageScaling.js';
 
 // Phone cameras produce 3–8 MB full-resolution photos. The feed never renders
-// wider than ~600px, so we downscale to a sane max and re-encode as JPEG before
-// upload. This cuts payloads ~10–20x, which is the single biggest win for feed
-// load time. Returns a file descriptor ready for getUploadUrl/uploadFileToS3.
-const MAX_DIMENSION = 1600;
-const JPEG_QUALITY = 0.7;
+// wider than ~600px and avatars never wider than ~64px, so we downscale and
+// re-encode as JPEG before upload. Returns a file descriptor ready for
+// getUploadUrl/uploadFileToS3.
+//
+// This must never silently upload the original. It used to: when the resize
+// threw, it fell back to the untouched asset, which is how multi-megabyte camera
+// originals ended up as profile pictures. Rendering ~18 of those at once in the
+// tourney player picker decoded to enough bitmap (~160 MB) to get the tab killed
+// by mobile Safari. Failing loudly is better than shipping a 5 MB avatar.
+export { AVATAR_MAX_DIMENSION, MAX_DIMENSION };
 
-export const prepareImageForUpload = async (asset) => {
-  const fallback = {
-    uri: asset.uri,
-    name: asset.fileName || 'rating-photo.jpg',
-    type: asset.mimeType || 'image/jpeg'
-  };
+// expo-image-manipulator is unreliable on web (it is where the silent fallback
+// kept triggering), so the web build resizes with a canvas instead.
+const resizeOnWeb = async (uri, maxDimension) => {
+  const blob = await fetch(uri).then((response) => response.blob());
+  const bitmap = await createImageBitmap(blob);
+  const target = computeTargetSize(bitmap.width, bitmap.height, maxDimension)
+    || { width: bitmap.width, height: bitmap.height };
+
+  const canvas = document.createElement('canvas');
+  canvas.width = target.width;
+  canvas.height = target.height;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, target.width, target.height);
+  bitmap.close?.();
+
+  const encoded = await new Promise((resolve) => {
+    canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY);
+  });
+  if (!encoded) {
+    throw new Error('Could not encode image');
+  }
+
+  return URL.createObjectURL(encoded);
+};
+
+const resizeOnNative = async (asset, maxDimension) => {
+  const target = computeTargetSize(asset.width, asset.height, maxDimension);
+  const result = await ImageManipulator.manipulateAsync(
+    asset.uri,
+    target ? [{ resize: target }] : [],
+    { compress: JPEG_QUALITY, format: ImageManipulator.SaveFormat.JPEG }
+  );
+  return result.uri;
+};
+
+export const prepareImageForUpload = async (asset, options = {}) => {
+  const { maxDimension = MAX_DIMENSION, name = 'rating-photo.jpg' } = options;
 
   try {
-    // Only downscale; never enlarge a small source. Scale the longest edge to
-    // MAX_DIMENSION, preserving aspect ratio.
-    const longest = Math.max(asset.width || 0, asset.height || 0);
-    const actions = [];
-    if (longest > MAX_DIMENSION) {
-      const scale = MAX_DIMENSION / longest;
-      actions.push({ resize: {
-        width: Math.round((asset.width || longest) * scale),
-        height: Math.round((asset.height || longest) * scale)
-      } });
-    }
-
-    const result = await ImageManipulator.manipulateAsync(
-      asset.uri,
-      actions,
-      { compress: JPEG_QUALITY, format: ImageManipulator.SaveFormat.JPEG }
-    );
-    return { uri: result.uri, name: 'rating-photo.jpg', type: 'image/jpeg' };
-  } catch {
-    // If manipulation fails (e.g. unsupported source), fall back to the original.
-    return fallback;
+    const uri = Platform.OS === 'web'
+      ? await resizeOnWeb(asset.uri, maxDimension)
+      : await resizeOnNative(asset, maxDimension);
+    return { uri, name, type: 'image/jpeg' };
+  } catch (cause) {
+    throw new Error('Could not process that image. Try a different photo.', { cause });
   }
 };

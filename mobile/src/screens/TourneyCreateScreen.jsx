@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import AppButton from '../components/AppButton.jsx';
 import AppTextInput from '../components/AppTextInput.jsx';
 import Card from '../components/Card.jsx';
@@ -205,19 +205,25 @@ const TourneyCreateScreen = ({ navigation, route }) => {
           </Text>
         </View>
 
-        <ScrollView
+        {/* Virtualized: mounting every row at once also mounted every avatar at
+            once, which is what made this screen a memory spike on mobile web. */}
+        <FlatList
           style={styles.playerList}
           contentContainerStyle={styles.playerListContent}
+          data={people}
+          keyExtractor={(person) => person.key}
+          extraData={selectedPlayers}
           nestedScrollEnabled
           showsVerticalScrollIndicator
-        >
-          {people.length === 0 ? (
+          initialNumToRender={10}
+          windowSize={5}
+          ListEmptyComponent={(
             <Text style={styles.muted}>{loadingUsers ? 'Loading players…' : 'No players found.'}</Text>
-          ) : people.map((person) => {
+          )}
+          renderItem={({ item: person }) => {
             const selected = isSelected(person.candidate);
             return (
               <Pressable
-                key={person.key}
                 onPress={() => (selected ? removeSelectedPlayer(person.candidate) : addSelectedPlayer(person.candidate))}
                 style={({ pressed }) => [styles.playerRow, pressed && styles.playerRowPressed]}
               >
@@ -235,8 +241,8 @@ const TourneyCreateScreen = ({ navigation, route }) => {
                 </View>
               </Pressable>
             );
-          })}
-        </ScrollView>
+          }}
+        />
 
         <View style={styles.rawBlock}>
           <Text style={styles.label}>Add someone not on Critic</Text>

@@ -99,7 +99,11 @@ const CreateScreen = ({ navigation, route }) => {
     });
     if (!result.canceled) {
       const asset = result.assets[0];
-      setSelectedFile(await prepareImageForUpload(asset));
+      try {
+        setSelectedFile(await prepareImageForUpload(asset));
+      } catch (err) {
+        setError(err.message);
+      }
     }
   };
 

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import AppButton from '../components/AppButton.jsx';
 import AppTextInput from '../components/AppTextInput.jsx';
 import Card from '../components/Card.jsx';
@@ -273,14 +273,24 @@ const TourneyMatchCreateScreen = ({ navigation }) => {
         <Pressable style={styles.sheetBackdrop} onPress={() => setPickerTarget(null)}>
           <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation()}>
             <Text style={styles.sheetTitle}>Add to Team {pickerTarget}</Text>
-            <ScrollView style={styles.pickerList} contentContainerStyle={styles.pickerListContent} keyboardShouldPersistTaps="handled">
-              {people.length === 0 ? (
+            {/* Virtualized for the same reason as the tourney create picker: rendering
+                every row mounts every avatar at once, which spikes memory on mobile web. */}
+            <FlatList
+              style={styles.pickerList}
+              contentContainerStyle={styles.pickerListContent}
+              keyboardShouldPersistTaps="handled"
+              data={people}
+              keyExtractor={(person) => person.key}
+              extraData={[team1, team2]}
+              initialNumToRender={10}
+              windowSize={5}
+              ListEmptyComponent={(
                 <Text style={styles.subtle}>{loading ? 'Loading players…' : 'No players found.'}</Text>
-              ) : people.map((person) => {
+              )}
+              renderItem={({ item: person }) => {
                 const chosen = isChosen(person.candidate);
                 return (
                   <Pressable
-                    key={person.key}
                     onPress={() => addToTeam(person.candidate)}
                     style={({ pressed }) => [styles.playerRow, pressed && styles.playerRowPressed]}
                   >
@@ -294,8 +304,8 @@ const TourneyMatchCreateScreen = ({ navigation }) => {
                     </View>
                   </Pressable>
                 );
-              })}
-            </ScrollView>
+              }}
+            />
             <View style={styles.addRow}>
               <AppTextInput value={rawName} onChangeText={setRawName} placeholder="Add someone not on Critic" style={styles.addInput} onSubmitEditing={addRawToTeam} />
               <AppButton label="Add" onPress={addRawToTeam} variant="secondary" style={styles.addButton} />
