@@ -42,9 +42,12 @@ frontend-old/
 **/charts/*.tgz
 values.secret.yaml
 
-# Local DB dumps
+# Local DB dumps. These contain real user PII (phone numbers), so keep the match
+# broad: `backup-*.sql` alone missed `critic-db-backup-*.sql` sitting in the repo root.
 backups/
 backup-*.sql
+*backup*.sql
+*.dump
 
 # Local-only DB helper scripts
 wiki/bin/critic-db-restore.sh

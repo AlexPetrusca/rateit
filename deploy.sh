@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 
 # Top-level script to deploy all application components to Kubernetes
-# Usage: IMAGE_TAG=<tag> ./deploy.sh [--local] [--single-node] [--push] [--skip-push] [--with-frontend] [--restart-nginx] [--force]
+# Usage: IMAGE_TAG=<tag> ./deploy.sh [--local] [--single-node] [--push] [--skip-push] [--with-frontend] [--frontend-only] [--restart-nginx] [--force]
 # If IMAGE_TAG is not provided, defaults to "latest"
+#
+# --frontend-only ships just the web bundle: no Postgres backup, no backend image
+# build/push, no Helm release, no pod restarts. Use it when only mobile/ changed;
+# rolling the backend to publish a frontend bundle is needless risk on the
+# single-node remote cluster.
 
 set -e  # Exit immediately if a command exits with a non-zero status
 
@@ -26,6 +31,7 @@ SKIP_BACKEND_PUSH=false
 FORCE_BACKEND_PUSH=false
 PULL_POLICY="Always"
 DEPLOY_FRONTEND=false
+FRONTEND_ONLY=false
 RESTART_NGINX=false
 TEMP_VALUES_FILES=()
 
@@ -60,6 +66,7 @@ while [[ "$#" -gt 0 ]]; do
         --push) FORCE_BACKEND_PUSH=true ;;
         --skip-push) SKIP_BACKEND_PUSH=true; PULL_POLICY="IfNotPresent" ;;
         --with-frontend) DEPLOY_FRONTEND=true ;;
+        --frontend-only) DEPLOY_FRONTEND=true; FRONTEND_ONLY=true ;;
         --skip-frontend) DEPLOY_FRONTEND=false ;;
         --restart-nginx) RESTART_NGINX=true ;;
         --twilio) BACKEND_SPRING_PROFILES="twilio" ;;
@@ -93,6 +100,13 @@ if [ "$LOCAL_DEPLOY" = true ]; then
   kubectl config use-context "$LOCAL_KUBE_CONTEXT"
 else
   kubectl config use-context "$REMOTE_KUBE_CONTEXT"
+fi
+
+if [ "$FRONTEND_ONLY" = true ]; then
+  echo "Frontend-only deploy: skipping Postgres backup, backend image push, Helm release, and rollouts"
+  (cd ./mobile/scripts && ./deploy.sh)
+  echo "Frontend-only deploy completed successfully!"
+  exit 0
 fi
 
 echo "Deploying application to Kubernetes with image tag: $IMAGE_TAG"

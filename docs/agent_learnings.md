@@ -72,6 +72,23 @@ Do not use this file for:
 - `helm dependency update` refreshes every range-pinned dependency in `rateit-chart/Chart.lock`, so adding one chart can also bump other lockfile versions.
 - `helm lint rateit-chart` needs `rateit-chart/values.secret.yaml`; `templates/secrets.yaml` dereferences secret values directly.
 
+### Images and mobile web
+
+- Never fall back to uploading the original asset when a resize fails; a silent fallback is how multi-megabyte camera originals became profile pictures, and rendering ~18 of them at once in the tourney player picker decoded to ~160 MB of bitmap and got the tab killed by mobile Safari. Fail loudly instead.
+- CSS/`style` dimensions do not bound image decode cost: a 12 MP JPEG costs ~48 MB of bitmap even when painted as a 32px avatar. Downscale at upload, and virtualize any list that renders many avatars.
+- `expo-image-manipulator` is unreliable on web; the web build resizes with a canvas instead (see `src/utils/imageUpload.js`).
+- Object keys containing spaces return 400 through the app nginx (they resolve fine straight from Spaces), so sanitize upload filenames.
+
+### Client error reporting
+
+- Metro only resolves platform variants (`Foo.web.js`) when the import has **no** file extension. This repo otherwise imports with explicit extensions, so a `Foo.js` import silently bundles the native stub into web — which quietly disabled Sentry until caught by grepping the built bundle.
+- `EXPO_PUBLIC_*` vars are inlined at Metro transform time, and a stale Metro cache will ship a bundle built against an older `.env` — changing `.env` alone is not enough. `mobile/scripts/deploy.sh` passes `--clear` and then greps the bundle for the DSN, because a DSN-less bundle looks perfectly healthy and reports nothing.
+- Sentry catches JavaScript exceptions only. It cannot report a tab that mobile Safari kills under memory pressure, so silence after a reported crash is evidence *for* an OOM, not against a bug.
+
+### Working against the deployed cluster
+
+- Check `git fetch && git status` before reasoning about infrastructure. A stale checkout makes the running cluster look inexplicable (missing MinIO, an empty `critic` database, "undocumented" Spaces hosting were all just unpulled commits) and building the web bundle from a stale tree silently reverts production to old code.
+
 ## How To Update
 
 When you discover a reusable lesson during implementation, add it here and keep it short. Prefer a single sentence that captures the invariant or pitfall.

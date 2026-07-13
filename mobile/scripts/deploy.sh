@@ -37,7 +37,10 @@ fi
 # proxies /api and /auth to the backend.
 npm install >/dev/null
 rm -rf "$DIST_PATH"
-npx expo export --platform web --output-dir "$DIST_PATH"
+# --clear is not optional: EXPO_PUBLIC_* vars are inlined at Metro transform time,
+# and a stale cache will happily ship a bundle built against an older .env. That
+# silently produced a build with no Sentry DSN (so no error reporting at all).
+npx expo export --platform web --output-dir "$DIST_PATH" --clear
 
 # Expo's generated index.html omits iOS home-screen (PWA) meta tags, so the
 # standalone status bar renders white. Inject them to match the dark app.
@@ -61,6 +64,17 @@ if 'apple-mobile-web-app-status-bar-style' not in html:
 else:
     print('iOS PWA meta tags already present')
 PY
+
+# Fail before uploading rather than shipping a bundle that silently lost its
+# build-time config: a DSN-less bundle looks completely healthy but reports nothing.
+if [ -n "${EXPO_PUBLIC_SENTRY_DSN:-}" ] || grep -q "EXPO_PUBLIC_SENTRY_DSN" .env 2>/dev/null; then
+  if ! grep -rqs "ingest\..*sentry\.io" "$DIST_PATH/_expo/static/js/web/"; then
+    echo "Error: EXPO_PUBLIC_SENTRY_DSN is configured but no Sentry DSN reached the bundle."
+    echo "       Error reporting would be dead on arrival. Aborting."
+    exit 1
+  fi
+  echo "Verified: Sentry DSN is present in the built bundle"
+fi
 
 # Replace the frontend/ contents so stale files don't linger (--delete scoped to
 # the prefix, so it never touches images/). Objects are public-read; assets are
