@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
+import AppErrorBoundary from './components/AppErrorBoundary.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { NotificationProvider } from './contexts/NotificationContext.jsx';
 import AppNavigator from './navigation/AppNavigator.jsx';
@@ -16,12 +17,14 @@ const App = () => {
   }
 
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <StatusBar style="light" />
-        <AppNavigator />
-      </NotificationProvider>
-    </AuthProvider>
+    <AppErrorBoundary>
+      <AuthProvider>
+        <NotificationProvider>
+          <StatusBar style="light" />
+          <AppNavigator />
+        </NotificationProvider>
+      </AuthProvider>
+    </AppErrorBoundary>
   );
 };
 
