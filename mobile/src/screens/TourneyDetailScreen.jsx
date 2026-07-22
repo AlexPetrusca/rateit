@@ -9,6 +9,7 @@ import TourneyHistoricalCreator from '../components/TourneyHistoricalCreator.jsx
 import TourneyScoreboard from '../components/TourneyScoreboard.jsx';
 import TourneyMatchLog from '../components/TourneyMatchLog.jsx';
 import TourneyRoundBuilder from '../components/TourneyRoundBuilder.jsx';
+import TourneyRosterEditor from '../components/TourneyRosterEditor.jsx';
 import UserAvatar from '../components/UserAvatar.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNotifications } from '../contexts/NotificationContext.jsx';
@@ -265,6 +266,8 @@ const LiveRunner = ({ detail, onChange }) => {
 
   // Matches build each game by dragging players onto two open sides (like the
   // historical creator), rather than the auto-paired tap-to-swap tournament nets.
+  // The roster is editable here rather than fixed at creation: a match starts with
+  // nobody in it and people get added as they turn up.
   if (isMatch) {
     const participants = (detail.players || []).map((tp) => ({
       id: tp.player.id,
@@ -274,28 +277,37 @@ const LiveRunner = ({ detail, onChange }) => {
     }));
     const roundNumber = (latestRound || 0) + 1;
     return (
-      <Card style={styles.section}>
-        <Text style={styles.sectionTitle}>Log a game</Text>
-        <Text style={styles.hint}>Drag players onto a side, enter each team&apos;s score (higher wins), then Save.</Text>
-        <TourneyRoundBuilder
-          participants={participants}
-          roundNumber={roundNumber}
-          pointsToWin={pointsToWin}
-          saving={busy}
-          onCommit={async (games) => {
-            if (!games.length) return;
-            setBusy(true);
-            try {
-              await BackendApiService.commitTourneyRound(detail.id, { roundNumber, games });
-              await onChange();
-            } catch (err) {
-              notify({ message: err.message || 'Failed to save game', type: 'error' });
-            } finally {
-              setBusy(false);
-            }
-          }}
-        />
-      </Card>
+      <>
+        <TourneyRosterEditor detail={detail} onChange={onChange} />
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>Log a game</Text>
+          {participants.length < 4 ? (
+            <Text style={styles.hint}>Add at least 4 players above to log a game.</Text>
+          ) : (
+            <>
+              <Text style={styles.hint}>Drag players onto a side, enter each team&apos;s score (higher wins), then Save.</Text>
+              <TourneyRoundBuilder
+                participants={participants}
+                roundNumber={roundNumber}
+                pointsToWin={pointsToWin}
+                saving={busy}
+                onCommit={async (games) => {
+                  if (!games.length) return;
+                  setBusy(true);
+                  try {
+                    await BackendApiService.commitTourneyRound(detail.id, { roundNumber, games });
+                    await onChange();
+                  } catch (err) {
+                    notify({ message: err.message || 'Failed to save game', type: 'error' });
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              />
+            </>
+          )}
+        </Card>
+      </>
     );
   }
 
@@ -394,13 +406,23 @@ const TourneyResults = ({ detail }) => {
   );
 };
 
-const EndTournament = ({ detail, onChange }) => {
+// The two terminal actions for a live event: delete it, or finish it. Both are
+// irreversible, so each asks for a second tap before it fires.
+const TourneyActions = ({ detail, onChange, onDelete }) => {
   const { notify } = useNotifications();
-  const [confirming, setConfirming] = useState(false);
+  const [confirming, setConfirming] = useState(null); // null | 'submit' | 'delete'
   const [busy, setBusy] = useState(false);
+  // Same "mark it COMPLETE" action either way, but a match isn't a tournament:
+  // you submit it, you don't end it.
+  const isMatch = detail.isMatch;
+  const noun = isMatch ? 'match' : 'tournament';
 
   if (detail.status === 'COMPLETE') {
-    return <Text style={styles.endedNote}>This tournament has ended.</Text>;
+    return (
+      <Text style={styles.endedNote}>
+        {isMatch ? 'This match has been submitted.' : 'This tournament has ended.'}
+      </Text>
+    );
   }
 
   const end = async () => {
@@ -418,22 +440,64 @@ const EndTournament = ({ detail, onChange }) => {
         notes: detail.notes
       });
       emitTourneyChanged();
-      notify({ message: 'Tournament ended.', type: 'info' });
+      notify({ message: isMatch ? 'Match submitted.' : 'Tournament ended.', type: 'info' });
       await onChange();
     } catch (err) {
-      notify({ message: err.message || 'Failed to end tournament', type: 'error' });
+      notify({
+        message: err.message || (isMatch ? 'Failed to submit match' : 'Failed to end tournament'),
+        type: 'error'
+      });
       setBusy(false);
-      setConfirming(false);
+      setConfirming(null);
     }
   };
 
-  if (!confirming) {
-    return <AppButton label="End tournament" variant="secondary" onPress={() => setConfirming(true)} style={styles.endBtn} />;
+  // onDelete navigates away on success, so there is no state to reset after it.
+  const remove = async () => {
+    setBusy(true);
+    try {
+      await onDelete();
+    } finally {
+      setBusy(false);
+      setConfirming(null);
+    }
+  };
+
+  if (confirming === 'delete') {
+    return (
+      <>
+        <Text style={styles.confirmNote}>Delete this {noun}? This cannot be undone.</Text>
+        <View style={styles.endConfirmRow}>
+          <AppButton label="Back" variant="ghost" onPress={() => setConfirming(null)} style={styles.endHalf} />
+          <AppButton label="Delete" variant="danger" onPress={remove} loading={busy} style={styles.endHalf} />
+        </View>
+      </>
+    );
   }
+
+  if (confirming === 'submit') {
+    return (
+      <>
+        <Text style={styles.confirmNote}>
+          {isMatch ? 'Submit this match?' : 'End this tournament?'}
+        </Text>
+        <View style={styles.endConfirmRow}>
+          <AppButton label="Back" variant="ghost" onPress={() => setConfirming(null)} style={styles.endHalf} />
+          <AppButton label="Confirm" onPress={end} loading={busy} style={styles.endHalf} />
+        </View>
+      </>
+    );
+  }
+
   return (
     <View style={styles.endConfirmRow}>
-      <AppButton label="Back" variant="ghost" onPress={() => setConfirming(false)} style={styles.endHalf} />
-      <AppButton label="Confirm" onPress={end} loading={busy} style={styles.endHalf} />
+      <AppButton label="Delete" variant="ghost" onPress={() => setConfirming('delete')} style={styles.endHalf} />
+      <AppButton
+        label={isMatch ? 'Submit' : 'End tournament'}
+        variant="secondary"
+        onPress={() => setConfirming('submit')}
+        style={styles.endHalf}
+      />
     </View>
   );
 };
@@ -799,7 +863,7 @@ const TourneyEditor = ({ detail, onDone, onCancel, showMeta = true, markComplete
 };
 
 // Kebab menu (Edit / Delete) shown on a finished tournament.
-const TourneyMenu = ({ onEdit, onDelete }) => {
+const TourneyMenu = ({ onEdit, onDelete, noun = 'tournament' }) => {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   return (
@@ -811,7 +875,7 @@ const TourneyMenu = ({ onEdit, onDelete }) => {
         <View style={styles.menu}>
           {confirming ? (
             <>
-              <Text style={styles.menuConfirm}>Delete this tournament?</Text>
+              <Text style={styles.menuConfirm}>Delete this {noun}?</Text>
               <Pressable onPress={() => { setOpen(false); setConfirming(false); onDelete(); }} style={styles.menuItem}>
                 <Text style={styles.menuItemDanger}>Delete</Text>
               </Pressable>
@@ -876,15 +940,16 @@ const TourneyDetailScreen = ({ route, navigation }) => {
   }, [detail?.status, navigation]);
 
   const deleteTournament = useCallback(async () => {
+    const noun = detail?.isMatch ? 'match' : 'tournament';
     try {
       await BackendApiService.deleteTourneyTournament(tournamentId);
       emitTourneyChanged();
-      notify({ message: 'Tournament deleted.', type: 'info' });
+      notify({ message: `${noun === 'match' ? 'Match' : 'Tournament'} deleted.`, type: 'info' });
       navigation.navigate('Tourney');
     } catch (err) {
-      notify({ message: err.message || 'Failed to delete tournament', type: 'error' });
+      notify({ message: err.message || `Failed to delete ${noun}`, type: 'error' });
     }
-  }, [tournamentId, navigation, notify]);
+  }, [tournamentId, detail?.isMatch, navigation, notify]);
 
   if (loading && !detail) {
     return <Screen><View style={styles.center}><ActivityIndicator color={colors.accent} /></View></Screen>;
@@ -911,7 +976,11 @@ const TourneyDetailScreen = ({ route, navigation }) => {
           <Text style={styles.sub}>{detail.playerCount} players · to {detail.pointsToWin}{!detail.isMatch && detail.mode !== 'HISTORICAL' && detail.courtCount ? ` · ${detail.courtCount} net${detail.courtCount > 1 ? 's' : ''}` : ''}</Text>
         </View>
         {isAdmin && detail.status === 'COMPLETE' ? (
-          <TourneyMenu onEdit={() => setEditing(true)} onDelete={deleteTournament} />
+          <TourneyMenu
+            onEdit={() => setEditing(true)}
+            onDelete={deleteTournament}
+            noun={detail.isMatch ? 'match' : 'tournament'}
+          />
         ) : null}
       </View>
       {detail.isMatch
@@ -926,7 +995,7 @@ const TourneyDetailScreen = ({ route, navigation }) => {
       ) : (
         <>
           <LiveRunner detail={detail} onChange={load} />
-          <EndTournament detail={detail} onChange={load} />
+          <TourneyActions detail={detail} onChange={load} onDelete={deleteTournament} />
         </>
       )}
     </Screen>
@@ -973,6 +1042,7 @@ const styles = StyleSheet.create({
   endConfirmRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   endHalf: { flex: 1 },
   endedNote: { ...text.muted, textAlign: 'center', marginTop: spacing.sm },
+  confirmNote: { ...text.muted, textAlign: 'center', marginTop: spacing.sm },
   hint: { ...text.muted, fontSize: 13 },
   gameCard: { gap: spacing.xs, padding: spacing.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surfaceSoft },
   gameHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

@@ -173,7 +173,7 @@ const TourneyCreateScreen = ({ navigation, route }) => {
           {isHistorical
             ? `Back-fill a finished ${kindLabel}: enter the matchups and scores yourself.`
             : isMatch
-              ? 'Start now on one net. Everyone begins benched — drag who is playing onto the net each game.'
+              ? 'Start now on one net. Add players on the match screen as they turn up, then drag who is playing onto the net each game.'
               : 'Run round-by-round; pairings are auto-generated each round (drag to adjust).'}
         </Text>
 
@@ -197,6 +197,10 @@ const TourneyCreateScreen = ({ navigation, route }) => {
         />
       </Card>
 
+      {/* A live match builds its roster on the match screen instead, so people can
+          be added and dropped as they turn up. Tournaments still pick the field up
+          front, because the first round's pairings are generated from it. */}
+      {isMatch ? null : (
       <Card style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Players</Text>
@@ -268,6 +272,7 @@ const TourneyCreateScreen = ({ navigation, route }) => {
           </View>
         </View>
       </Card>
+      )}
 
       <AppButton label={`Create ${kindLabel}`} onPress={createTournament} loading={saving} />
     </Screen>
