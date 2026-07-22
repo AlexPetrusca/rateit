@@ -52,6 +52,9 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) =
 
   const featured = topRatings[0];
   const rest = topRatings.slice(1);
+  // The latest rating is featured above, not in the list, so the count on the
+  // comment button is what expanding actually reveals: everything else.
+  const otherRatingCount = Math.max(0, ratingCount - 1);
 
   const openTopic = () => onTopicPress?.(rateableItemId);
 
@@ -154,7 +157,7 @@ const TopicFeedCard = ({ item, onTopicPress, onAuthorPress, notify, onRated }) =
           <PostActions
             liked={fLiked}
             likeCount={fLikeCount}
-            commentCount={ratingCount}
+            commentCount={otherRatingCount}
             onLike={toggleLike}
             onComment={() => setExpanded((open) => !open)}
             commentLabel={expanded ? 'Hide' : 'Comments'}
