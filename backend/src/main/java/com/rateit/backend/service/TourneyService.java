@@ -11,6 +11,7 @@ import com.rateit.backend.entity.dto.TourneyLeaderboardRowDto;
 import com.rateit.backend.entity.dto.TourneyLiveBannerDto;
 import com.rateit.backend.entity.dto.TourneyEloPointDto;
 import com.rateit.backend.entity.dto.TourneyMatchDto;
+import com.rateit.backend.entity.dto.TourneyMyMatchDto;
 import com.rateit.backend.entity.dto.TourneyPlayerDto;
 import com.rateit.backend.entity.dto.TourneyPlayerStandingDto;
 import com.rateit.backend.entity.dto.TourneyStandingDto;
@@ -51,7 +52,9 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -97,6 +100,64 @@ public class TourneyService {
     @Transactional
     public List<TourneyEloPointDto> getMyEloHistory(String phoneNumber) {
         return tourneyEloService.getMyEloHistory(phoneNumber);
+    }
+
+    // Every finished game the caller played in, told from their own side: who they
+    // played with, who against, and whether they won. Unlike the tournament views,
+    // this is not scoped to events the caller owns — you want the games you played
+    // in, not the ones you ran.
+    @Transactional(readOnly = true)
+    public List<TourneyMyMatchDto> getMyMatches(String phoneNumber) {
+        User user = userService.findByPhoneNumber(phoneNumber);
+        Long criticUserId = user.getId();
+
+        return matchRepository.findCompletedByCriticUser(criticUserId).stream()
+            .map(match -> toMyMatch(match, criticUserId))
+            .toList();
+    }
+
+    private TourneyMyMatchDto toMyMatch(TourneyMatch match, Long criticUserId) {
+        boolean onTeamA = teamHasCriticUser(match.getTeamA(), criticUserId);
+        TourneyTeam myTeam = onTeamA ? match.getTeamA() : match.getTeamB();
+        TourneyTeam theirTeam = onTeamA ? match.getTeamB() : match.getTeamA();
+        Integer myScore = onTeamA ? match.getTeamAScore() : match.getTeamBScore();
+        Integer theirScore = onTeamA ? match.getTeamBScore() : match.getTeamAScore();
+        TourneyTournament tournament = match.getTournament();
+
+        return new TourneyMyMatchDto(
+            match.getId(),
+            tournament.getId(),
+            tournament.getName(),
+            tournament.isMatch(),
+            tournament.getTournamentDate(),
+            match.getRoundNumber(),
+            teamNames(myTeam, criticUserId),
+            teamNames(theirTeam, null),
+            myScore,
+            theirScore,
+            myScore != null && theirScore != null && myScore > theirScore
+        );
+    }
+
+    private boolean teamHasCriticUser(TourneyTeam team, Long criticUserId) {
+        return playerIsCriticUser(team.getPlayerOne(), criticUserId)
+            || playerIsCriticUser(team.getPlayerTwo(), criticUserId);
+    }
+
+    private boolean playerIsCriticUser(TourneyPlayer player, Long criticUserId) {
+        return player != null
+            && player.getCriticUser() != null
+            && player.getCriticUser().getId().equals(criticUserId);
+    }
+
+    // Display names on a team; pass the viewer's critic id to leave them out (so a
+    // team reads as "your partner", not "you and your partner").
+    private List<String> teamNames(TourneyTeam team, Long excludeCriticUserId) {
+        return Stream.of(team.getPlayerOne(), team.getPlayerTwo())
+            .filter(Objects::nonNull)
+            .filter(player -> excludeCriticUserId == null || !playerIsCriticUser(player, excludeCriticUserId))
+            .map(TourneyPlayer::getDisplayName)
+            .toList();
     }
 
     @Transactional

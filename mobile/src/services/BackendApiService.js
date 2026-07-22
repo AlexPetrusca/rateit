@@ -148,6 +148,8 @@ const BackendApiService = {
 
   getMyLiveTourney: () => request('/api/tourney/live/me', {}, 'Failed to check live tournament'),
 
+  getMyTourneyMatches: () => request('/api/tourney/matches/me', {}, 'Failed to load match history'),
+
   createTourneyPlayer: (playerData) => request('/api/tourney/players', {
     method: 'POST',
     body: jsonBody(playerData)
@@ -157,6 +159,12 @@ const BackendApiService = {
     method: 'POST',
     body: jsonBody(playerData)
   }, 'Failed to add player to tournament'),
+
+  removeTourneyTournamentPlayer: (tournamentId, playerId) => request(
+    `/api/tourney/tournaments/${encodeURIComponent(tournamentId)}/players/${encodeURIComponent(playerId)}`,
+    { method: 'DELETE' },
+    'Failed to remove player from tournament'
+  ),
 
   getTopicRatings: ({ rateableItemId, page = 0, size = 20 } = {}) => request(
     `/api/feed/topics/${encodeURIComponent(rateableItemId)}?page=${encodeURIComponent(page)}&limit=${encodeURIComponent(size)}`,

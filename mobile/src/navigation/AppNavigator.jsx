@@ -30,6 +30,7 @@ import TourneyCreateScreen from '../screens/TourneyCreateScreen.jsx';
 import TourneyMatchCreateScreen from '../screens/TourneyMatchCreateScreen.jsx';
 import TourneyDashboardScreen from '../screens/TourneyDashboardScreen.jsx';
 import TourneyDetailScreen from '../screens/TourneyDetailScreen.jsx';
+import TourneyHistoryScreen from '../screens/TourneyHistoryScreen.jsx';
 import TourneyLeaderboardScreen from '../screens/TourneyLeaderboardScreen.jsx';
 import TourneyScreen from '../screens/TourneyScreen.jsx';
 import { APP_PUBLIC_URL } from '../config.js';
@@ -65,6 +66,7 @@ const linking = {
       SuggestionSubmit: 'suggestions/new',
       Tourney: 'tourney',
       TourneyDashboard: 'tourney/dashboard',
+      TourneyHistory: 'tourney/history',
       TourneyLeaderboard: 'tourney/leaderboard',
       TourneyCreate: 'tourney/new',
       TourneyMatchCreate: 'tourney/match',
@@ -93,16 +95,20 @@ const webTabIcons = {
   Me: require('../../assets/tab-icons/profile_hd.png')
 };
 
+// The tourney bar everyone sees: dashboard, their own match history, leaderboard.
+// `Tourney` (the raw list of every tournament and match) is an admin-only tool and
+// is appended as a "+" slot below, not shown to players.
 const tourneyTabIcons = {
   TourneyDashboard: require('../../assets/tab-icons/tourney-dashboard.png'),
-  Tourney: require('../../assets/tab-icons/tourney-list.png'),
+  TourneyHistory: require('../../assets/tab-icons/tourney-list.png'),
   TourneyLeaderboard: require('../../assets/tab-icons/tourney-trophy.png')
 };
 
 const webTourneyTabIcons = {
   TourneyDashboard: require('../../assets/tab-icons/tourney-dashboard_hd.png'),
-  Tourney: require('../../assets/tab-icons/tourney-list_hd.png'),
-  TourneyLeaderboard: require('../../assets/tab-icons/tourney-trophy_hd.png')
+  TourneyHistory: require('../../assets/tab-icons/tourney-list_hd.png'),
+  TourneyLeaderboard: require('../../assets/tab-icons/tourney-trophy_hd.png'),
+  Tourney: require('../../assets/tab-icons/create_hd.png')
 };
 
 const tabOptions = ({ route }) => {
@@ -138,6 +144,9 @@ const tabOptions = ({ route }) => {
 
 const TAB_NAMES = Object.keys(tabIcons);
 const TOURNEY_TAB_NAMES = Object.keys(tourneyTabIcons);
+// Admins get a fourth "+" slot: the tournament/match list, which is also where
+// events get created. Players never see it.
+const TOURNEY_ADMIN_TAB_NAMES = [...TOURNEY_TAB_NAMES, 'Tourney'];
 const WEB_NAV_W = 320;
 const BUBBLE_W = 40;
 
@@ -228,7 +237,7 @@ const AppNavigator = () => {
     if (TAB_NAMES.includes(name)) {
       setActiveTab(name);
     }
-    if (TOURNEY_TAB_NAMES.includes(name)) {
+    if (TOURNEY_ADMIN_TAB_NAMES.includes(name)) {
       setActiveTourneyTab(name);
     }
     setShowNav(
@@ -243,7 +252,7 @@ const AppNavigator = () => {
     // An ended tournament's detail view is read-only, so it's safe to surface the
     // tourney tab bar there too (TourneyDetailScreen sets this param once the
     // tournament is COMPLETE), unlike an in-progress live/historical entry flow.
-    setShowTourneyNav(TOURNEY_TAB_NAMES.includes(name) || (name === 'TourneyDetail' && Boolean(route?.params?.tourneyNavVisible)));
+    setShowTourneyNav(TOURNEY_ADMIN_TAB_NAMES.includes(name) || (name === 'TourneyDetail' && Boolean(route?.params?.tourneyNavVisible)));
   }, [navigationRef]);
 
   const navigateToTab = useCallback((name) => {
@@ -305,10 +314,17 @@ const AppNavigator = () => {
             <Stack.Screen name="Backlog" component={BacklogScreen} />
             <Stack.Screen name="SuggestionSubmit" component={SuggestionSubmitScreen} options={{ title: 'Suggestion' }} />
             <Stack.Screen name="TourneyDashboard" component={TourneyDashboardScreen} />
-            <Stack.Screen name="Tourney" component={TourneyScreen} />
+            <Stack.Screen name="TourneyHistory" component={TourneyHistoryScreen} />
             <Stack.Screen name="TourneyLeaderboard" component={TourneyLeaderboardScreen} />
-            <Stack.Screen name="TourneyCreate" component={TourneyCreateScreen} />
-            <Stack.Screen name="TourneyMatchCreate" component={TourneyMatchCreateScreen} />
+            {/* The raw tournament/match list and the creation flows it leads to are
+                admin tooling; a player only ever sees a tournament via TourneyDetail. */}
+            {isAdmin ? (
+              <>
+                <Stack.Screen name="Tourney" component={TourneyScreen} />
+                <Stack.Screen name="TourneyCreate" component={TourneyCreateScreen} />
+                <Stack.Screen name="TourneyMatchCreate" component={TourneyMatchCreateScreen} />
+              </>
+            ) : null}
             <Stack.Screen name="TourneyDetail" component={TourneyDetailScreen} />
             <Stack.Screen name="InstallInfo" component={InstallInfoScreen} options={{ title: 'Install' }} />
             {isAdmin ? (
@@ -331,7 +347,7 @@ const AppNavigator = () => {
         <WebNavBar
           activeTab={activeTourneyTab}
           onNavigate={navigateToTourneyTab}
-          tabNames={TOURNEY_TAB_NAMES}
+          tabNames={isAdmin ? TOURNEY_ADMIN_TAB_NAMES : TOURNEY_TAB_NAMES}
           icons={webTourneyTabIcons}
         />
       ) : null}
